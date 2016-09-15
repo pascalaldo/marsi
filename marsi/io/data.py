@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import os
+from pandas import DataFrame
 
 from marsi.utils import data_dir
-from pandas import DataFrame
 
 __all__ = ["chebi", "drugbank"]
 
