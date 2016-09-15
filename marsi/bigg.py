@@ -187,6 +187,23 @@ def get_metabolite(metabolite_id):
         return response.json()
 
 
+def get_model_metabolite(model_id, metabolite_id):
+    """
+    Retrieve a metabolite in the context of a model from BiGG.
+
+    Arguments
+    ---------
+    metabolite_id: str
+        A valid id for a reaction in BiGG.
+    model_id: str
+        A valid id for a model in BiGG.
+    """
+    response = requests.get(BASE_URL + "models/%s/metabolites/%s" % (model_id, metabolite_id))
+    print(model_id, metabolite_id)
+    if response.ok:
+        return response.json()
+
+
 def list_model_genes(model_id):
     """
     List all genes in a model.
