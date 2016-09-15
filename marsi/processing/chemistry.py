@@ -14,23 +14,6 @@
 
 import pybel
 
-from marsi.io.db import Metabolite
-
-
-def add_mol_to_db(mol, references):
-    try:
-        metabolite = Metabolite.get(inchi_key=mol_to_inchi_key(mol))
-        for reference in references:
-            if reference not in metabolite.references:
-                metabolite.references.append(reference)
-    except KeyError:
-        metabolite = Metabolite(inchi_key=mol_to_inchi_key(mol),
-                                inchi=mol_to_inchi(mol),
-                                references=references)
-    metabolite.save()
-
-    return metabolite
-
 
 def has_radical(mol):
     """
@@ -82,6 +65,23 @@ def mol_to_inchi_key(mol):
         A InChI key.
     """
     return mol.write(format="inchikey", opt=dict(errorlevel=0)).strip()
+
+
+def inchi_to_inchi_key(inchi):
+    """
+    Makes an InChI Key from a InChI string.
+
+    Arguments
+    ---------
+    inchi: str
+        A valid InChI string.
+
+    Returns
+    -------
+    str
+        A InChI key.
+    """
+    return mol_to_inchi_key(inchi_to_molecule(inchi))
 
 
 def mol_drugbank_id(mol):
@@ -137,7 +137,7 @@ def mol_chebi_id(mol):
 
 def fingerprint(mol, fpformat='maccs'):
     """
-    Returns the ChEBI ID from the molecule data.
+    Returns the Fingerprint of the molecule.
 
     Arguments
     ---------
@@ -154,4 +154,38 @@ def fingerprint(mol, fpformat='maccs'):
     """
     if fpformat not in pybel.fps:
         raise AssertionError("'%s' is not a valid fingerprint format" % fpformat)
-    mol.calcfp(fptype=fpformat)
+    return mol.calcfp(fptype=fpformat)
+
+
+def inchi_to_molecule(inchi):
+    """
+    Returns a molecule from a InChI string.
+
+    Arguments
+    ---------
+    inchi: str
+        A valid string.
+
+    Returns
+    -------
+    mol: pybel.Molecule
+        A molecule.
+    """
+    return pybel.readstring('inchi', inchi, opt=dict(errorlevel=0))
+
+
+def mol_str_to_inchi(mol_str):
+    """
+    Returns the ChEBI ID from the molecule data.
+
+    Arguments
+    ---------
+    mol_str: str
+        A valid MOL string.
+
+    Returns
+    -------
+    str
+        A InChI string.
+    """
+    mol_to_inchi(pybel.readstring('mol', mol_str))
