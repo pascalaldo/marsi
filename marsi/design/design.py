@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from collections import defaultdict
-from marsi.parallel import apply
 
-
+from marsi.io.db import Database
 from marsi.design.operations import NearestNeighbors
+
+from marsi.parallel import apply
 
 
 class GenericDesignMethod(object):
 
-    def __init__(self, model=None, metabolite_database=None, min_tanimoto=0.8, min_rmsd=0.8):
+    def __init__(self, model=None, metabolite_database=Database, min_tanimoto=0.8, min_rmsd=0.8):
         self.model = model
         self.database = metabolite_database
         self.min_tanimoto = min_tanimoto
@@ -29,8 +30,9 @@ class GenericDesignMethod(object):
         self.map_model()
 
     def map_model(self):
-        neighbors = apply(NearestNeighbors, self.model.metabolites)
-        self.metabolite_neighbors.update({m.id: n.apply() for m, n in zip(self.model.metabolites, neighbors)})
+        nn_function = NearestNeighbors(self.database)
+        neighbors = apply(nn_function, self.model.metabolites, min_tanimoto=self.min_tanimoto, min_rmsd=self.min_rmsd)
+        self.metabolite_neighbors.update({m.id: n[2] for m, n in zip(self.model.metabolites, neighbors)})
 
     def __call__(self, target, maximize=True, **kwargs):
         raise NotImplementedError
