@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from itertools import combinations
+
 from pandas import melt, DataFrame
 
 from bokeh.charts import Bar
@@ -19,8 +21,23 @@ from bokeh.io import show
 
 
 def summary_plot(summary, dbs=['chebi', 'kegg', 'drugbank', 'pubchem']):
-    summary = DataFrame(summary)
-    summary['key'] = summary.index
-    by_database = melt(summary, id_vars='key', value_vars=dbs).dropna(subset=['value'])
+    data = DataFrame(summary)
+    data['key'] = data.index
+    by_database = melt(data, id_vars='key', value_vars=dbs).dropna(subset=['value'])
     bar = Bar(by_database, label='variable', values='key', color='variable', agg='count')
     show(bar)
+
+
+def venn_plot(summary, dbs=['chebi', 'kegg', 'drugbank', 'pubchem']):
+    sets = {db: set(summary[~summary[db].isnull()].index) for db in dbs}
+    for db1, db2 in combinations(dbs, 2):
+        l_int = len(sets[db1].intersection(sets[db2]))
+        print("%s AND %s: %i" % (db1, db2, l_int))
+
+    for db1, db2, db3 in combinations(dbs, 3):
+        l_int = len(sets[db1].intersection(sets[db2]).intersection(db3))
+        print("%s AND %s AND %s: %i" % (db1, db2, db3, l_int))
+
+    for db1, db2, db3, db4 in combinations(dbs, 4):
+        l_int = len(sets[db1].intersection(sets[db2]).intersection(db3).intersection(db4))
+        print("%s AND %s AND %s AND %s: %i " % (db1, db2, db3, db4, l_int))

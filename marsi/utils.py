@@ -13,10 +13,123 @@
 # limitations under the License.
 
 import os
+import numpy as np
+import time
+import pickle
+import logging
 
-__all__ = ['data_dir', 'log_dir']
+import gzip
+import shutil
 
-__cur_dir__ = os.path.dirname(__file__)
+from IProgress import ProgressBar, Percentage
+from cameo import fba
 
-data_dir = os.path.join(__cur_dir__, "..", "data")
-log_dir = os.path.join(__cur_dir__, "..", "log")
+from marsi import config
+
+__all__ = ['data_dir', 'log_dir', 'pickle_large', 'unpickle_large', 'frange']
+
+data_dir = os.path.join(config.prj_dir, "data")
+models_dir = os.path.join(config.prj_dir, "models")
+log_dir = os.path.join(config.prj_dir, "log")
+
+INCHI_KEY_TYPE = np.dtype("a27")
+MAX_BYTES = 2**31 - 1
+
+logger = logging.getLogger(__name__)
+
+
+def pickle_large(obj, file_path, progress=False):
+    with open(file_path, 'wb') as model_handler:
+        bytes_out = pickle.dumps(obj)
+        output_size = len(bytes_out)
+        if progress:
+            pbar = ProgressBar(maxval=output_size, widgets=["Writing ", Percentage()])
+            for idx in pbar(range(0, output_size, MAX_BYTES)):
+                model_handler.write(bytes_out[idx:idx+MAX_BYTES])
+        else:
+            for idx in range(0, output_size, MAX_BYTES):
+                model_handler.write(bytes_out[idx:idx+MAX_BYTES])
+
+
+def unpickle_large(file_path, progress=False):
+    input_size = os.path.getsize(file_path)
+    logger.debug("Input size: %f bytes" % input_size)
+    with open(file_path, 'rb') as file_handler:
+        bytes_in = bytearray(0)
+
+        if progress:
+            pbar = ProgressBar(maxval=input_size, widgets=["Loading ", Percentage()])
+            for _ in pbar(range(0, input_size, MAX_BYTES)):
+                bytes_in += file_handler.read(MAX_BYTES)
+        else:
+            for _ in range(0, input_size, MAX_BYTES):
+                bytes_in += file_handler.read(MAX_BYTES)
+
+    return pickle.loads(bytes_in)
+
+
+def frange(start, stop=None, steps=10):
+    if stop is None:
+        stop = start
+        start = 0
+
+    step_size = (stop-start) / steps
+    logger.debug("Step size %f" % step_size)
+    for i in range(steps):
+        logger.debug("Iteration %i: %f" % (i+1, i * step_size))
+        yield i * step_size
+
+
+def unique(l):
+    s = set()
+    n = 0
+    for x in l:
+        if x not in s:
+            s.add(x)
+            l[n] = x
+            n += 1
+    del l[n:]
+
+
+def timing(debug=False):
+    def function_wrapper(func):
+        if debug:
+            def debug_wrap_func(*args, **kwargs):
+                start = time.time()
+                ret = func(*args, **kwargs)
+                stop = time.time()
+                if config.log.level >= config.Level.DEBUG:
+                    print('%s function took %0.3f ms' % (func.__name__, (stop - start) * 1000.0))
+                return ret
+            return debug_wrap_func
+        else:
+            def wrap_func(*args, **kwargs):
+                start = time.time()
+                ret = func(*args, **kwargs)
+                stop = time.time()
+                print('%s function took %0.3f ms' % (func.__name__, (stop - start) * 1000.0))
+                return ret
+            return wrap_func
+    return function_wrapper
+
+
+def default_carbon_sources(model):
+    solution = fba(model)
+    carbon_sources = []
+
+    for ex in model.exchanges:
+        if ex.lower_bound < 0 and solution[ex.id] < 0 < ex.n_carbon:
+            logger.debug("Found carbon source: %s")
+            carbon_sources.append(ex)
+
+    return carbon_sources
+
+
+def gunzip(file):
+    assert file[-3:] == ".gz"
+    in_name = file
+    out_name = file[0:-3]
+    with gzip.open(in_name, 'rb') as f_in, open(out_name, 'wb') as f_out:
+        shutil.copyfileobj(f_in, f_out)
+
+

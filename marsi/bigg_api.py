@@ -67,11 +67,15 @@ def download_model(model_id, file_format="json", save=True, path="."):
             with open(os.path.join(path, "%s.%s" % (model_id, file_format)), "w") as model_file:
                 for block in response.iter_content(1024):
                     model_file.write(block)
+        else:
+            raise ValueError(response.text)
 
     else:
-        response = requests.get(BASE_URL + "models/%s/%s" % (model_id, file_format))
+        response = requests.get(BASE_URL + "models/%s" % model_id)
         if response.ok:
             return response.json()
+        else:
+            raise ValueError(response.text)
 
 
 def model_details(model_id):
@@ -199,7 +203,6 @@ def get_model_metabolite(model_id, metabolite_id):
         A valid id for a model in BiGG.
     """
     response = requests.get(BASE_URL + "models/%s/metabolites/%s" % (model_id, metabolite_id))
-    print(model_id, metabolite_id)
     if response.ok:
         return response.json()
 
