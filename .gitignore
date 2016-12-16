@@ -45,3 +45,7 @@ nosetests.xml
 
 docs/_build
 
+data
+
+# My stuff
+notebooks
