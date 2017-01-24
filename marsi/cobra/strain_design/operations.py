@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from marsi.io.mongodb import Database
-from marsi.processing.chemistry.openbabel import inchi_to_molecule, inchi_to_inchi_key
+from marsi.chemistry.openbabel import inchi_to_molecule, inchi_to_inchi_key
 
 __all__ = ['AntiMetaboliteFilter', 'CombinedSubstratesAntiMetaboliteFilter']
 
@@ -104,19 +104,3 @@ class CombinedSubstratesAntiMetaboliteFilter(AntiMetaboliteFilter):
             return inchis, inchi_keys
         except ValueError:
             return None, None, []
-
-
-class ReplaceKnockoutFinder(object):
-    def __init__(self, model, simulation_method, simulation_kwargs, currency_metabolites):
-        self.model = model
-        self.simulation_method = simulation_method
-        self.simulation_kwargs = simulation_kwargs
-        self.currency_metabolites = currency_metabolites
-
-    def __call__(self, targets, fitness, objective_function, cache, max_lost=0.2):
-        from marsi.processing.models import test_reaction_knockout_replacements
-        simulation_kwargs = dict(cache=cache)
-        simulation_kwargs.update(self.simulation_kwargs)
-        return test_reaction_knockout_replacements(self.model, targets, objective_function, fitness,
-                                                   self.simulation_method, simulation_kwargs=simulation_kwargs,
-                                                   ignore_metabolites=self.currency_metabolites, max_lost=max_lost)

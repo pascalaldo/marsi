@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 import os
 import numpy as np
 import time
@@ -33,6 +34,9 @@ models_dir = os.path.join(config.prj_dir, "models")
 log_dir = os.path.join(config.prj_dir, "log")
 
 INCHI_KEY_TYPE = np.dtype("a27")
+
+BIOMASS_RE = re.compile("biomass", re.IGNORECASE)
+
 MAX_BYTES = 2**31 - 1
 
 logger = logging.getLogger(__name__)
@@ -133,3 +137,5 @@ def gunzip(file):
         shutil.copyfileobj(f_in, f_out)
 
 
+def search_metabolites(model, species_id):
+    return model.metabolites.query(lambda mid: mid[:-2] == species_id, attribute='id')

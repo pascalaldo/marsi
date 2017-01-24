@@ -27,8 +27,8 @@ from cameo.flux_analysis.analysis import flux_variability_analysis, FluxVariabil
 from cameo.flux_analysis.simulation import pfba, fba
 from cameo.exceptions import SolveError
 
-from marsi.processing.models import search_metabolites, apply_antimetabolite
-from marsi.utils import frange
+from marsi.processing.models import search_metabolites, apply_anti_metabolite
+from marsi.utils import frange, search_metabolites
 
 BASE_ELEMENTS = ["C", "N"]
 
@@ -211,9 +211,9 @@ def sensitivity_analysis(model, metabolite, biomass=None, is_essential=False, st
 
     for fraction in frange(0, 1.1, steps):
         with TimeMachine() as tm:
-            exchanges = apply_antimetabolite(metabolites, essential_metabolites, simulation_kwargs['reference'],
-                                             inhibition_fraction=fraction, competition_fraction=fraction,
-                                             allow_accumulation=True, ignore_transport=True, time_machine=tm)
+            exchanges = apply_anti_metabolite(metabolites, essential_metabolites, simulation_kwargs['reference'],
+                                              inhibition_fraction=fraction, competition_fraction=fraction,
+                                              allow_accumulation=True, ignore_transport=True, time_machine=tm)
 
             flux_dist = simulation_method(model, **simulation_kwargs)
 

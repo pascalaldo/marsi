@@ -19,7 +19,7 @@ from bioservices.kegg import KEGG
 from bioservices.uniprot import UniProt
 from math import ceil
 
-from marsi.processing.chemistry.openbabel import mol_str_to_inchi
+from marsi.chemistry.openbabel import mol_str_to_inchi
 
 
 try:

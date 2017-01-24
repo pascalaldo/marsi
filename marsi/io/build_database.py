@@ -15,9 +15,11 @@ import os
 import pandas
 from pybel import readfile
 
+from numpy import nan
+
 from marsi.io.mongodb import Metabolite
 from marsi.io.mongodb import Reference
-from marsi.processing import chemistry
+from marsi import chemistry
 
 
 def build_database(data, data_dir):
@@ -30,7 +32,7 @@ def build_database(data, data_dir):
     i = upload_kegg_entries(kegg_mol_files_dir, data.kegg, i=i)
     pubchem_sdf_files_dir = os.path.join(data_dir, "pubchem_sdf_files")
     i = upload_pubchem_entries(pubchem_sdf_files_dir, data.pubchem, i=i)
-    zinc_data_file = os.path.join(data_dir, "zinc15_16_prop.tsv")
+    zinc_data_file = os.path.join(data_dir, "zinc_16_prop.tsv")
     i = upload_zin_entries(zinc_data_file, i=i)
     return i
 
@@ -67,7 +69,7 @@ def upload_drugbank_entries(drugbank_structures_file, drugbank_data, i=0):
         drugbank_id = chemistry.openbabel.mol_drugbank_id(mol)
         drugbank_rows = drugbank_data.query("id == @drugbank_id")
         if len(drugbank_rows) > 0:
-            _add_molecule(mol, drugbank_rows.synonyms[0], 'drugbank', drugbank_id, False)
+            _add_molecule(mol, drugbank_rows.iloc[0].synonyms[0], 'drugbank', drugbank_id, False)
 
         i += 1
     return i
@@ -86,7 +88,15 @@ def upload_kegg_entries(kegg_mol_files_dir, kegg_data, i=0):
                 continue
             rows = kegg_data.query("kegg_drug_id == @kegg_id")
             synonyms = set(rows.generic_name.values.tolist() + rows.name.values.tolist())
-            _add_molecule(mol, synonyms, 'kegg', kegg_id, False)
+            if None in synonyms:
+                synonyms.remove(None)
+            if nan in synonyms:
+                synonyms.remove(nan)
+            try:
+                _add_molecule(mol, synonyms, 'kegg', kegg_id, False)
+            except Exception as e:
+                print(synonyms)
+                raise e
 
         i += 1
     return i

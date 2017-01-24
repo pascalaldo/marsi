@@ -13,14 +13,12 @@
 # limitations under the License.
 import time
 
-from functools import lru_cache
-
 import numpy as np
-
 import pybel
 from bitarray import bitarray
+from functools import lru_cache
 
-from marsi.processing.chemistry.common import convex_hull_volume, monte_carlo_volume as mc_vol
+from marsi.chemistry.common import convex_hull_volume, monte_carlo_volume as mc_vol
 
 __all__ = ['has_radical', 'mol_to_inchi', 'mol_to_inchi_key', 'mol_to_svg', 'mol_chebi_id', 'mol_drugbank_id',
            'mol_pubchem_id', 'mol_str_to_inchi', 'align_molecules', 'inchi_to_molecule', 'smiles_to_molecule',

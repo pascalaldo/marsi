@@ -38,34 +38,21 @@ class AntimetaboliteEvaluator(TargetEvaluator):
         self.competition_fraction = competition_fraction
 
     def _evaluate_individual(self, individual):
-        from marsi.processing.models import apply_antimetabolite, search_metabolites
+        from marsi.processing.models import apply_anti_metabolite
+        from marsi.utils import search_metabolites
 
         specie_ids = self.decoder(individual)
         metabolite_targets = [search_metabolites(self.model, val) for val in specie_ids]
         with TimeMachine() as tm:
             for metabolites in metabolite_targets:
-                apply_antimetabolite(metabolites, self.essential_metabolites, self.simulation_kwargs['reference'],
-                                     self.inhibition_fraction, self.competition_fraction, time_machine=tm)
+                apply_anti_metabolite(metabolites, self.essential_metabolites, self.simulation_kwargs['reference'],
+                                      self.inhibition_fraction, self.competition_fraction, time_machine=tm)
 
             try:
                 solution = self.simulation_method(self.model, **self.simulation_kwargs)
-
-                fitness = self._calculate_fitness(solution, metabolite_targets)
-
+                return self.objective_function(self.model, solution, metabolite_targets)
             except SolveError:
-                if self.is_mo:
-                    fitness = inspyred.ec.emo.Pareto(values=[0 for _ in self.objective_function])
-                else:
-                    fitness = 0.
-
-            except Exception as e:
-                logger.exception(e)
-                if self.is_mo:
-                    fitness = inspyred.ec.emo.Pareto(values=[0 for _ in self.objective_function])
-                else:
-                    fitness = 0.
-
-            return fitness
+                return self.objective_function.worst_fitness()
 
 
 class MetaboliteKnockoutOptimization(TargetOptimization):

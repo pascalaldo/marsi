@@ -11,19 +11,4 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from cement.core.foundation import CementApp
 
-from marsi.cli.controllers import MarsiBaseController
-from marsi.cli.controllers.initialization import InitializationController
-from marsi.cli.controllers.modeling import OptimizationController
-
-
-class MarsiApp(CementApp):
-    class Meta:
-        label = 'marsi'
-        base_controller = 'base'
-        handlers = [
-            MarsiBaseController,
-            InitializationController,
-            OptimizationController
-        ]

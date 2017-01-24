@@ -18,7 +18,7 @@ cimport cython
 import numpy as np
 cimport numpy as np
 
-from marsi.processing.chemistry.common_ext cimport _tanimoto_distance
+from marsi.chemistry.common_ext cimport _tanimoto_distance
 
 ctypedef np.int32_t INT32_t
 ctypedef np.float32_t FLOAT32_t

@@ -19,7 +19,7 @@ from mongoengine import connect
 
 from cameo.parallel import SequentialView
 
-from marsi.mining.nearest_neighbors_model import NearestNeighbors, DistributedNearestNeighbors
+from marsi.algorithms.nearest_neighbors_model import NearestNeighbors, DistributedNearestNeighbors
 
 from marsi.utils import data_dir, INCHI_KEY_TYPE, unpickle_large, pickle_large
 from marsi.io.mongodb import Database

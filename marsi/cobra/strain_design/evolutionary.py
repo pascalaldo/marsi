@@ -12,25 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import inspyred
 import logging
 
+import inspyred
 from IProgress import ProgressBar, Bar, Percentage
 from cameo import fba, phenotypic_phase_plane, flux_variability_analysis
+from cameo.core.strain_design import StrainDesignMethod
 from cameo.exceptions import SolveError
 from cameo.strain_design.heuristic.evolutionary.archives import ProductionStrainArchive
 from cameo.strain_design.heuristic.evolutionary.objective_functions import biomass_product_coupled_min_yield, \
     biomass_product_coupled_yield
-from cameo.strain_design.heuristic.evolutionary.processing import reactions2filter
 from cameo.strain_design.heuristic.evolutionary_based import OptGeneResult
-from cameo.core.strain_design import StrainDesignMethod
 from cameo.util import TimeMachine
 from cameo.visualization.plotting import plotter
 from pandas import DataFrame
 from sympy.tensor.tests.test_tensor import numpy
 
-from marsi.metaheuristic.optimization import MetaboliteKnockoutOptimization
-
+from marsi.cobra.metaheuristic.optimization import MetaboliteKnockoutOptimization
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +143,7 @@ class OptGeneMet(StrainDesignMethod):
 
 def process_metabolite_knockout_solution(model, solution, simulation_method, simulation_kwargs, inhibition_fraction,
                                          competition_fraction, essential_metabolites, biomass, target, substrate,
-                                         objective_functions, simplify=True):
+                                         objective_function, simplify=True):
     """
 
     Arguments
@@ -168,8 +166,8 @@ def process_metabolite_knockout_solution(model, solution, simulation_method, sim
         The strain design target
     substrate: Reaction
         The main carbon source uptake rate
-    objective_functions: list
-        A list of cameo.strain_design.heuristic.evolutionary.objective_functions.ObjectiveFunction
+    objective_function:
+        A cameo.strain_design.heuristic.evolutionary.objective_functions.ObjectiveFunction
     cache: ProblemCache
         A problem cache for performance improvement
 
@@ -177,13 +175,12 @@ def process_metabolite_knockout_solution(model, solution, simulation_method, sim
     -------
 
     list
-        A list with: metabolites, blocked_reactions, size, fva_min, fva_max, target flux, biomass flux, yield, fitness,
-        [fitness, [fitness]]
+        A list with: metabolites, blocked_reactions, size, fva_min, fva_max, target flux, biomass flux, yield, fitness
     """
 
     fva_min, fva_max, target_flux, growth_rate, target_yield, *of = \
         _test_solution(model, solution, simulation_method, simulation_kwargs, inhibition_fraction,
-                       competition_fraction, essential_metabolites, biomass, target, substrate, objective_functions)
+                       competition_fraction, essential_metabolites, biomass, target, substrate, objective_function)
 
     tested = []
     original_solution = list(solution)
@@ -193,7 +190,7 @@ def process_metabolite_knockout_solution(model, solution, simulation_method, sim
 
         _fva_min, _fva_max, _target_flux, _growth_rate, _target_yield, *_of = \
             _test_solution(model, solution, simulation_method, simulation_kwargs, inhibition_fraction,
-                           competition_fraction, essential_metabolites, biomass, target, substrate, objective_functions)
+                           competition_fraction, essential_metabolites, biomass, target, substrate, objective_function)
 
         if _fva_min != fva_min or _growth_rate < growth_rate or _target_yield < target_yield or \
            any(_of[i] < of[i] for i in range(len(of))):
@@ -202,13 +199,13 @@ def process_metabolite_knockout_solution(model, solution, simulation_method, sim
     if set(solution) != set(original_solution):
         fva_min, fva_max, target_flux, growth_rate, target_yield, *of = \
             _test_solution(model, solution, simulation_method, simulation_kwargs, inhibition_fraction,
-                           competition_fraction, essential_metabolites, biomass, target, substrate, objective_functions)
+                           competition_fraction, essential_metabolites, biomass, target, substrate, objective_function)
 
     return [solution, len(solution), fva_min, fva_max, target_flux, growth_rate, target_yield] + of
 
 
 def _test_solution(model, solution, simulation_method, simulation_kwargs, inhibition_fraction, competition_fraction,
-                   essential_metabolites, biomass, target, substrate, objective_functions):
+                   essential_metabolites, biomass, target, substrate, objective_function):
     """
     Returns
     -------
@@ -216,25 +213,26 @@ def _test_solution(model, solution, simulation_method, simulation_kwargs, inhibi
     fva_min, fva_max, target_flux, growth_rate, target_yield, of[0], [of[1], .., of[n-1]]
     """
 
-    from marsi.processing.models import apply_antimetabolite, search_metabolites
+    from marsi.processing.models import apply_anti_metabolite
+    from marsi.utils import search_metabolites
 
     metabolites = [search_metabolites(model, species_id) for species_id in solution]
     with TimeMachine() as tm:
         for _metabolites in metabolites:
-            apply_antimetabolite(_metabolites, essential_metabolites, simulation_kwargs['reference'],
-                                 inhibition_fraction=inhibition_fraction, competition_fraction=competition_fraction,
-                                 time_machine=tm)
+            apply_anti_metabolite(_metabolites, essential_metabolites, simulation_kwargs['reference'],
+                                  inhibition_fraction=inhibition_fraction, competition_fraction=competition_fraction,
+                                  time_machine=tm)
 
-        reactions = reactions2filter(objective_functions)
+        reactions = objective_function.reactions
         flux_dist = simulation_method(model, reactions=reactions, objective=biomass, **simulation_kwargs)
         model.change_objective(biomass, time_machine=tm)
 
         fva = flux_variability_analysis(model, fraction_of_optimum=0.99, reactions=[target])
         target_yield = flux_dist[target] / abs(flux_dist[substrate])
 
-        of_values = [of(model, flux_dist, solution) for of in objective_functions]
+        fitness = objective_function(model, flux_dist, solution)
 
-        return fva.lower_bound(target), fva.upper_bound(target), flux_dist[target], flux_dist[biomass], target_yield, of_values
+        return fva.lower_bound(target), fva.upper_bound(target), flux_dist[target], flux_dist[biomass], target_yield, fitness
 
 
 class OptGeneMetResult(OptGeneResult):
@@ -272,7 +270,7 @@ class OptGeneMetResult(OptGeneResult):
                     processed_solutions.loc[i] = process_metabolite_knockout_solution(
                         self._model, solution, self._simulation_method, self._simulation_kwargs,
                         self.inhibition_fraction, self.competition_fraction, self.essential_metabolites,
-                        self._biomass, self._target, self._substrate, [self._objective_function])
+                        self._biomass, self._target, self._substrate, self._objective_function)
                 except SolveError as e:
                     logger.error(e)
                     processed_solutions.loc[i] = [numpy.nan for _ in processed_solutions.columns]

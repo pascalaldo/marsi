@@ -11,17 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from io import BytesIO
+
 import bioservices
 import os
 from urllib.request import urlretrieve
 import pubchempy as pbc
 
-from IProgress import ProgressBar
-from pandas import DataFrame
-
 from marsi.utils import data_dir, gunzip
 from ftplib import FTP
 import requests
+
+import zipfile
 
 BIGG_BASE_URL = "http://bigg.ucsd.edu/static/namespace/"
 DRUGBANK_BASE_URL = "https://www.drugbank.ca/"
@@ -36,6 +37,7 @@ def retrieve_bigg_reactions(dest=os.path.join(data_dir, "bigg_models_reactions.t
     """
     bigg_reactions_file = "bigg_models_reactions.txt"
     urlretrieve(BIGG_BASE_URL+bigg_reactions_file, dest)
+
 
 def retrieve_bigg_metabolites(dest=os.path.join(data_dir, "bigg_models_metabolites.txt")):
     """
@@ -57,11 +59,13 @@ def retrieve_drugbank_open_structures(db_version="5.0.3", dest=os.path.join(data
 
     encoded_version = db_version.replace(".", "-")
     response = requests.get(DRUGBANK_BASE_URL + "releases/%s/downloads/all-open-structures" % encoded_version)
-    with open(dest, 'w') as fhandle:
-        fhandle.write(response.text)
+    with zipfile.ZipFile(BytesIO(response.content)) as zip_ref:
+        zip_ref.extractall(data_dir)
+
+    os.rename(os.path.join(data_dir, "open structures.sdf"), dest)
 
 
-def retrieve_drugbank_open_vocabulary(db_version="5.0.3", dest=os.path.join(data_dir,"drugbank_open_vocabulary.sdf")):
+def retrieve_drugbank_open_vocabulary(db_version="5.0.3", dest=os.path.join(data_dir,"drugbank_open_vocabulary.csv")):
     """
     Retrieves Drugbank Open Vocabulary.
 
@@ -73,8 +77,10 @@ def retrieve_drugbank_open_vocabulary(db_version="5.0.3", dest=os.path.join(data
 
     encoded_version = db_version.replace(".", "-")
     response = requests.get(DRUGBANK_BASE_URL + "releases/%s/downloads/all-drugbank-vocabulary" % encoded_version)
-    with open(dest, 'w') as fhandle:
-        fhandle.write(response.text)
+    with zipfile.ZipFile(BytesIO(response.content)) as zip_ref:
+        zip_ref.extractall(data_dir)
+
+    os.rename(os.path.join(data_dir, "drugbank vocabulary.csv"), dest)
 
 
 def retrieve_chebi_structures(dest=os.path.join(data_dir, "chebi_lite_3star.sdf")):
@@ -180,7 +186,7 @@ def retrieve_kegg_mol_files(kegg, dest=data_dir):
     print("Not Found: %s" % (", ".join(not_found)))
 
 
-def retrieve_zinc_properties(dest=os.path.join(data_dir, "zinc15_16_prop.tsv")):
+def retrieve_zinc_properties(dest=os.path.join(data_dir, "zinc_16_prop.tsv")):
     """
     Retrieves ZINC properties file:
     "All Clean

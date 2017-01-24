@@ -21,7 +21,7 @@ __all__ = ["chebi", "drugbank"]
 
 chebi = DataFrame.from_csv(os.path.join(data_dir, "chebi_analogues_filtered.csv"))
 
-drugbank = DataFrame.from_csv(os.path.join(data_dir, "drugbank_vocabulary.csv"), sep=",", index_col=None)
+drugbank = DataFrame.from_csv(os.path.join(data_dir, "drugbank_open_vocabulary.csv"), sep=",", index_col=None)
 drugbank.columns = ["id", "accessions", "common_names", "cas", "unii", "synonyms", "inchi_key"]
 
 drugbank.fillna("", inplace=True)
@@ -33,10 +33,10 @@ pubchem = DataFrame.from_csv(os.path.join(data_dir, "pubchem_data.csv"))
 
 kegg = DataFrame.from_csv(os.path.join(data_dir, "kegg_data.csv"))
 
-binding_db = read_csv(os.path.join(data_dir, "BindingDB_All.tsv"), sep="\t", error_bad_lines=False)
-with open(os.path.join(data_dir, 'binding_db_sane_columns.txt'), 'r') as columns_file:
-    line = next(columns_file)
-    binding_db.columns = line.split(", ")
+# binding_db = read_csv(os.path.join(data_dir, "BindingDB_All.tsv"), sep="\t", error_bad_lines=False)
+# with open(os.path.join(data_dir, 'binding_db_sane_columns.txt'), 'r') as columns_file:
+#     line = next(columns_file)
+#     binding_db.columns = line.split(", ")
 
-solubility = DataFrame.from_csv(os.path.join(data_dir, 'solubility.csv'))
-solubility.columns = ['log_measured', 'log_predicted', 'smiles']
+# solubility = DataFrame.from_csv(os.path.join(data_dir, 'solubility.csv'))
+# solubility.columns = ['log_measured', 'log_predicted', 'smiles']

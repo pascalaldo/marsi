@@ -40,7 +40,7 @@ extra_requirements = {
 extra_requirements['all'] = sum([list(values) for values in extra_requirements.values()], [])
 
 
-ext_modules = cythonize(["marsi/processing/chemistry/common_ext.pyx", "marsi/mining/_nearest_neighbors_ext.pyx"],
+ext_modules = cythonize(["marsi/chemistry/common_ext.pyx", "marsi/algorithms/_nearest_neighbors_ext.pyx"],
                         include_dirs=[numpy.get_include()])
 
 include_dirs = [numpy.get_include()]
@@ -48,7 +48,7 @@ include_dirs = [numpy.get_include()]
 
 setup(
     name='marsi',
-    version="0.0.1a0",
+    version="0.0.1",
     packages=find_packages(exclude=("*.pyx")),
     install_requires=requirements,
     extras_require=extra_requirements,

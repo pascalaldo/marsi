@@ -24,9 +24,9 @@ from mongoengine import Document, StringField, ListField, ReferenceField, MapFie
 from mongoengine.base import BaseField
 
 from marsi.io.plots import summary_plot
-from marsi.processing.chemistry import INCHI_KEY_REGEX, openbabel, rdkit
+from marsi.chemistry import INCHI_KEY_REGEX, openbabel, rdkit
 from marsi.utils import INCHI_KEY_TYPE, unique
-from marsi.mining.enrichment import map_uniprot_from_pdb_ids
+from marsi.algorithms.enrichment import map_uniprot_from_pdb_ids
 
 
 __all__ = ['Database', 'Metabolite']

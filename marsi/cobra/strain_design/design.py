@@ -16,9 +16,9 @@
 from cameo import fba
 from cameo.strain_design import OptKnock
 from cameo.strain_design.heuristic.evolutionary.objective_functions import biomass_product_coupled_yield
+from marsi.cobra.strain_design.operations import AntiMetaboliteFilter, CombinedSubstratesAntiMetaboliteFilter
 
-from marsi.design.evolutionary import OptGeneMet
-from marsi.design.operations import AntiMetaboliteFilter, CombinedSubstratesAntiMetaboliteFilter
+from marsi.cobra.strain_design.evolutionary import OptGeneMet
 
 CURRENCY_METABOLITES = ["atp", "adp", "nad", "nadh", "nadp", "nadph", "amp",
                         "h2o", "h", "coa", "acp", "pi", 'pppi', 'ppi']
@@ -32,10 +32,10 @@ class GenericMARSIDesignMethod(object):
 
     Example
     -------
-    >>> from marsi import design
+    >>> from marsi.cobra import strain_design
     >>> from cameo import models
     >>> from cameo.strain_design import OptGene
-    >>> designer = design.GenericMARSIDesignMethod(model=models.bigg.iJO1366)
+    >>> designer = strain_design.GenericMARSIDesignMethod(model=models.bigg.iJO1366)
     >>> designer.optimize_with_reaction("succ_e", max_interventions=5, substrate="EX_glc__D_e",
     >>> biomass="BIOMASS_Ec_iJO1366_core_53p95M", max_results=25, design_method=OptGene, manipulation_type="reactions")
 
@@ -78,7 +78,7 @@ class GenericMARSIDesignMethod(object):
         knockouts = designer.run(max_knockouts=max_interventions, biomass=biomass, substrate=substrate,
                                  target=target_flux, max_results=max_results)
 
-        from marsi.design.post_processing import replace_knockouts
+        from marsi.cobra.strain_design.post_processing import replace_knockouts
         return replace_knockouts(self.model, knockouts.data_frame, bpcy, fba, {}, self.currency_metabolites)
 
     def optimize_with_metabolites(self, target, maximize=True, max_interventions=1, substrate=None, biomass=None,

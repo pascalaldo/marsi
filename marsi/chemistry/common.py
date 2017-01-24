@@ -16,7 +16,7 @@ import re
 import numpy as np
 from scipy.spatial import ConvexHull
 
-from marsi.processing.chemistry.common_ext import tanimoto_coefficient, tanimoto_distance, rmsd, monte_carlo_volume
+from marsi.chemistry.common_ext import tanimoto_coefficient, tanimoto_distance, rmsd, monte_carlo_volume
 from scipy.spatial.qhull import QhullError
 
 __all__ = ["rmsd", "tanimoto_coefficient", "tanimoto_distance", "INCHI_KEY_REGEX", 'SOLUBILITY']

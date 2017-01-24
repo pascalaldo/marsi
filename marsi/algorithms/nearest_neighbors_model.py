@@ -31,7 +31,7 @@ import numpy as np
 from pandas import DataFrame
 
 from marsi.utils import timing
-from marsi.mining import _nearest_neighbors_ext as nn_ext
+from marsi.algorithms import _nearest_neighbors_ext as nn_ext
 
 # Tanimoto coefficient calculation is implemented based on to OpenBabel's implementation
 # https://github.com/openbabel/openbabel/blob/master/include/openbabel/fingerprint.h#L86
