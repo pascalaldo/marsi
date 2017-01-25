@@ -15,7 +15,8 @@
 import unittest
 
 from cameo import models
-from marsi.design.evolutionary import OptGeneMet
+
+from marsi.cobra.strain_design.evolutionary import OptGeneMet
 
 
 class OptGeneMetTestCase(unittest.TestCase):

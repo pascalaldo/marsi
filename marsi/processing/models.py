@@ -33,11 +33,11 @@ KEGG = "KEGG Compound"
 
 
 @lru_cache(maxsize=1024)
-def find_inchi_for_bigg_metabolite(model, metabolite_id):
+def find_inchi_for_bigg_metabolite(model_id, metabolite_id):
     try:
         links = bigg_metabolites.loc[metabolite_id].database_links
     except KeyError:
-        metabolite_data = bigg_api.get_model_metabolite(model.id, metabolite_id)
+        metabolite_data = bigg_api.get_model_metabolite(model_id, metabolite_id)
         links = metabolite_data[DATABASE_LINKS]
     inchi_keys = []
     if CHEBI in links:

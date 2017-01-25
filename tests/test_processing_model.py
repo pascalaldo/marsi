@@ -18,9 +18,7 @@ from cameo import load_model, pfba
 from cameo.util import TimeMachine
 
 from marsi.processing.models import degree, in_degree, out_degree
-from marsi.processing.models import inhibit_metabolite, compete_metabolite, knockout_metabolite
-from marsi.processing.models import apply_antimetabolite, knockout_antimetabolite_substitution
-
+from marsi.cobra.flux_analysis.manipulation import knockout_metabolite
 
 TEST_DIR = os.path.dirname(__file__)
 

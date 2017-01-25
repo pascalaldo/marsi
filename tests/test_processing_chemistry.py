@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import unittest
+
 import numpy as np
 
-from marsi.processing.chemistry.common import SOLUBILITY, tanimoto_coefficient, tanimoto_distance
-from marsi.processing.chemistry import openbabel, rdkit
-
+from marsi.chemistry.common import SOLUBILITY, tanimoto_coefficient, tanimoto_distance
+from marsi.chemistry import openbabel, rdkit
 
 CARBON_ATOMIC_NUMBER = 6
 HYDROGEN_ATOMIC_NUMBER = 1

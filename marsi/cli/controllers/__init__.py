@@ -45,8 +45,12 @@ class MarsiBaseController(CementBaseController):
             os.mkdir(log_dir)
         if not os.path.isdir(models_dir):
             os.mkdir(models_dir)
+        print("\n################################################################")
+        print("#                                                              #")
+        print("#                       Welcome to MARSI!                      #")
+        print("#                                                              #")
+        print("################################################################")
 
-        print("Welcome to MARSI!")
         print("Your current project directory is %s" % prj_dir)
         print("The directory tree is:")
         print("%s:" % prj_dir)
