@@ -15,10 +15,9 @@ import logging
 
 from collections import Counter
 from functools import lru_cache
-from pandas import DataFrame
 
 from marsi import bigg_api
-from marsi.cobra.flux_analysis import compete_metabolite, inhibit_metabolite
+from marsi.cobra.flux_analysis.manipulation import compete_metabolite, inhibit_metabolite
 from marsi.io.bigg import bigg_metabolites
 from marsi.algorithms.enrichment import inchi_from_chebi, inchi_from_kegg
 
