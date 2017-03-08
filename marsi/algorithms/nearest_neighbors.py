@@ -23,7 +23,7 @@ from marsi.algorithms.nearest_neighbors_model import NearestNeighbors, Distribut
 
 from marsi.utils import data_dir, INCHI_KEY_TYPE, unpickle_large, pickle_large
 from marsi.io.mongodb import Database
-from marsi.processing.chemistry import SOLUBILITY
+from marsi.chemistry import SOLUBILITY
 
 __all__ = ['build_knn_model']
 
@@ -90,13 +90,13 @@ def _build_knn_model(indices, features, lengths, n_models):
     return DistributedNearestNeighbors(knns)
 
 
-def build_knn_model(database, fpformat='ecfp10', solubility='high', n_models=5, chunk_size=1e6, view=SequentialView):
+def build_knn_model(database, fpformat='fp4', solubility='high', n_models=5, chunk_size=1e6, view=SequentialView):
     indices, features, lens = _build_feature_table(database, fpformat=fpformat, chunk_size=chunk_size,
                                                    solubility=solubility, view=view)
     return _build_knn_model(indices, features, lens, n_models)
 
 
-def load_nn_model(chunk_size=1e6, fpformat="ecfp4", solubility='high', view=SequentialView(), model_size=100000):
+def load_nn_model(chunk_size=1e6, fpformat="fp4", solubility='high', view=SequentialView(), model_size=100000):
     """
     Loads a NN model
 
@@ -111,8 +111,10 @@ def load_nn_model(chunk_size=1e6, fpformat="ecfp4", solubility='high', view=Sequ
         The format of the fingerprint (see pybel.fps)
     solubility: str
         One of high, medium, low or all.
-
-
+    view: cameo.parallel.SequentialView, cameo.parallel.MultiprocesingView
+        A view to control parallelization.
+    model_size: int
+        The size of each NearestNeighbor in the Ensemble.
     """
     if solubility not in SOLUBILITY:
         raise ValueError('%s not one of %s' % (solubility, ", ".join(SOLUBILITY.keys())))
