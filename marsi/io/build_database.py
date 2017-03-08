@@ -13,33 +13,39 @@
 # limitations under the License.
 import os
 import pandas
+import pybel
 from pybel import readfile
 
 from numpy import nan
 
 from marsi.io.mongodb import Metabolite
 from marsi.io.mongodb import Reference
-from marsi import chemistry
+from marsi.chemistry import openbabel
 
 
 def build_database(data, data_dir):
     i = 0
     chebi_structures_file = os.path.join(data_dir, "chebi_lite_3star.sdf")
     i = upload_chebi_entries(chebi_structures_file, data.chebi, i=i)
+    print("Added %i" % i)
     drugbank_structures_file = os.path.join(data_dir, "drugbank_open_structures.sdf")
     i = upload_drugbank_entries(drugbank_structures_file, data.drugbank, i=i)
+    print("Added %i" % i)
     kegg_mol_files_dir = os.path.join(data_dir, "kegg_mol_files")
     i = upload_kegg_entries(kegg_mol_files_dir, data.kegg, i=i)
+    print("Added %i" % i)
     pubchem_sdf_files_dir = os.path.join(data_dir, "pubchem_sdf_files")
     i = upload_pubchem_entries(pubchem_sdf_files_dir, data.pubchem, i=i)
+    print("Added %i" % i)
     zinc_data_file = os.path.join(data_dir, "zinc_16_prop.tsv")
     i = upload_zin_entries(zinc_data_file, i=i)
+    print("Added %i" % i)
     return i
 
 
 def _add_molecule(mol, synonyms, database, identifier, is_analog):
-    if not chemistry.openbabel.has_radical(mol):
-        inchi_key = chemistry.openbabel.mol_to_inchi_key(mol)
+    if not openbabel.has_radical(mol):
+        inchi_key = openbabel.mol_to_inchi_key(mol)
         if len(inchi_key) > 0:
             reference = Reference.add_reference(database, identifier)
             Metabolite.from_molecule(mol, [reference], synonyms, is_analog)
@@ -50,7 +56,7 @@ def upload_chebi_entries(chebi_structures_file, chebi_data, i=0):
     Import ChEBI data
     """
     for mol in readfile("sdf", chebi_structures_file):
-        chebi_id = chemistry.openbabel.mol_chebi_id(mol)
+        chebi_id = openbabel.mol_chebi_id(mol)
         chebi_id_int = int(chebi_id.split(":")[1])
         chebi_rows = chebi_data.query('compound_id == @chebi_id_int')
         if len(chebi_rows) > 0:
@@ -66,7 +72,7 @@ def upload_drugbank_entries(drugbank_structures_file, drugbank_data, i=0):
     Import DrugBank
     """
     for mol in readfile("sdf", drugbank_structures_file):
-        drugbank_id = chemistry.openbabel.mol_drugbank_id(mol)
+        drugbank_id = openbabel.mol_drugbank_id(mol)
         drugbank_rows = drugbank_data.query("id == @drugbank_id")
         if len(drugbank_rows) > 0:
             _add_molecule(mol, drugbank_rows.iloc[0].synonyms[0], 'drugbank', drugbank_id, False)
@@ -129,15 +135,9 @@ def upload_pubchem_entries(pubchem_sdf_files_dir, pubchem_data, i=0):
 def upload_zin_entries(zinc_data_file, i=0):
     """Add ZINC15"""
 
-    zinc15 = pandas.read_csv(zinc_data_file, sep="\t", chunksize=1e3)
-    j = 0
-    for chunk in zinc15:
-        chunk.columns = map(str.lower, chunk.columns)
-        for _, row in chunk.iterrows():
-            molecule = chemistry.openbabel.smiles_to_molecule(row.smiles)
-            reference = Reference.add_reference("zinc", row.zinc_id)
-            Metabolite.from_molecule(molecule, [reference], [], False)
-            i += 1
-            j += 1
-        print("\r" + str(j) + " zinc entries uploaded")
+    zinc = pybel.readfile('sdf', zinc_data_file)
+    for molecule in zinc:
+        _add_molecule(molecule, [], 'zinc', molecule.title, False)
+        i += 1
+
     return i
