@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ query.name }}</title>
+</head>
+<body>
+    <div id="query-info">
+        <table>
+            <tr>
+                <th>Name</th><td>{{ query.name }}</td>
+                <th>Structure</th><td><img src="{{ query.structure }}"/></td>
+                <th>InChI Key</th><td>{{ query.inchi_key }}</td>
+                <th>Molecular Weight</th><td>{{ query.molecular_weight }}</td>
+            </tr>
+        </table>
+    </div>
+    <div id="results">
+        <table>
+            <thead>
+                <th>InChI Key</th>
+                <th></th>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+
+
+    </div>
+</body>
+</html>

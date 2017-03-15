@@ -16,6 +16,7 @@ from cement.core.foundation import CementApp
 from marsi.cli.controllers import MarsiBaseController
 from marsi.cli.controllers.initialization import InitializationController
 from marsi.cli.controllers.modeling import OptimizationController
+from marsi.cli.controllers.chemistry import ChemistryController
 
 
 class MarsiApp(CementApp):
@@ -25,5 +26,6 @@ class MarsiApp(CementApp):
         handlers = [
             MarsiBaseController,
             InitializationController,
-            OptimizationController
+            OptimizationController,
+            ChemistryController
         ]

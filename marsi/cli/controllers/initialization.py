@@ -22,7 +22,7 @@ from marsi.io.parsers import parse_chebi_data, parse_pubchem, parse_kegg_brite
 from marsi.io.retriaval import retrieve_chebi_names, retrieve_chebi_relation, retrieve_chebi_vertice, \
     retrieve_chebi_structures, retrieve_drugbank_open_structures, retrieve_drugbank_open_vocabulary, \
     retrieve_bigg_reactions, retrieve_bigg_metabolites, retrieve_zinc_properties, retrieve_kegg_brite, \
-    retrieve_pubchem_mol_files, retrieve_kegg_mol_files
+    retrieve_pubchem_mol_files, retrieve_kegg_mol_files, retrieve_zinc_structures
 from marsi.utils import data_dir
 
 
@@ -34,7 +34,8 @@ class InitializationController(CementBaseController):
         stacked_type = 'nested'
         description = "Initialise MARSI (download data and build initial database)"
         arguments = [
-            (['--drugbank-version'], dict(help="drugbank version (5.0.3)"))
+            (['--drugbank-version'], dict(help="DrugBank version (5.0.3)")),
+            (['--with-zinc'], dict(help="Include Zinc", action="store_true"))
         ]
 
     @expose(hide=True)
@@ -46,9 +47,10 @@ class InitializationController(CementBaseController):
         self.download_chebi()
         self.download_drug_bank()
         self.download_kegg()
-        self.download_zinc()
         self.download_pubchem()
         self.download_bigg()
+        if self.app.pargs.with_zinc:
+            self.download_zinc()
 
     @expose(help="Retrieve ChEBI files (part of download)")
     def download_chebi(self):
@@ -96,11 +98,8 @@ class InitializationController(CementBaseController):
 
     @expose(help="Retrieve Zinc files (part of download)")
     def download_zinc(self):
-        pbar = ProgressBar(maxval=1, widgets=["Downloading Zinc files", Bar(), ETA()])
-        pbar.start()
-        retrieve_zinc_properties()
-        pbar.update(1)
-        pbar.finish()
+        # retrieve_zinc_properties()
+        retrieve_zinc_structures()
 
     @expose(help="Retrieve KEGG files (part of download)")
     def download_kegg(self):
@@ -114,7 +113,7 @@ class InitializationController(CementBaseController):
     def status(self):
         necessary_files = ["chebi_names_3star.txt", "chebi_vertice_3star.tsv", "chebi_relation_3star.tsv",
                            "chebi_lite_3star.sdf", "pubchem_compound_analogs_antimetabolites.txt",
-                           "kegg_brite_08310.keg", "zinc_16_prop.tsv", "drugbank_open_vocabulary.csv",
+                           "kegg_brite_08310.keg", "zinc_16.sdf", "drugbank_open_vocabulary.csv",
                            "drugbank_open_structures.sdf"]
 
         missing = []
