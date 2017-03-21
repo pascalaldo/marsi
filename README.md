@@ -1,7 +1,7 @@
 marsi - Metabolite Analogues for Strain Improvement
 ===================================================
 
-marsi is an open-source software to created to identify strain design
+marsi is an open-source software to created to identify non-GMO strain design
 targets 
 
 Dependencies
@@ -23,6 +23,8 @@ Quick Start
 2. `pip install marsi` 
 3. Run `marsi --help` from the command line
 
+More details in [Quick Start](QUICK_START.md)
+
 Initialization
 --------------
 
@@ -31,7 +33,6 @@ and build the database. You can start by running `marsi init --help`.
 
 *marsi* will download the required files for you. Just run `marsi init download`. **Make sure you have an stable internet 
 connection.** 
-
 
 
 The PubChem API does not provide a method for query. To retrieve the necessary files,

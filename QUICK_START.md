@@ -1,9 +1,5 @@
-**WIP**
-
-
 Quick Start
 -----------
-
 
 To start using MARSI you need to install all the dependencies and the 
 source code.
