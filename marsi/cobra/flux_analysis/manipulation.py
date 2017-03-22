@@ -11,152 +11,263 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from numbers import Number
 
-from cameo.flux_analysis.simulation import FluxDistributionResult
+import logging
+
+from cameo.util import float_floor, TimeMachine
+from cameo.config import ndecimals
+from cobra import DictList
+from functools import partial
+
+from cameo.flux_analysis.simulation import FluxDistributionResult, fba
+
+__all__ = ["compete_metabolite", "inhibit_metabolite", "knockout_metabolite", "apply_anti_metabolite"]
+
+logger = logging.getLogger(__name__)
 
 
-def compete_metabolite(metabolite, reference_dist, fraction=0.5, ignore_transport=True,
-                       allow_accumulation=True, time_machine=None):
+def compete_metabolite(model, metabolite, reference_dist, fraction=0.5, time_machine=None):
     """
     Inhibits the usage of a metabolite based on a reference flux distributions.
 
     Parameters
     ----------
-    metabolite: cobra.Metabolite
+    model : cameo.core.SolverBasedModel
+        A constraint-based model.
+    metabolite : cobra.Metabolite
         A metabolite.
-    reference_dist: dict or FluxDistributionResult
+    reference_dist : dict or FluxDistributionResult
         The result of a FBA like simulation. Alternative can be dictionaries of reaction.id -> flux.
-    fraction: float
+    fraction : float
         How much does it requires the reactions to go up.
-    ignore_transport: bool
-        Choose to ignore transport reactions.
-    allow_accumulation: bool
-        Allow to accumulate the metabolite (add a exchange reaction).
-    time_machine: cameo.util.TimeMachine
+    time_machine : cameo.util.TimeMachine
         Action control.
-    """
-    reactions = metabolite.reactions
 
-    if ignore_transport:
-        reactions = [r for r in reactions if not len(set(m.compartment for m in r.metabolites)) > 1]
+    Returns
+    -------
+    cameo.core.Reaction
+        If allow accumulation returns the exchange reaction associated with the metabolite.
+    """
+
+    exchanges = DictList(model.exchanges)
 
     if not isinstance(reference_dist, (dict, FluxDistributionResult)):
         raise ValueError("'reference_dist' must be a dict or FluxDistributionResult")
 
-    exchanges = metabolite.model.exchanges
+    species_id = metabolite.id[:-2]
+    if "EX_%s_e" % species_id not in exchanges:
+        exchange = model.add_exchange(metabolite, prefix="COMPETE_", time_machine=time_machine)
+    else:
+        exchange = model.reactions.get_by_id("EX_%s_e" % species_id)
 
-    for reaction in reactions:
-        if reaction in exchanges:
-            continue
+    with TimeMachine() as tm:
+        model.fix_objective_as_constraint(time_machine=tm, fraction=1)
+        flux_dist = fba(model, objective=exchange)
 
-        if reaction.metabolites[metabolite] > 0 and reference_dist[reaction.id] > 1e-6:
-            reaction.change_bounds(lb=reference_dist[reaction.id] + (reference_dist[reaction.id] * fraction),
-                                   time_machine=time_machine)
+    min_value = flux_dist[exchange]
+    flux_dist = fba(model, objective=exchange)
+    max_value = flux_dist[exchange]
+    exchange_flux = float_floor(fraction * (max_value - min_value) + min_value, ndecimals)
+    exchange.change_bounds(lb=exchange_flux, time_machine=time_machine)
 
-        if reaction.metabolites[metabolite] < 0 and reference_dist[reaction.id] < -1e-6:
-            reaction.change_bounds(ub=reference_dist[reaction.id] + (reference_dist[reaction.id] * fraction),
-                                   time_machine=time_machine)
-
-    if allow_accumulation:
-        species_id = metabolite.id[:-2]
-        if "EX_%s_e" % species_id not in metabolite.model.reactions:
-            return metabolite.model.add_exchange(metabolite, prefix="OF_", time_machine=time_machine)
-        else:
-            return metabolite.model.reactions.get_by_id("EX_%s_e" % species_id)
+    return exchange
 
 
-def inhibit_metabolite(metabolite, reference_dist, fraction=0.5, ignore_transport=True,
-                       allow_accumulation=True, time_machine=None):
+def inhibit_metabolite(model, metabolite, reference_dist, fraction=0.5, allow_accumulation=True,
+                       constant=1e4, time_machine=None):
     """
     Inhibits the usage of a metabolite based on a reference flux distributions.
 
     Parameters
     ----------
-    metabolite: cobra.Metabolite
+    model : cameo.core.SolverBasedModel
+        A constraint-based model.
+    metabolite : cobra.Metabolite
         A metabolite.
-    reference_dist: dict, FluxDistributionResult
+    reference_dist : dict, FluxDistributionResult
         The result of a FBA like simulation. Alternative can be dictionaries of reaction.id -> flux.
-    fraction: float, dict
+    fraction : float
         How much does it inhibits the reactions. A float applies the same amount of inhibition. A dictionary must
         contain an inhibition percentage to all reactions associated with the metabolite.
-    ignore_transport: bool
-        Choose to ignore transport reactions.
-    allow_accumulation: bool
+    allow_accumulation : bool
         Allow to accumulate the metabolite (add a exchange reaction).
-    time_machine: cameo.util.TimeMachine
+    constant : float
+        A large number (like 10000).
+    time_machine : cameo.util.TimeMachine
         Action control.
+
+    Returns
+    -------
+    cameo.core.Reaction, None
+        If allow accumulation returns the exchange reaction associated with the metabolite.
+
     """
     reactions = metabolite.reactions
-
-    if ignore_transport:
-        reactions = [r for r in reactions if not len(set(m.compartment for m in r.metabolites)) > 1]
-
-    if isinstance(fraction, Number):
-        fraction = {r.id: fraction for r in reactions}
-
-    if not isinstance(fraction, dict):
-        raise ValueError("'percentage' must be a dict or numeric")
 
     if not isinstance(reference_dist, (dict, FluxDistributionResult)):
         raise ValueError("'reference_dist' must be a dict or FluxDistributionResult")
 
     missing = []
 
-    for reaction in reactions:
-        if reaction.id not in fraction:
-            missing.append(reaction)
-
     if len(missing):
         raise ValueError("reactions %s are not accounted in 'fraction'" % ", ".join("'%s'" % r.id for r in missing))
 
-    exchanges = metabolite.model.exchanges
+    exchanges = DictList(model.exchanges)
 
+    aux_variables = {}
+    ind_variables = {}
+    turnover = 0
     for reaction in reactions:
-        if reaction in exchanges:
-            continue
+        coefficient = reaction.metabolites[metabolite]
 
-        if reaction.metabolites[metabolite] < 0:
-            if reference_dist[reaction.id] > 1e-6:
-                reaction.change_bounds(ub=reference_dist[reaction.id] * fraction[reaction.id], time_machine=time_machine)
+        if not reaction.reversibility:
+            if coefficient > 0:
+                continue
             else:
-                reaction.change_bounds(ub=0, time_machine=time_machine)
+                aux_variables[reaction.id] = reaction.flux_expression * coefficient
+                continue
 
-        if reaction.metabolites[metabolite] > 0:
-            if reference_dist[reaction.id] < -1e-6:
-                reaction.change_bounds(lb=reference_dist[reaction.id] * fraction[reaction.id], time_machine=time_machine)
+        add = []
+
+        t = coefficient * reference_dist[reaction.id]
+        if t > 0:
+            turnover += t
+
+        ind_var_id = "y_%s" % reaction.id
+        aux_var_id = "u_%s" % reaction.id
+        try:
+            ind_var = model.solver.variables[ind_var_id]
+            aux_var = model.solver.variables[aux_var_id]
+        except KeyError:
+            ind_var = model.solver.interface.Variable(ind_var_id, type='binary')
+            aux_var = model.solver.interface.Variable(aux_var_id, lb=0)
+            add += [ind_var, aux_var]
+
+        aux_variables[reaction.id] = aux_var
+        ind_variables[reaction.id] = ind_var
+
+        upper_indicator_constraint_name = "ind_%s_u" % reaction.id
+        lower_indicator_constraint_name = "ind_%s_l" % reaction.id
+
+        auxiliary_constraint_a_name = "aux_%s_a" % reaction.id
+        auxiliary_constraint_b_name = "aux_%s_b" % reaction.id
+        auxiliary_constraint_c_name = "aux_%s_c" % reaction.id
+        auxiliary_constraint_d_name = "aux_%s_d" % reaction.id
+
+        try:
+            model.solver.constraints[upper_indicator_constraint_name]
+        except KeyError:
+
+            # constraint y to be 0 if abs(v) == 0
+
+            #  -M             0                M
+            # v <-------------|---------------->
+            #        y=0      |      y=1
+
+            # v - My <= 0
+            # if y = 1 then v <= M
+            # if y = 0 then v <= 0
+            upper_indicator_expression = reaction.flux_expression - ind_var * constant
+            ind_constraint_u = model.solver.interface.Constraint(upper_indicator_expression,
+                                                                 name=upper_indicator_constraint_name,
+                                                                 ub=0)
+
+            # v + M(1-y) >= 0
+            # if y = 1 then v >= 0
+            # if y = 0 then v >= -M
+            lower_indicator_expression = reaction.flux_expression + constant - ind_var * constant
+            ind_constraint_l = model.solver.interface.Constraint(lower_indicator_expression,
+                                                                 name=lower_indicator_constraint_name,
+                                                                 lb=0)
+
+            # a) -M(1-y) + u <= 0
+            # b) M(1-y) + u >= 0
+
+            # if y = 1, u = 0
+            # if y = 0, -M <= u <= M
+            aux_indicator_expression_a = -constant * (1 - ind_var) + aux_var
+            aux_constraint_a = model.solver.interface.Constraint(aux_indicator_expression_a,
+                                                                 name=auxiliary_constraint_a_name,
+                                                                 ub=0)
+
+            aux_indicator_expression_b = constant * (1 - ind_var) + aux_var
+            aux_constraint_b = model.solver.interface.Constraint(aux_indicator_expression_b,
+                                                                 name=auxiliary_constraint_b_name,
+                                                                 lb=0)
+            #
+            # # c) -My + u - viSi <= 0
+            # # d) My + u - viSi >= 0
+            #
+            # # if y = 0 then 0 <= -u - viSi <= 0
+            # # if y = 1 then -M <= -u - viSi <= M
+            aux_indicator_expression_c = -constant * ind_var - aux_var - reaction.flux_expression * coefficient
+            aux_constraint_c = model.solver.interface.Constraint(aux_indicator_expression_c,
+                                                                 name=auxiliary_constraint_c_name,
+                                                                 ub=0)
+
+            aux_indicator_expression_d = constant * ind_var - aux_var - reaction.flux_expression * coefficient
+            aux_constraint_d = model.solver.interface.Constraint(aux_indicator_expression_d,
+                                                                 name=auxiliary_constraint_d_name,
+                                                                 lb=0)
+
+            add += [ind_constraint_l, ind_constraint_u, aux_constraint_a,
+                    aux_constraint_b, aux_constraint_c, aux_constraint_d]
+
+            if time_machine:
+                time_machine(do=partial(model.solver.add, add), undo=partial(model.solver.remove, add))
             else:
-                reaction.change_bounds(lb=0, time_machine=time_machine)
+                model.solver.add(add)
+
+    model.solver.update()
+    max_production_turnover = (1 - fraction) * turnover
+    decrease_turnover_constraint = model.solver.interface.Constraint(sum(aux_variables.values()),
+                                                                     name="make_less_%s" % metabolite.id,
+                                                                     ub=max_production_turnover)
+
+    if time_machine:
+        time_machine(do=partial(model.solver.add, decrease_turnover_constraint),
+                     undo=partial(model.solver.remove, decrease_turnover_constraint))
+    else:
+        model.solver.add(decrease_turnover_constraint)
 
     if allow_accumulation:
         species_id = metabolite.id[:-2]
-        if "EX_%s_e" % species_id not in metabolite.model.reactions:
-            return metabolite.model.add_exchange(metabolite, prefix="I_", demand=True, time_machine=time_machine)
+        if "EX_%s_e" % species_id not in exchanges:
+            exchange = model.add_exchange(metabolite, prefix="INHIBIT_", time_machine=time_machine)
         else:
-            return metabolite.model.reactions.get_by_id("EX_%s_e" % species_id)
+            exchange = model.reactions.get_by_id("EX_%s_e" % species_id)
+
+        return exchange
 
 
-def knockout_metabolite(metabolite, ignore_transport=True, allow_accumulation=True, time_machine=None):
+def knockout_metabolite(model, metabolite, ignore_transport=True, allow_accumulation=True, time_machine=None):
     """
     Inhibits the usage of a metabolite based on a reference flux distributions.
 
     Parameters
     ----------
+    model : cameo.core.SolverBasedModel
+        A constraint-based model.
     metabolite: cobra.Metabolite
         A metabolite.
-    ignore_transport: bool
+    ignore_transport : bool
         Choose to ignore transport reactions.
-    allow_accumulation: bool
+    allow_accumulation : bool
         Allow to accumulate the metabolite (add a exchange reaction).
-    time_machine: cameo.util.TimeMachine
+    time_machine : cameo.util.TimeMachine
         Action control.
+
+    Returns
+    -------
+    cameo.core.Reaction, None
+        If allow accumulation returns the exchange reaction associatd with the metabolite.
     """
     reactions = metabolite.reactions
 
     if ignore_transport:
         reactions = [r for r in reactions if not len(set(m.compartment for m in r.metabolites)) > 1]
 
-    exchanges = metabolite.model.exchanges
+    exchanges = model.exchanges
 
     for reaction in reactions:
         if reaction in exchanges:
@@ -169,7 +280,58 @@ def knockout_metabolite(metabolite, ignore_transport=True, allow_accumulation=Tr
 
     if allow_accumulation:
         species_id = metabolite.id[:-2]
-        if "EX_%s_e" % species_id not in metabolite.model.reactions:
-            return metabolite.model.add_exchange(metabolite, prefix="KO_", demand=True, time_machine=time_machine)
+        if "EX_%s_e" % species_id not in model.reactions:
+            return model.add_exchange(metabolite, prefix="KO_", demand=True, time_machine=time_machine)
         else:
-            return metabolite.model.reactions.get_by_id("EX_%s_e" % species_id)
+            return model.reactions.get_by_id("EX_%s_e" % species_id)
+
+
+def apply_anti_metabolite(model, metabolites, essential_metabolites, reference, inhibition_fraction=.0,
+                          competition_fraction=.0, allow_accumulation=True, time_machine=None):
+    """
+    Apply a metabolite in the context of a model without knowing if it is activating or inhibiting.
+
+    Parameters
+    ----------
+    model : cameo.core.SolverBasedModel
+        A constraint-based model.
+    metabolites : list
+        Metabolites of the same species.
+    essential_metabolites : list
+        A list of essential metabolites.
+    reference : dict, cameo.core.FluxDistributionResult
+        A flux distribution.
+    inhibition_fraction : float
+        How much a metabolite inhibits.
+    competition_fraction : float
+        How much a metabolite competes.
+    allow_accumulation : bool
+        Allow accumulation of the metabolite.
+    time_machine : TimeMachine
+        A context manager.
+
+    Returns
+    -------
+    set
+        Exchange reactions added for accumulation.
+
+    """
+    exchanges = set()
+
+    if any(met in essential_metabolites for met in metabolites):
+        for metabolite in metabolites:
+            exchanges.add(compete_metabolite(model,
+                                             metabolite,
+                                             reference,
+                                             fraction=competition_fraction,
+                                             time_machine=time_machine))
+    else:
+        for metabolite in metabolites:
+            exchanges.add(inhibit_metabolite(model,
+                                             metabolite,
+                                             reference,
+                                             allow_accumulation=allow_accumulation,
+                                             fraction=inhibition_fraction,
+                                             time_machine=time_machine))
+
+    return exchanges
