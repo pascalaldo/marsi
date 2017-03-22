@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import logging
+
 from IProgress import ProgressBar, Bar, Percentage
 from bokeh.layouts import column
 from bokeh.models import FactorRange, Range1d, LinearAxis
@@ -25,15 +28,33 @@ from cameo.core.result import Result
 from cameo.util import TimeMachine
 from cameo.flux_analysis.analysis import flux_variability_analysis, FluxVariabilityResult
 from cameo.flux_analysis.simulation import pfba, fba
-from cameo.exceptions import SolveError
+from cameo.exceptions import SolveError, Infeasible
 
-from marsi.processing.models import search_metabolites, apply_anti_metabolite
+from marsi.cobra.flux_analysis.manipulation import apply_anti_metabolite, knockout_metabolite, compete_metabolite, \
+    inhibit_metabolite
 from marsi.utils import frange, search_metabolites
 
 BASE_ELEMENTS = ["C", "N"]
 
 
+logger = logging.getLogger(__name__)
+
+
 class MetaboliteKnockoutFitness(Result):
+    """
+    The result holder for the fitness landscape analysis.
+
+    See Also
+    --------
+    marsi.cobra.flux_analysis.analysis.metabolite_knockout_fitness
+
+    Properties
+    ----------
+    data_frame : pandas.DataFrame
+        A DataFrame with the result.
+
+
+    """
     def __init__(self, fitness_data_frame, *args, **kwargs):
         super(MetaboliteKnockoutFitness, self).__init__(*args, **kwargs)
         assert isinstance(fitness_data_frame, DataFrame)
@@ -44,6 +65,8 @@ class MetaboliteKnockoutFitness(Result):
         return DataFrame(self._data_frame)
 
     def plot(self, grid=None, width=None, height=None, title=None, *args, **kwargs):
+        """
+        """
         data = self._data_frame.sort_values('fitness')
         data['x'] = data.index
         show(Line(data, 'x', 'fitness', title=title, plot_width=width, plot_height=height))
@@ -53,10 +76,39 @@ class MetaboliteKnockoutFitness(Result):
 
 
 def metabolite_knockout_fitness(model, simulation_method=pfba, compartments=None, elements=BASE_ELEMENTS,
-                                objective=None, ndecimals=6, progress=False, ncarbons=2, steady_state=True,
-                                **simulation_kwargs):
+                                objective=None, ndecimals=6, progress=False, ncarbons=2, **simulation_kwargs):
+    """
+    Calculate the landscape of fitness for each metabolite knockout in the model.
+
+    Parameters
+    ----------
+    model : cameo.core.SolverBasedModel
+        A constraint-based model.
+    simulation_method : cameo.flux_analysis.simulation.fba
+        A method to simulate the knockouts (e.g. cameo.flux_analysis.simulation.moma)
+    compartments : list
+        The compartments to consider (e.g. ["c", "g", "r"] for cytosol, golgi aparatus and endoplasmatic reticulum)
+    elements : list
+        Atomic elements to add to the result.
+    objective : str, cameo.core.Reaction, other
+        A valid objective for the model.
+    ndecimals : int
+        Number of decimals to use as precision.
+    progress : bool
+        Report progress.
+    ncarbons : int
+        Minimum number of carbons to consider.
+    simulation_kwargs : dict
+        Arguments for `simulation_method
+
+    Returns
+    -------
+    MetaboliteKnockoutFitness
+        The fitness landscape.
+    """
     assert isinstance(model, Model)
-    fitness = DataFrame(columns=["fitness"]+elements)
+    fitness = DataFrame(columns=["fitness"] + list(elements))
+
     if compartments is None:
         compartments = list(model.compartments.keys())
 
@@ -67,7 +119,7 @@ def metabolite_knockout_fitness(model, simulation_method=pfba, compartments=None
     for met in iterator(model.metabolites):
         if met.compartment in compartments and met.elements.get("C", 0) > ncarbons:
             with TimeMachine() as tm:
-                met.knock_out(tm, force_steady_state=steady_state)
+                knockout_metabolite(model, met, allow_accumulation=True, ignore_transport=True, time_machine=tm)
                 try:
                     solution = simulation_method(model, objective=objective, **simulation_kwargs)
                     fitness.loc[met.id] = [round(solution[objective], ndecimals)] + \
@@ -121,7 +173,7 @@ class MetaboliteKnockoutPhenotypeResult(MetaboliteKnockoutFitness):
         if indexes:
             data = data.loc[indexes]
 
-        factors = list(set(sum(data.phenotype.apply(lambda p: list(p.keys()))), []))
+        factors = list(set(sum(data.phenotype.apply(lambda p: list(p.keys())), [])))
         plots = []
 
         for index in data.index:
@@ -130,7 +182,7 @@ class MetaboliteKnockoutPhenotypeResult(MetaboliteKnockoutFitness):
 
 
 def metabolite_knockout_phenotype(model, compartments=None, objective=None, ndecimals=6, elements=BASE_ELEMENTS,
-                                  progress=False, ncarbons=2, steady_state=True):
+                                  progress=False, ncarbons=2):
     assert isinstance(model, Model)
     phenotype = DataFrame(columns=['fitness', 'fva'] + elements)
     exchanges = model.exchanges
@@ -143,7 +195,7 @@ def metabolite_knockout_phenotype(model, compartments=None, objective=None, ndec
     for met in iterator(model.metabolites):
         if met.compartment in compartments and met.elements.get("C", 0) > ncarbons:
             with TimeMachine() as tm:
-                met.knock_out(tm, force_steady_state=steady_state)
+                knockout_metabolite(model, met, allow_accumulation=True, ignore_transport=True, time_machine=tm)
                 fitness = fba(model, objective=objective)
                 fva = flux_variability_analysis(model, reactions=exchanges, fraction_of_optimum=1)
                 fva = FluxVariabilityResult(fva.data_frame.apply(round, args=(ndecimals,)))
@@ -153,8 +205,10 @@ def metabolite_knockout_phenotype(model, compartments=None, objective=None, ndec
 
 
 class SensitivityAnalysisResult(Result):
-    def __init__(self, species_id, exchange_fluxes, steps, biomass_fluxes=None, biomass=None, *args, **kwargs):
+    def __init__(self, species_id, exchange_fluxes, steps, is_essential, biomass_fluxes=None,
+                 biomass=None, *args, **kwargs):
         super(SensitivityAnalysisResult, self).__init__(*args, **kwargs)
+        self._is_essential = is_essential
         self._species_id = species_id
         self._exchange_fluxes = exchange_fluxes
         self._steps = steps
@@ -170,8 +224,9 @@ class SensitivityAnalysisResult(Result):
                              index=["fraction", self._species_id, self._biomass.id]).T
 
     def plot(self, grid=None, width=None, height=None, *args, **kwargs):
-        fig = figure(plot_width=305, plot_height=305, title=self._species_id,
-                     x_axis_label='Inihibition level', y_axis_label="Accumulation Level",
+        x_label = "Competition Level" if self._is_essential else 'Inhibition level'
+        fig = figure(plot_width=width, plot_height=height, title=self._species_id,
+                     x_axis_label=x_label, y_axis_label="Accumulation Level",
                      toolbar_sticky=False)
 
         data = self.data_frame
@@ -184,9 +239,11 @@ class SensitivityAnalysisResult(Result):
 
             fig.extra_y_ranges = {"growth_rate": Range1d(start=0, end=1)}
             fig.add_layout(LinearAxis(y_range_name="growth_rate", axis_label="Growth rate"), 'right')
-            fig.line(data['fraction'].apply(lambda v: 1 - v) * 100, data[self._species_id]/data[self._biomass.id],
+            fig.line(data['fraction'].apply(lambda v: v if self._is_essential else 1 - v) * 100,
+                                            data[self._species_id]/data[self._biomass.id],
                      line_color='orange')
-            fig.line(data['fraction'].apply(lambda v: 1 - v) * 100, data[self._biomass.id], line_color='green',
+            fig.line(data['fraction'].apply(lambda v: v if self._is_essential else 1 - v) * 100,
+                     data[self._biomass.id], line_color='green',
                      y_range_name="growth_rate")
 
         show(fig)
@@ -199,11 +256,6 @@ def sensitivity_analysis(model, metabolite, biomass=None, is_essential=False, st
         simulation_kwargs['reference'] = simulation_kwargs.get('reference', None) or pfba(model, objective=biomass)
 
     species_id = metabolite.id[:-2]
-    metabolites = search_metabolites(model, species_id)
-
-    essential_metabolites = []
-    if is_essential:
-        essential_metabolites.append(metabolite)
 
     exchange_fluxes = []
     biomass_fluxes = []
@@ -211,21 +263,28 @@ def sensitivity_analysis(model, metabolite, biomass=None, is_essential=False, st
 
     for fraction in frange(0, 1.1, steps):
         with TimeMachine() as tm:
-            exchanges = apply_anti_metabolite(metabolites, essential_metabolites, simulation_kwargs['reference'],
-                                              inhibition_fraction=fraction, competition_fraction=fraction,
-                                              allow_accumulation=True, ignore_transport=True, time_machine=tm)
+            if is_essential:
+                exchange = compete_metabolite(model, metabolite, simulation_kwargs['reference'], fraction,
+                                              time_machine=tm)
+            else:
+                exchange = inhibit_metabolite(model, metabolite, simulation_kwargs['reference'], fraction,
+                                              time_machine=tm)
+            try:
+                flux_dist = simulation_method(model, objective=biomass, **simulation_kwargs)
 
-            flux_dist = simulation_method(model, **simulation_kwargs)
+                if biomass is not None:
+                    biomass_fluxes.append(flux_dist[biomass])
+                flux = flux_dist[exchange]
 
-            if biomass is not None:
-                biomass_fluxes.append(flux_dist[biomass])
+                exchange_fluxes.append(flux)
+                fractions.append(fraction)
+                logger.debug("Feasible: %s (%.3f) essential: %s flux: %.3f" % (species_id, fraction, is_essential, flux))
+            except Infeasible:
+                logger.debug("Infeasible: %s (%.3f) essential: %s" % (species_id, fraction, is_essential))
+                if biomass is not None:
+                    biomass_fluxes.append(0)
 
-            exchange_fluxes.append(sum(flux_dist[exchange] for exchange in exchanges))
-            fractions.append(fraction)
+                exchange_fluxes.append(0)
+                fractions.append(fraction)
 
-    return SensitivityAnalysisResult(species_id, exchange_fluxes, fractions, biomass_fluxes, biomass)
-
-
-
-
-
+    return SensitivityAnalysisResult(species_id, exchange_fluxes, fractions, is_essential, biomass_fluxes, biomass)
