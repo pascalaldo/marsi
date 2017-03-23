@@ -21,6 +21,20 @@ BASE_URL = "http://bigg.ucsd.edu/api/v2/"
 
 
 class DBVersion(object):
+    """
+    Version container.
+
+    Attributes
+    ----------
+    version : str
+        Database version.
+    api_version : str
+        Version of the API used.
+    last_update : str
+        Last update timestamp.
+
+    """
+
     def __init__(self, version, api_version, last_update):
         self.version = version
         self.api_version = api_version
@@ -35,17 +49,18 @@ def database_version():
     Retrieves the current version of BiGG database
     """
     response = requests.get(BASE_URL + "database_version")
-    if response.ok:
-        data = response.json()
-        return DBVersion(data['bigg_models_version'], data['api_version'], data['last_updated'])
+    response.raise_for_status()
+
+    data = response.json()
+    return DBVersion(data['bigg_models_version'], data['api_version'], data['last_updated'])
 
 
 def download_model(model_id, file_format="json", save=True, path="."):
     """
     Download models from BiGG. You can chose to save the file or to return the JSON data.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
 
     model_id: str
         A valid id for a model in BiGG.
@@ -63,42 +78,37 @@ def download_model(model_id, file_format="json", save=True, path="."):
 
     if save:
         response = requests.get("http://bigg.ucsd.edu/static/models/%s.%s" % (model_id, file_format), stream=True)
-        if response.ok:
-            with open(os.path.join(path, "%s.%s" % (model_id, file_format)), "w") as model_file:
-                for block in response.iter_content(1024):
-                    model_file.write(block)
-        else:
-            raise ValueError(response.text)
-
+        response.raise_for_status()
+        with open(os.path.join(path, "%s.%s" % (model_id, file_format)), "wb") as model_file:
+            for block in response.iter_content(1024):
+                model_file.write(block)
     else:
         response = requests.get(BASE_URL + "models/%s" % model_id)
-        if response.ok:
-            return response.json()
-        else:
-            raise ValueError(response.text)
+        response.raise_for_status()
+        return response.json()
 
 
 def model_details(model_id):
     """
     Summarize the model.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     model_id: str
         A valid id for a model in BiGG.
     """
     response = requests.get(BASE_URL + "models/%s" % model_id)
-    if response.ok:
-        return response.json()
+    response.raise_for_status()
+    return response.json()
 
 
 def list_models():
     """
-    Listsall models available in BiGG.
+    Lists all models available in BiGG.
     """
     response = requests.get(BASE_URL + "models/")
-    if response.ok:
-        return response.json()
+    response.raise_for_status()
+    return response.json()
 
 
 def list_reactions():
@@ -106,52 +116,52 @@ def list_reactions():
     List all reactions available in BiGG.
     """
     response = requests.get(BASE_URL + "universal/reactions")
-    if response.ok:
-        return response.json()
+    response.raise_for_status()
+    return response.json()
 
 
 def list_model_reactions(model_id):
     """
     List all reactions in a model.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     model_id: str
         A valid id for a model in BiGG.
     """
     response = requests.get(BASE_URL + "models/%s/reactions" % model_id)
-    if response.ok:
-        return response.json()
+    response.raise_for_status()
+    return response.json()
 
 
 def get_reaction(reaction_id):
     """
     Retrieve a reaction from BiGG.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     reaction_id: str
         A valid id for a reaction in BiGG.
     """
-    response = requests.get(BASE_URL + "universal/reactions" % reaction_id)
-    if response.ok:
-        return response.json()
+    response = requests.get(BASE_URL + "universal/reactions/%s" % reaction_id)
+    response.raise_for_status()
+    return response.json()
 
 
 def get_model_reaction(model_id, reaction_id):
     """
     Retrieve a reaction in the context of a model from BiGG.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     model_id: str
         A valid id for a model in BiGG.
     reaction_id: str
         A valid id for a reaction in BiGG.
     """
     response = requests.get(BASE_URL + "models/%s/reactions/%s" % (model_id, reaction_id))
-    if response.ok:
-        return response.json()
+    response.raise_for_status()
+    return response.json()
 
 
 def list_metabolites():
@@ -159,74 +169,74 @@ def list_metabolites():
     List all metabolites in BiGG.
     """
     response = requests.get(BASE_URL + "universal/metabolites")
-    if response.ok:
-        return response.json()
+    response.raise_for_status()
+    return response.json()
 
 
 def list_model_metabolites(model_id):
     """
     List all metabolites in a model.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     model_id: str
         A valid id for a model in BiGG.
     """
     response = requests.get(BASE_URL + "models/%s/metabolites" % model_id)
-    if response.ok:
-        return response.json()
+    response.raise_for_status()
+    return response.json()
 
 
 def get_metabolite(metabolite_id):
     """
     Retrieve a metabolite from BiGG.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     metabolite_id: str
         A valid id for a reaction in BiGG.
     """
     response = requests.get(BASE_URL + "universal/metabolites/%s" % metabolite_id)
-    if response.ok:
-        return response.json()
+    response.raise_for_status()
+    return response.json()
 
 
 def get_model_metabolite(model_id, metabolite_id):
     """
     Retrieve a metabolite in the context of a model from BiGG.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     metabolite_id: str
         A valid id for a reaction in BiGG.
     model_id: str
         A valid id for a model in BiGG.
     """
     response = requests.get(BASE_URL + "models/%s/metabolites/%s" % (model_id, metabolite_id))
-    if response.ok:
-        return response.json()
+    response.raise_for_status()
+    return response.json()
 
 
 def list_model_genes(model_id):
     """
     List all genes in a model.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     model_id: str
         A valid id for a model in BiGG.
     """
     response = requests.get(BASE_URL + "models/%s/genes" % model_id)
-    if response.ok:
-        return response.json()
+    response.raise_for_status()
+    return response.json()
 
 
 def get_model_gene(model_id, gene_id):
     """
     Retrieve a gene in the context of a model from BiGG.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     model_id: str
         A valid id for a model in BiGG.
     gene_id: str
@@ -241,8 +251,8 @@ def search(query, search_type):
     """
     Fuzzy search the BiGG database.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     query: str
         Whatever you are searching for (ids, names, etc...).
     search_type: str
@@ -250,5 +260,5 @@ def search(query, search_type):
 
     """
     response = requests.get(BASE_URL + "search", params=dict(query=query, search_type=search_type))
-    if response.ok:
-        return response.json()
+    response.raise_for_status()
+    return response.json()
