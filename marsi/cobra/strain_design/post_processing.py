@@ -14,7 +14,8 @@
 
 import logging
 
-from IProgress import ProgressBar, Bar, Percentage
+import numpy
+from cameo.core.strain_design import StrainDesign
 from cameo.core.target import ReactionKnockoutTarget, ReactionModulationTarget
 from pandas import DataFrame
 
@@ -29,133 +30,6 @@ from marsi.cobra.strain_design.target import AntiMetaboliteManipulationTarget, M
 logger = logging.getLogger(__name__)
 
 
-class ReplaceKnockoutFinder(object):
-    def __init__(self, model, simulation_method, simulation_kwargs, currency_metabolites):
-        self.model = model
-        self.simulation_method = simulation_method
-        self.simulation_kwargs = simulation_kwargs
-        self.currency_metabolites = currency_metabolites
-
-    def __call__(self, targets, fitness, objective_function, max_loss=0.2):
-        return test_reaction_knockout_replacements(self.model, targets, objective_function, fitness,
-                                                   self.simulation_method, simulation_kwargs=self.simulation_kwargs,
-                                                   ignore_metabolites=self.currency_metabolites, max_loss=max_loss)
-
-
-def test_reaction_knockout_replacements(model, targets, objective_function, fitness_value, simulation_method,
-                                        simulation_kwargs=None, reference=None, ignore_metabolites=None,
-                                        ignore_transport=True, allow_accumulation=True, max_loss=0.2):
-
-    if reference is None:
-        reference = {}
-
-    if simulation_kwargs is None:
-        simulation_kwargs = {}
-
-    assert isinstance(model, SolverBasedModel)
-    assert isinstance(objective_function, ObjectiveFunction)
-
-    def valid_loss(val, base):
-        fitness_loss = fitness_value - val
-
-        return fitness_loss / fitness_value < max_loss and val - base > 1e-6
-
-    target_test_count = {test: 0 for test in targets}  # Keep track of which targets where tested
-    possible_targets = list(targets)
-    anti_metabolites = DataFrame(columns=['reaction', 'metabolites', 'base_fitness', 'fitness', 'loss'])
-    index = 0
-
-    def termination_criteria():
-        logger.debug("Possible targets: %i" % len(possible_targets))
-        logger.debug("Tested targets: %s" % target_test_count)
-        logger.debug("Antimetabolites: %s" % str(anti_metabolites))
-        return len(possible_targets) == 0 or all(count == 1 for count in target_test_count.values())
-
-    # Stop when all targets have been replaced or tested more then once.
-    while not termination_criteria():
-        with TimeMachine() as tm:
-            test = possible_targets.pop(0)
-            target_test_count[test] += 1
-
-            logger.debug("Testing target %s (%i times)" % (test, target_test_count[test]))
-
-            reaction = model.reactions.get_by_id(test)
-            for ko in possible_targets:
-                model.reactions.get_by_id(ko).knock_out(tm)
-
-            base_solution = simulation_method(model, **simulation_kwargs)
-            base_fitness = objective_function(model, base_solution, targets)
-
-            anti_metabolite_targets = find_anti_metabolite_knockouts(reaction,
-                                                                     ref_flux=reference.get(test, 0),
-                                                                     ignore_transport=ignore_transport,
-                                                                     ignore_metabolites=ignore_metabolites,
-                                                                     allow_accumulation=allow_accumulation)
-
-            new_fitness_values = {}
-
-            for species_id, target in anti_metabolite_targets.items():
-                assert isinstance(target, AntiMetaboliteManipulationTarget)
-                with TimeMachine() as another_tm:
-                    target.apply(model, another_tm)
-                    fitness = 0
-                    try:
-                        solution = simulation_method(model, **simulation_kwargs)
-                        fitness = objective_function(model, solution, targets)
-                    except SolveError:
-                        logger.debug("Didn't solve %s" % species_id)
-                        fitness = 0
-                    finally:
-                        if fitness not in new_fitness_values:
-                            new_fitness_values[fitness] = []
-                        new_fitness_values[fitness].append(species_id)
-
-                        logger.debug("Applying %s yields %f (loss: %f)" %
-                                     (species_id, fitness, (fitness_value - fitness)/fitness_value))
-
-            new_fitness_values = {val: anti_mets for val, anti_mets in new_fitness_values.items()
-                                  if valid_loss(val, base_fitness)}
-
-            if len(new_fitness_values) == 0:
-                # Put target back to test in other combinations.
-                possible_targets.append(test)
-                logger.debug("Return target %s, no replacement found" % test)
-            else:
-                max_fitness = max(new_fitness_values.keys())
-                loss = fitness_value - max_fitness
-                anti_metabolites.loc[index] = [test, new_fitness_values[max_fitness], base_fitness, max_fitness, loss]
-                index += 1
-
-    return anti_metabolites
-
-
-def replace_knockouts(model, knockouts, objective_function, simulation_method, simulation_kwargs, currency_metabolites,
-                      max_loss=0.2):
-        knockout_replace_finder = ReplaceKnockoutFinder(model,
-                                                        simulation_method=simulation_method,
-                                                        simulation_kwargs=simulation_kwargs,
-                                                        currency_metabolites=currency_metabolites)
-
-        result = DataFrame(columns=['reactions', 'replaced_reaction', 'metabolites',
-                                    'original_fitness', 'anti_metabolite_fitness'])
-        pbar = ProgressBar(maxval=len(knockouts), widgets=["Replacing KOs: ", Bar(), Percentage()])
-        replacements = [knockout_replace_finder(row.reactions, row.fitness, objective_function, max_loss)
-                        for row in pbar(knockouts.itertuples(index=False))]
-        i = 0
-        for replace, original in zip(replacements, knockouts.itertuples(index=False)):
-            if len(replace) == 0:
-                continue
-
-            for row in replace.itertuples(index=False):
-                reactions = list(original.reactions)
-                reactions.remove(row.reaction)
-                for metabolite in row.metabolites:
-                    result.loc[i] = [reactions, row.reaction, metabolite, original.fitness, row.fitness]
-                    i += 1
-
-        return result
-
-
 def find_anti_metabolite_knockouts(reaction, ref_flux=0, ignore_metabolites=None, ignore_transport=True,
                                    allow_accumulation=True):
     """
@@ -166,7 +40,7 @@ def find_anti_metabolite_knockouts(reaction, ref_flux=0, ignore_metabolites=None
     reaction: cobra.Reaction
         A COBRA reaction
     ref_flux: float
-        The flux from the reference state (0 if unkown)
+        The flux from the reference state (0 if unknown)
     ignore_metabolites: list
         A list of metabolites that should not be targeted (currency metabolites, etc.)
     ignore_transport: bool
@@ -200,52 +74,50 @@ def find_anti_metabolite_knockouts(reaction, ref_flux=0, ignore_metabolites=None
     return result
 
 
-def find_anti_metabolite_modulation(reaction, fold_change, ref_flux=0, ignore_metabolites=None,
-                                    ignore_transport=True, allow_accumulation=True, essential_metabolites=None):
+def find_anti_metabolite_modulation(reaction, fold_change, essential_metabolites, ref_flux=0, ignore_metabolites=None,
+                                    ignore_transport=True, allow_accumulation=True):
     """
     Generates a dictionary {species_id -> AntiMetaboliteManipulationTarget}.
 
-    If the fold change > 1:
+    If the fold change > 0:
         1. Search for metabolites that are essential.
         2. Calculate fraction using a link function.
 
-    If fold change < 1:
+    If fold change < 0:
         1. Search for metabolites that are not essential
         2. Calculated fraction is 1 - fold change
 
     Parameters
     ----------
-    reaction: cobra.Reaction
+    reaction : cobra.Reaction
         A COBRA reaction.
-    fold_change: float
+    fold_change : float
         The fold change of the reaction flux.
-    ref_flux: float
-        The flux from the reference state (0 if unknown)
-    ignore_metabolites: list
-        A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc.).
-    ignore_transport: bool
-        If False, also knockout the transport reactions.
-    allow_accumulation: bool
-        If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.
-    essential_metabolites: list
+    essential_metabolites : list
         A list of essential metabolites.
+    ref_flux : float
+        The flux from the reference state (0 if unknown)
+    ignore_metabolites : list
+        A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc.).
+    ignore_transport : bool
+        If False, also knockout the transport reactions.
+    allow_accumulation : bool
+        If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.
+
     Returns
     -------
     dict
-
-
-
-    Returns
-    -------
-    dict
-
+        {MetaboliteID -> AntiMetaboliteManipulationTarget}
     """
+
+    if ignore_metabolites is None:
+        ignore_metabolites = []
 
     assert isinstance(reaction, Reaction)
     assert isinstance(ignore_metabolites, (list, set, tuple))
     assert isinstance(essential_metabolites, (list, set, tuple))
 
-    if fold_change > 1:
+    if fold_change > 0:
         ignore_metabolites = list(ignore_metabolites) + essential_metabolites
 
     if ref_flux != 0:
@@ -262,8 +134,8 @@ def find_anti_metabolite_modulation(reaction, fold_change, ref_flux=0, ignore_me
     result = {}
 
     # Use a link function to convert fold change into ]0, 1]
-    if fold_change > 1:
-        fraction = 10 * (1 - fold_change) / (1 + (1 - fold_change))
+    if fold_change > 0:
+        fraction = 1/(1 + numpy.exp(-0.5 * fold_change - 5))
     else:
         fraction = 1 - fold_change
 
@@ -275,8 +147,118 @@ def find_anti_metabolite_modulation(reaction, fold_change, ref_flux=0, ignore_me
     return result
 
 
-def convert_target(model, target, ignore_transport=True, ignore_metabolites=None,
-                   allow_accumulation=True, reference=None):
+def replace_in_design(model, strain_design, fitness, objective_function, simulation_method, simulation_kwargs=None,
+                      ignore_metabolites=None, ignore_transport=True, allow_accumulation=True,
+                      essential_metabolites=None, max_loss=0.2):
+
+    if simulation_kwargs is None:
+        simulation_kwargs = {}
+
+    if simulation_kwargs.get('reference', None) is None:
+        reference = {}
+    else:
+        reference = simulation_kwargs['reference']
+
+    if essential_metabolites is None:
+        essential_metabolites = []
+
+    if ignore_metabolites is None:
+        ignore_metabolites = []
+
+    assert isinstance(model, SolverBasedModel)
+    assert isinstance(objective_function, ObjectiveFunction)
+
+    def valid_loss(val, base):
+        fitness_loss = fitness - val
+
+        return fitness_loss / fitness < max_loss and val - base > 1e-6
+
+    # Keep track of which targets where tested
+    target_test_count = {test.id: 0 for test in strain_design.targets if isinstance(test, ReactionModulationTarget)}
+    test_targets = [t for t in strain_design.targets if isinstance(t, ReactionModulationTarget)]
+    keep_targets = [t for t in strain_design.targets if not isinstance(t, ReactionModulationTarget)]
+    anti_metabolites = DataFrame(columns=['base_design', 'replaced_target', 'metabolite_targets',
+                                          'old_fitness', 'fitness', 'delta'])
+    index = 0
+
+    def termination_criteria():
+        logger.debug("Targets: %i/%i" % (sum(target_test_count.values()), len(test_targets)))
+        logger.debug("Anti metabolites: %s" % str(anti_metabolites))
+        return len(test_targets) == 0 or all(count == 1 for count in target_test_count.values())
+
+    # Stop when all targets have been replaced or tested more then once.
+    while not termination_criteria():
+        with TimeMachine() as tm:
+            test_target = test_targets.pop(0)
+            target_test_count[test_target.id] += 1
+
+            logger.debug("Testing target %s" % test_target)
+            assert test_target not in test_targets
+
+            all_targets = test_targets + keep_targets
+
+            for target in all_targets:
+                target.apply(model, time_machine=tm)
+
+            base_solution = simulation_method(model, **simulation_kwargs)
+            base_fitness = objective_function(model, base_solution, test_targets)
+
+            try:
+                anti_metabolite_targets = convert_target(model, test_target, essential_metabolites,
+                                                         ignore_transport=ignore_transport,
+                                                         ignore_metabolites=ignore_metabolites,
+                                                         allow_accumulation=allow_accumulation,
+                                                         reference=reference)
+                fitness2targets = {}
+
+                for species_id, target in anti_metabolite_targets.items():
+                    assert isinstance(target, AntiMetaboliteManipulationTarget)
+                    with TimeMachine() as another_tm:
+                        target.apply(model, time_machine=another_tm, reference=reference)
+                        try:
+                            new_solution = simulation_method(model, **simulation_kwargs)
+                            new_fitness = objective_function(model, new_solution, all_targets)
+                            logger.debug("New fitness %s" % new_fitness)
+                            logger.debug("solver objective value %s" % new_solution.objective_value)
+                            for r in objective_function.reactions:
+                                logger.debug("%s: %f" % (r, new_solution[r]))
+                        except SolveError:
+                            logger.debug("Didn't solve %s" % species_id)
+                            new_fitness = 0
+                        finally:
+                            if new_fitness not in fitness2targets:
+                                fitness2targets[new_fitness] = []
+                            fitness2targets[new_fitness].append(target)
+                            try:
+                                logger.debug("Applying %s yields %f (loss: %f)" %
+                                             (species_id, new_fitness, (new_fitness - fitness)/new_fitness))
+                            except ZeroDivisionError:
+                                logger.debug("Applying %s yields %f (loss: %f)" %
+                                             (species_id, new_fitness, 1))
+
+                fitness2targets = {fit: anti_mets for fit, anti_mets in fitness2targets.items()
+                                   if valid_loss(fit, base_fitness)}
+
+                if len(fitness2targets) == 0:
+                    # Put target back to test in other combinations.
+                    logger.debug("Return target %s, no replacement found" % test_target)
+                else:
+                    for fit, anti_mets in fitness2targets.items():
+                        delta = fitness - fit
+                        anti_metabolites.loc[index] = [StrainDesign(all_targets), test_target,
+                                                       anti_mets, fitness, fit, delta]
+                        index += 1
+            except (ValueError, KeyError) as e:
+                logger.error(str(e))
+                continue
+            finally:
+                test_targets.append(test_target)
+
+    return anti_metabolites
+
+
+def convert_target(model, target, essential_metabolites, ignore_transport=True,
+                   ignore_metabolites=None, allow_accumulation=True, reference=None):
     """
     Generates a dictionary {species_id -> MetaboliteKnockoutTarget}.
 
@@ -294,10 +276,18 @@ def convert_target(model, target, ignore_transport=True, ignore_metabolites=None
         If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.
     reference: dict
         A dictionary containing the flux values of a reference flux distribution.
+    essential_metabolites: list
+        A list of essential metabolites
     Returns
     -------
     dict
     """
+
+    if ignore_metabolites is None:
+        ignore_metabolites = []
+
+    if essential_metabolites is None:
+        essential_metabolites = []
 
     reference = reference or {}
     if isinstance(target, ReactionKnockoutTarget):
@@ -305,12 +295,13 @@ def convert_target(model, target, ignore_transport=True, ignore_metabolites=None
         substitutions = find_anti_metabolite_knockouts(target.get_model_target(model),
                                                        ref_flux=reference.get(target.id, 0),
                                                        ignore_transport=ignore_transport,
-                                                       ignore_metabolites=ignore_metabolites,
+                                                       ignore_metabolites=ignore_metabolites + essential_metabolites,
                                                        allow_accumulation=allow_accumulation)
 
     elif isinstance(target, ReactionModulationTarget):
         substitutions = find_anti_metabolite_modulation(target.get_model_target(model),
                                                         target.fold_change,
+                                                        essential_metabolites,
                                                         ref_flux=reference.get(target.id, 0),
                                                         ignore_transport=ignore_transport,
                                                         ignore_metabolites=ignore_metabolites,
