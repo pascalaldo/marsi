@@ -52,3 +52,9 @@ Find Metabolite Targets
 License
 -------
 Apache License Version 2.0
+
+
+Databases and Software Tools
+----------------------------
+
+All tools and databases are listed [here](CITATIONS.md)
