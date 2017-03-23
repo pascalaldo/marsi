@@ -17,6 +17,7 @@ parts
 bin
 var
 sdist
+docs/xml
 develop-eggs
 .installed.cfg
 lib
@@ -27,7 +28,7 @@ __pycache__
 pip-log.txt
 
 # Unit test / coverage reports
-.coverage
+.coverage*
 .tox
 nosetests.xml
 
@@ -44,8 +45,13 @@ nosetests.xml
 .idea
 
 docs/_build
+docs/xml
+
+tests/.coverage
+tests/.benchmarks
 
 data
 
 # My stuff
-notebooks
+notebooks-old
+notebooks/.ipynb_checkpoints
