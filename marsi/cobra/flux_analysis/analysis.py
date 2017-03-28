@@ -30,9 +30,12 @@ from cameo.flux_analysis.analysis import flux_variability_analysis, FluxVariabil
 from cameo.flux_analysis.simulation import pfba, fba
 from cameo.exceptions import SolveError, Infeasible
 
-from marsi.cobra.flux_analysis.manipulation import apply_anti_metabolite, knockout_metabolite, compete_metabolite, \
-    inhibit_metabolite
-from marsi.utils import frange, search_metabolites
+from marsi.cobra.flux_analysis.manipulation import knockout_metabolite, compete_metabolite, inhibit_metabolite
+from marsi.utils import frange
+
+
+__all__ = ['metabolite_knockout_fitness', 'metabolite_knockout_phenotype', 'sensitivity_analysis']
+
 
 BASE_ELEMENTS = ["C", "N"]
 
@@ -48,7 +51,7 @@ class MetaboliteKnockoutFitness(Result):
     --------
     marsi.cobra.flux_analysis.analysis.metabolite_knockout_fitness
 
-    Properties
+    Attributes
     ----------
     data_frame : pandas.DataFrame
         A DataFrame with the result.
@@ -72,7 +75,7 @@ class MetaboliteKnockoutFitness(Result):
         show(Line(data, 'x', 'fitness', title=title, plot_width=width, plot_height=height))
 
     def _repr_html_(self):
-        return self.plot(height=500, width=12*len(self._data_frame), title="Fitness for metabolite Knockout")
+        return self.plot(height=500, width=12*len(self._data_frame), title="Metabolite knockout fitness landscape")
 
 
 def metabolite_knockout_fitness(model, simulation_method=pfba, compartments=None, elements=BASE_ELEMENTS,
@@ -226,7 +229,7 @@ class SensitivityAnalysisResult(Result):
     def plot(self, grid=None, width=None, height=None, *args, **kwargs):
         x_label = "Competition Level" if self._is_essential else 'Inhibition level'
         fig = figure(plot_width=width, plot_height=height, title=self._species_id,
-                     x_axis_label=x_label, y_axis_label="Accumulation Level",
+                     x_axis_label=x_label, y_axis_label="Accumulation Level (mmol/gDW)",
                      toolbar_sticky=False)
 
         data = self.data_frame
@@ -237,8 +240,8 @@ class SensitivityAnalysisResult(Result):
 
         else:
 
-            fig.extra_y_ranges = {"growth_rate": Range1d(start=0, end=1)}
-            fig.add_layout(LinearAxis(y_range_name="growth_rate", axis_label="Growth rate"), 'right')
+            fig.extra_y_ranges = {"growth_rate": Range1d(start=0, end=data[self._biomass.id].max())}
+            fig.add_layout(LinearAxis(y_range_name="growth_rate", axis_label="Growth rate (h-1)"), 'right')
             fig.line(data['fraction'].apply(lambda v: v if self._is_essential else 1 - v) * 100,
                                             data[self._species_id]/data[self._biomass.id],
                      line_color='orange')
