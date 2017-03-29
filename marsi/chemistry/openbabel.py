@@ -30,9 +30,9 @@ def has_radical(mol):
     Finds if a pybel.Molecule has Radicals.
     Radicals have an atomic number of 0.
 
-    Arguments
-    ---------
-    mol: pybel.Molecule
+    Parameters
+    ----------
+    mol : pybel.Molecule
         A molecule.
 
     Returns
@@ -47,9 +47,9 @@ def mol_to_inchi(mol):
     """
     Makes an InChI from a pybel.Molecule.
 
-    Arguments
-    ---------
-    mol: pybel.Molecule
+    Parameters
+    ----------
+    mol : pybel.Molecule
         A molecule.
 
     Returns
@@ -64,9 +64,9 @@ def mol_to_svg(mol):
     """
     Makes an SVG from a pybel.Molecule.
 
-    Arguments
-    ---------
-    mol: pybel.Molecule
+    Parameters
+    ----------
+    mol : pybel.Molecule
         A molecule.
 
     Returns
@@ -81,9 +81,9 @@ def mol_to_inchi_key(mol):
     """
     Makes an InChI Key from a pybel.Molecule.
 
-    Arguments
-    ---------
-    mol: pybel.Molecule
+    Parameters
+    ----------
+    mol : pybel.Molecule
         A molecule.
 
     Returns
@@ -99,9 +99,9 @@ def inchi_to_inchi_key(inchi):
     """
     Makes an InChI Key from a InChI string.
 
-    Arguments
-    ---------
-    inchi: str
+    Parameters
+    ----------
+    inchi : str
         A valid InChI string.
 
     Returns
@@ -116,9 +116,9 @@ def mol_drugbank_id(mol):
     """
     Returns the DrugBank ID from the molecule data.
 
-    Arguments
-    ---------
-    mol: pybel.Molecule
+    Parameters
+    ----------
+    mo l: pybel.Molecule
         A molecule.
 
     Returns
@@ -133,9 +133,9 @@ def mol_pubchem_id(mol):
     """
     Returns the PubChem Compound ID from the molecule data.
 
-    Arguments
-    ---------
-    mol: pybel.Molecule
+    Parameters
+    ----------
+    mol : pybel.Molecule
         A molecule.
 
     Returns
@@ -150,9 +150,9 @@ def mol_chebi_id(mol):
     """
     Returns the ChEBI ID from the molecule data.
 
-    Arguments
-    ---------
-    mol: pybel.Molecule
+    Parameters
+    ----------
+    mol : pybel.Molecule
         A molecule.
 
     Returns
@@ -167,11 +167,11 @@ def fingerprint(mol, fpformat='maccs'):
     """
     Returns the Fingerprint of the molecule.
 
-    Arguments
-    ---------
-    mol: pybel.Molecule
+    Parameters
+    ----------
+    mol : pybel.Molecule
         A molecule.
-    fpformat: str
+    fpformat : str
         A valid fingerprint format (see pybel.fps)
 
     Returns
@@ -189,17 +189,83 @@ def inchi_to_molecule(inchi):
     """
     Returns a molecule from a InChI string.
 
-    Arguments
-    ---------
-    inchi: str
+    Parameters
+    ----------
+    inchi : str
         A valid string.
+
+    Returns
+    -------
+    mol : pybel.Molecule
+        A molecule.
+    """
+    mol = pybel.readstring('inchi', inchi, opt=dict(errorlevel=0))
+    mol.addh()
+    return mol
+
+
+def sdf_to_molecule(from_file_or_molecule_desc, from_file=True):
+    """
+    Returns a molecule from a SDF file.
+
+    Parameters
+    ----------
+    from_file_or_molecule_desc : str
+        A valid SDF file path or a valid SDF string.
+    from_file : bool
+        If True tries to read the molecule from a file.
+
+
+    Returns
+    -------
+    mol : pybel.Molecule
+        A molecule.
+    """
+    if from_file:
+        mol = next(pybel.readfile('sdf', from_file_or_molecule_desc, opt=dict(errorlevel=0)))
+    else:
+        mol = pybel.readstring('sdf', from_file_or_molecule_desc, opt=dict(errorlevel=0))
+    mol.addh()
+    return mol
+
+
+def molecule_to_sdf(molecule):
+    """
+    Makes an SDF from a pybel.Molecule.
+
+    Parameters
+    ----------
+    molecule : pybel.Molecule
+        A molecule.
+
+    Returns
+    -------
+    str
+    A SDF string.
+    """
+    return molecule.write('sdf', opt=dict(errorlevel=0)).strip()
+
+
+def mol_to_molecule(file_or_molecule_desc, from_file=True):
+    """
+    Returns a molecule from a MOL file.
+
+    Parameters
+    ----------
+    file_or_molecule_desc : str
+        A valid MOL file path or a valid MOL string.
+    from_file : bool
+        If True tries to read the molecule from a file.
 
     Returns
     -------
     mol: pybel.Molecule
         A molecule.
     """
-    mol = pybel.readstring('inchi', inchi, opt=dict(errorlevel=0))
+    if from_file:
+        mol = next(pybel.readfile('mol', file_or_molecule_desc, opt=dict(errorlevel=0)))
+    else:
+        mol = pybel.readstring('mol', file_or_molecule_desc, opt=dict(errorlevel=0))
     mol.addh()
     return mol
 
@@ -208,9 +274,9 @@ def mol_str_to_inchi(mol_str):
     """
     Returns the InChI from the molecule data.
 
-    Arguments
-    ---------
-    mol_str: str
+    Parameters
+    ----------
+    mol_str : str
         A valid MOL string.
 
     Returns
@@ -225,9 +291,9 @@ def smiles_to_molecule(smiles):
     """
     Returns the pybel.Molecule from the molecule data.
 
-    Arguments
-    ---------
-    simes: str
+    Parameters
+    ----------
+    smiles : str
         A valid SMILES string.
 
     Returns
@@ -242,12 +308,12 @@ def fingerprint_to_bits(fp, bits=1024):
     """
     Converts a pybel.Fingerprint into a binary array
 
-    Arguments
-    ---------
-    fp: pybel.Fingerprint
+    Parameters
+    ----------
+    fp : pybel.Fingerprint
         A fingerprint molecule.
 
-    bits: int
+    bits : int
         Number of bits (default is 1024)
     Returns
     -------
@@ -266,15 +332,15 @@ def align_molecules(reference, *molecules, include_h=True, symmetry=True):
     """
     Align molecules to a reference.
 
-    Arguments
-    ---------
-    reference: pybel.Molecule
+    Parameters
+    ----------
+    reference : pybel.Molecule
         A reference molecule.
-    molecules: pybel.Molecule
+    molecules : pybel.Molecule
         Molecules to align.
-    include_h: bool
+    include_h : bool
         Include implicit hydrogen atoms.
-    symmetry: bool
+    symmetry : bool
 
     Returns
     -------
@@ -289,14 +355,15 @@ def get_spectrophore_data(molecule):
     """
     A Spectrophore is calculated as a vector of 48 numbers (in the case of a non-stereospecific Spectrophore.
     The 48 doubles are organised into 4 sets of 12 doubles each:
+
     * numbers 01-11: Spectrophore values calculated from the atomic partial charges;
     * numbers 13-24: Spectrophore values calculated from the atomic lipophilicity properties;
     * numbers 25-36: Spectrophore values calculated from the atomic shape deviations;
     * numbers 37-48: Spectrophore values calculated from the atomic electrophilicity properties;
 
-    Arguments
-    ---------
-    molecule: pybel.Molecule
+    Parameters
+    ----------
+    molecule : pybel.Molecule
 
     Returns
     -------
@@ -316,11 +383,11 @@ def solubility(molecule, log_value=True):
         MWT = Molecular Weight
         RB = Rotatable Bounds
         AP = Aromatic Proportion
-        ogP
+        ogP$
 
-    Arguments
-    ---------
-    molecule: pybel.Molecule
+    Parameters
+    ----------
+    molecule : pybel.Molecule
 
     Returns
     -------
@@ -347,21 +414,22 @@ def molecule_convex_hull_volume(molecule, forcefield='mmff94', steps=100):
     """
     Calculates the volume of the convex hull formed by the molecule.
 
-    Arguments
-    ---------
-    molecule: pybel.Molecule
+    Parameters
+    ----------
+    molecule : pybel.Molecule
     """
     assert isinstance(molecule, pybel.Molecule)
     assert forcefield in pybel.forcefields
     molecule.addh()
-    molecule.make3D(forcefield=forcefield, steps=steps)
+    if molecule.dim < 3:
+        molecule.make3D(forcefield=forcefield, steps=steps)
 
     xyz = [a.coords for a in molecule.atoms]
     return convex_hull_volume(xyz)
 
 
-def monte_carlo_volume(molecule, coords=None, tolerance=0.01, max_iterations=10000,
-                       step_size=1000, seed=time.time(), verbose=False):
+def monte_carlo_volume(molecule, coordinates=None, tolerance=1, max_iterations=10000, step_size=1000,
+                       seed=time.time(), verbose=False, forcefield='mmff94', steps=100):
     """
     Adapted from:
 
@@ -370,32 +438,39 @@ def monte_carlo_volume(molecule, coords=None, tolerance=0.01, max_iterations=100
 
     https://github.com/ghutchis/hutchison-cluster
 
-    Arguments
-    ---------
-    molecule: pybel.Molecule
+    Parameters
+    ----------
+    molecule : pybel.Molecule
         A molecule from pybel.
-    coords: list
+    coordinates : list
         A list of pre selected x,y,z coords. It must match the atoms order.
-    tolerance: float
+    tolerance : float
         The tolerance for convergence of the monte carlo abs(new_volume - volume) < tolerance
-    max_iterations: int
+    max_iterations : int
         Number of iterations before the algorithm starts
-    step_size: int
+    step_size : int
         Number of points to add each step.
-    seed: object
+    seed : object
         A valid seed for random.
-    verbose: bool
+    verbose : bool
         Print debug information if True.
+    forcefield : str
+        The force field to get a 3D molecule. (only if it is not 3D already)
+    steps : int
+        The number of steps used for the force field to get a 3D molecule. (only if it is not 3D already)
 
     Returns
     -------
     float
-        Molecule volume
-
+        Molecule volume.
     """
 
     assert isinstance(molecule, pybel.Molecule)
-    if coords is None:
-        coords = np.array([a.coords for a in molecule.atoms], dtype=np.float32)
+    if coordinates is None:
+        if molecule.dim < 3:
+            molecule.make3D(forcefield=forcefield, steps=steps)
+        coordinates = np.array([a.coords for a in molecule.atoms], dtype=np.float32)
+    else:
+        coordinates = np.array(coordinates, dtype=np.float32)
     vdw_radii = np.array([pybel.ob.etab.GetVdwRad(a.atomicnum) for a in molecule.atoms], dtype=np.float32)
-    return mc_vol(coords, vdw_radii, tolerance, max_iterations, step_size, seed, int(verbose))
+    return mc_vol(coordinates, vdw_radii, tolerance, max_iterations, step_size, seed, int(verbose))
