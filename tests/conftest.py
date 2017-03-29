@@ -46,6 +46,6 @@ def amino_acid(request):
     return request.param
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def essential_metabolites(model):
     return model.essential_metabolites()
