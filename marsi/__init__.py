@@ -12,7 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from ._version import get_versions
+
 from marsi import config
 from marsi import cli
 
 __all__ = ['config', 'cli']
+
+__version__ = get_versions()['version']
+
+del get_versions

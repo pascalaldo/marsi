@@ -13,6 +13,7 @@
 # limitations under the License.
 from __future__ import absolute_import, print_function
 
+import versioneer
 import numpy
 from setuptools import setup, find_packages
 from Cython.Build import cythonize
@@ -48,8 +49,9 @@ include_dirs = [numpy.get_include()]
 
 setup(
     name='marsi',
-    version="0.0.1",
-    packages=find_packages(exclude=("*.pyx")),
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
+    packages=find_packages(exclude=("*.pyx",)),
     install_requires=requirements,
     extras_require=extra_requirements,
     ext_modules=ext_modules,
