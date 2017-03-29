@@ -74,4 +74,4 @@ def test_convert_design(model, essential_metabolites):
 
     model.reactions.EX_o2_e.lower_bound = 1000
 
-    assert "acald" in flatten([target.id for target in replacement.metabolite_targets.values])
+    assert "actp" in [target.id for target in flatten(replacement.metabolite_targets.values)]
