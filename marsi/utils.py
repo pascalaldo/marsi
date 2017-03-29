@@ -73,6 +73,26 @@ def unpickle_large(file_path, progress=False):
 
 
 def frange(start, stop=None, steps=10):
+    """
+    Float range generator.
+
+    Generates *steps* equally separated between *start* and *stop*.
+    If *stop* is None, the values are between 0 and *start*
+
+    Parameters
+    ----------
+    start : float
+        The initial value.
+    stop : float
+        The final value.
+    steps : int
+        Number of values to generate.
+
+    Returns
+    -------
+    generator
+        A generator that yields float.
+    """
     if stop is None:
         stop = start
         start = 0
@@ -81,10 +101,22 @@ def frange(start, stop=None, steps=10):
     logger.debug("Step size %f" % step_size)
     for i in range(steps):
         logger.debug("Iteration %i: %f" % (i+1, i * step_size))
-        yield i * step_size
+        yield start + i * step_size
 
 
 def unique(l):
+    """
+    Removes repeated values from a list.
+
+    Parameters
+    ----------
+    l: list
+
+    Returns
+    -------
+    list
+        The same list with only unique values.
+    """
     s = set()
     n = 0
     for x in l:
@@ -95,7 +127,7 @@ def unique(l):
     del l[n:]
 
 
-def timing(debug=False):
+def timing(debug=False):  # pragma: no cover
     def function_wrapper(func):
         if debug:
             def debug_wrap_func(*args, **kwargs):
@@ -137,5 +169,8 @@ def gunzip(file):
         shutil.copyfileobj(f_in, f_out)
 
 
-def search_metabolites(model, species_id):
-    return model.metabolites.query(lambda mid: mid[:-2] == species_id, attribute='id')
+def search_metabolites(model, species_id, ignore_external=True):
+    if ignore_external:
+        return model.metabolites.query(lambda mid: mid[:-2] == species_id and mid[-2:] != "_e", attribute='id')
+    else:
+        return model.metabolites.query(lambda mid: mid[:-2] == species_id, attribute='id')
