@@ -27,13 +27,13 @@ try:  # pragma: no cover
 
     periodic_table = Chem.GetPeriodicTable()
 except ImportError:
-    class RdkitFail:
+    class RDKitFail:
         def __dir__(self):
             return ["rdkit_not_available"]
 
         def __getattr__(self, item):
-            return "RDKit is not installed"
-    rdkit = RdkitFail()
+            raise NotImplementedError("RDKit is not installed")
+    rdkit = RDKitFail()
     periodic_table = None
 
 
