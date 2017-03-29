@@ -52,5 +52,5 @@ tests/.coverage
 tests/.benchmarks
 
 # My stuf
-notebooks-old
+notebooks-old/*
 notebooks/.ipynb_checkpoints
