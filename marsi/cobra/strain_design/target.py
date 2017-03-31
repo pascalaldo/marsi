@@ -13,9 +13,9 @@
 # limitations under the License.
 
 from cameo.core.target import Target
+from cameo.util import in_ipnb
 
-from marsi.cobra.flux_analysis.manipulation import knockout_metabolite, inhibit_metabolite, compete_metabolite, \
-    apply_anti_metabolite
+from marsi.cobra.flux_analysis.manipulation import knockout_metabolite, apply_anti_metabolite
 from marsi.utils import search_metabolites
 
 
@@ -67,7 +67,10 @@ class AntiMetaboliteManipulationTarget(Target):
         return "&#x2623;(%.3f)-%s" % (self.fraction, self.id)
 
     def __str__(self):
-        return b'\xe2\x98\xa3'.decode('utf-8') + "(%.3f)-%s" % (self.fraction, self.id)
+        if in_ipnb():
+            return self._repr_html_()
+        else:
+            return b'\xe2\x98\xa3'.decode('utf-8') + "(%.3f)-%s" % (self.fraction, self.id)
 
     def __repr__(self):
         return "<AntiMetaboliteManipulation %s (%.3f)>" % (self.id, self.fraction)
@@ -82,7 +85,10 @@ class MetaboliteKnockoutTarget(AntiMetaboliteManipulationTarget):
             knockout_metabolite(model, metabolite, self.ignore_transport, self.allow_accumulation, time_machine)
 
     def __str__(self):
-        return b'\xe2\x98\xa3'.decode('utf-8') + "-%s" % self.id
+        if in_ipnb():
+            return self._repr_html_()
+        else:
+            return b'\xe2\x98\xa3'.decode('utf-8') + "-%s" % self.id
 
     def __repr__(self):
         return "<MetaboliteKnockout %s>" % self.id
