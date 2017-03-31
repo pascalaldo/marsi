@@ -147,9 +147,98 @@ def find_anti_metabolite_modulation(reaction, fold_change, essential_metabolites
     return result
 
 
-def replace_in_design(model, strain_design, fitness, objective_function, simulation_method, simulation_kwargs=None,
-                      ignore_metabolites=None, ignore_transport=True, allow_accumulation=True,
-                      essential_metabolites=None, max_loss=0.2):
+def replace_strain_design_results(model, results, objective_function, simulation_method, simulation_kwargs=None,
+                                  ignore_metabolites=None, ignore_transport=True, allow_accumulation=True,
+                                  essential_metabolites=None, max_loss=0.2):
+    """
+    Converts a StrainDesignMethodResult into a DataFrame of possible substitutions.
+
+    Parameters
+    ----------
+    model : cobra.Model
+        A COBRA model.
+    results : cameo.core.strain_design.StrainDesignMethodResult
+        The results of a strain design method.
+    objective_function : cameo.strain_design.heuristic.evolutionary.objective_functions.ObjectiveFunction
+        The cellular objective to evaluate.
+    simulation_method : cameo.flux_analysis.simulation.fba or equivalent
+        The method to compute a flux distribution using a COBRA model.
+    simulation_kwargs : dict
+        The arguments for the simulation_method.
+    ignore_metabolites : list
+        A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc).
+    ignore_transport : bool
+        If False, also knockout the transport reactions.
+    allow_accumulation : bool
+        If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.
+    essential_metabolites : list
+        A list of essential metabolites.
+    max_loss : float
+        A number between 0 and 1 for how much the fitness is allowed to drop with the metabolite target.
+
+    Returns
+    -------
+    pandas.DataFrame
+        A data frame with the possible replacements.
+    """
+
+    if simulation_kwargs is None:
+        simulation_kwargs = {}
+
+    replacements = DataFrame()
+    for index, design in enumerate(results):
+        with TimeMachine() as tm:
+            design.apply(model, tm)
+            solution = simulation_method(model, **simulation_kwargs)
+            fitness = objective_function(model, solution, design.targets)
+        if fitness <= 0:
+            continue
+
+        res = replace_design(model, design, fitness, objective_function, simulation_method,
+                             simulation_kwargs=simulation_kwargs, ignore_metabolites=ignore_metabolites,
+                             ignore_transport=ignore_transport, allow_accumulation=allow_accumulation,
+                             essential_metabolites=essential_metabolites, max_loss=max_loss)
+
+        res['index'] = index
+        replacements = replacements.append(res, ignore_index=True)
+
+    return replacements
+
+
+def replace_design(model, strain_design, fitness, objective_function, simulation_method, simulation_kwargs=None,
+                   ignore_metabolites=None, ignore_transport=True, allow_accumulation=True,
+                   essential_metabolites=None, max_loss=0.2):
+    """
+    Converts a StrainDesign into a DataFrame of possible substitutions.
+
+    Parameters
+    ----------
+    model: cobra.Model
+        A COBRA model.
+    strain_design : cameo.core.strain_design.StrainDesign
+        The results of a strain design method.
+    objective_function : cameo.strain_design.heuristic.evolutionary.objective_functions.ObjectiveFunction
+        The cellular objective to evaluate.
+    simulation_method : cameo.flux_analysis.simulation.fba or equivalent
+        The method to compute a flux distribution using a COBRA model.
+    simulation_kwargs : dict
+        The arguments for the simulation_method.
+    ignore_metabolites : list
+        A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc).
+    ignore_transport : bool
+        If False, also knockout the transport reactions.
+    allow_accumulation : bool
+        If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.
+    essential_metabolites : list
+        A list of essential metabolites.
+    max_loss : float
+        A number between 0 and 1 for how much the fitness is allowed to drop with the metabolite target.
+
+    Returns
+    -------
+    pandas.DataFrame
+        A data frame with the possible replacements.
+    """
 
     if simulation_kwargs is None:
         simulation_kwargs = {}
@@ -219,11 +308,11 @@ def replace_in_design(model, strain_design, fitness, objective_function, simulat
                             new_solution = simulation_method(model, **simulation_kwargs)
                             new_fitness = objective_function(model, new_solution, all_targets)
                             logger.debug("New fitness %s" % new_fitness)
-                            logger.debug("solver objective value %s" % new_solution.objective_value)
+                            logger.debug("Solver objective value %s" % new_solution.objective_value)
                             for r in objective_function.reactions:
                                 logger.debug("%s: %f" % (r, new_solution[r]))
                         except SolveError:
-                            logger.debug("Didn't solve %s" % species_id)
+                            logger.debug("Cannot solve %s" % species_id)
                             new_fitness = 0
                         finally:
                             if new_fitness not in fitness2targets:
@@ -240,7 +329,6 @@ def replace_in_design(model, strain_design, fitness, objective_function, simulat
                                    if valid_loss(fit, base_fitness)}
 
                 if len(fitness2targets) == 0:
-                    # Put target back to test in other combinations.
                     logger.debug("Return target %s, no replacement found" % test_target)
                 else:
                     for fit, anti_mets in fitness2targets.items():
@@ -251,7 +339,7 @@ def replace_in_design(model, strain_design, fitness, objective_function, simulat
             except (ValueError, KeyError) as e:
                 logger.error(str(e))
                 continue
-            finally:
+            finally:  # put the target back on the list.
                 test_targets.append(test_target)
 
     return anti_metabolites
@@ -264,20 +352,21 @@ def convert_target(model, target, essential_metabolites, ignore_transport=True,
 
     Parameters
     ----------
-    model: cobra.Model
+    model : cobra.Model
         A COBRA model
-    target: ReactionModulationTarget, ReactionKnockoutTarget
+    target : ReactionModulationTarget, ReactionKnockoutTarget
         The flux from the reference state (0 if unknown)
-    ignore_metabolites: list
+    ignore_metabolites : list
         A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc.)
-    ignore_transport: bool
+    ignore_transport : bool
         If False, also knockout the transport reactions.
-    allow_accumulation: bool
+    allow_accumulation : bool
         If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.
-    reference: dict
+    reference : dict
         A dictionary containing the flux values of a reference flux distribution.
-    essential_metabolites: list
+    essential_metabolites : list
         A list of essential metabolites
+
     Returns
     -------
     dict
