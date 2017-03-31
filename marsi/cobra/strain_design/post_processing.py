@@ -325,6 +325,7 @@ def replace_design(model, strain_design, fitness, objective_function, simulation
                                 logger.debug("Applying %s yields %f (loss: %f)" %
                                              (species_id, new_fitness, 1))
 
+                # keep only targets that keep the fitness above the valid loss regarding the original fitness.
                 fitness2targets = {fit: anti_mets for fit, anti_mets in fitness2targets.items()
                                    if valid_loss(fit, base_fitness)}
 
