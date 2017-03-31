@@ -22,6 +22,8 @@ from cameo.strain_design.heuristic.evolutionary.evaluators import TargetEvaluato
 from cameo.strain_design.heuristic.evolutionary.decoders import SetDecoder
 from cameo.util import TimeMachine
 
+from marsi.cobra.flux_analysis.manipulation import knockout_metabolite
+from marsi.utils import search_metabolites
 
 logger = logging.getLogger(__name__)
 
@@ -30,24 +32,87 @@ __all__ = ["MetaboliteKnockoutOptimization"]
 METABOLITE_KNOCKOUT_TYPE = "metabolite knockout"
 
 
-class AntimetaboliteEvaluator(TargetEvaluator):
+class MetaboliteDecoder(SetDecoder):
+    """
+    Decoder for set representation. Converts an integer set into metabolites.
+
+    Parameters
+    ----------
+
+    representation : list
+        Reactions.
+    model : SolverBasedModel
+
+    """
+
+    def __init__(self, representation, model, *args, **kwargs):
+        super(MetaboliteDecoder, self).__init__(representation, model, *args, **kwargs)
+
+    def __call__(self, individual, flat=False):
+        """
+        Parameters
+        ----------
+
+        individual: list
+            a list of integers
+        flat: bool
+            if True, returns strings. Otherwise returns Reaction.
+
+        Returns
+        -------
+        list
+            Decoded representation
+
+        """
+        metabolites = tuple(self.representation[index] for index in individual)
+        return metabolites
+
+
+class AntiMetaboliteEvaluator(TargetEvaluator):
     def __init__(self, essential_metabolites=None, inhibition_fraction=.0, competition_fraction=.0, *args, **kwargs):
-        super(AntimetaboliteEvaluator, self).__init__(*args, **kwargs)
+        super(AntiMetaboliteEvaluator, self).__init__(*args, **kwargs)
         self.essential_metabolites = essential_metabolites or []
         self.inhibition_fraction = inhibition_fraction
         self.competition_fraction = competition_fraction
 
     def _evaluate_individual(self, individual):
-        from marsi.processing.models import apply_anti_metabolite
-        from marsi.utils import search_metabolites
+        return self.evaluate_individual(individual)
+
+    def evaluate_individual(self, individual):
+        from marsi.cobra.flux_analysis.manipulation import apply_anti_metabolite
 
         specie_ids = self.decoder(individual)
         metabolite_targets = [search_metabolites(self.model, val) for val in specie_ids]
         with TimeMachine() as tm:
             for metabolites in metabolite_targets:
-                apply_anti_metabolite(metabolites, self.essential_metabolites, self.simulation_kwargs['reference'],
-                                      self.inhibition_fraction, self.competition_fraction, time_machine=tm)
+                apply_anti_metabolite(self.model, metabolites, self.essential_metabolites,
+                                      self.simulation_kwargs['reference'], self.inhibition_fraction,
+                                      self.competition_fraction, time_machine=tm)
 
+            try:
+                solution = self.simulation_method(self.model, **self.simulation_kwargs)
+                return self.objective_function(self.model, solution, metabolite_targets)
+            except SolveError:
+                return self.objective_function.worst_fitness()
+
+
+class MetaboliteKnockoutEvaluator(TargetEvaluator):
+    def __init__(self, essential_metabolites=None, *args, **kwargs):
+        super(MetaboliteKnockoutEvaluator, self).__init__(*args, **kwargs)
+        self.essential_metabolites = essential_metabolites or []
+
+    def _evaluate_individual(self, individual):
+        return self.evaluate_individual(individual)
+
+    def evaluate_individual(self, individual):
+
+        specie_ids = self.decoder(individual)
+        metabolite_targets = [search_metabolites(self.model, val) for val in specie_ids]
+        with TimeMachine() as tm:
+            for metabolites in metabolite_targets:
+                for metabolite in metabolites:
+                    knockout_metabolite(self.model, metabolite, ignore_transport=True,
+                                        allow_accumulation=True, time_machine=tm)
             try:
                 solution = self.simulation_method(self.model, **self.simulation_kwargs)
                 return self.objective_function(self.model, solution, metabolite_targets)
@@ -90,11 +155,11 @@ class MetaboliteKnockoutOptimization(TargetOptimization):
 
     See Also
     --------
-    *inspyred.ec
-    *cameo.config.default_view
+    inspyred
+    cameo.config.default_view
 
-    Examples
-    --------
+    Example
+    -------
     >>> from cameo import models
     >>> model = models.bigg.iJO1366
     >>> from cameo.strain_design.heuristic.evolutionary.objective_functions import biomass_product_coupled_yield
@@ -106,7 +171,7 @@ class MetaboliteKnockoutOptimization(TargetOptimization):
 
     """
     def __init__(self, metabolites=None, essential_metabolites=None, n_carbons=2, compartments="c",
-                 inhibition_fraction=.0, competition_fraction=0.2, skip_essential_metabolites=False, *args, **kwargs):
+                 skip_essential_metabolites=False, *args, **kwargs):
         super(MetaboliteKnockoutOptimization, self).__init__(*args, **kwargs)
 
         if compartments is None:
@@ -130,16 +195,14 @@ class MetaboliteKnockoutOptimization(TargetOptimization):
 
         self.representation = list(self.metabolites)
         self._target_type = METABOLITE_KNOCKOUT_TYPE
-        self._decoder = SetDecoder(self.representation, self.model)
-        self._evaluator = AntimetaboliteEvaluator(
+        self._decoder = MetaboliteDecoder(self.representation, self.model)
+        self._evaluator = MetaboliteKnockoutEvaluator(
             model=self.model,
             decoder=self._decoder,
             objective_function=self.objective_function,
             simulation_method=self._simulation_method,
             simulation_kwargs=self._simulation_kwargs,
-            essential_metabolites=self.essential_metabolites,
-            inhibition_fraction=inhibition_fraction,
-            competition_fraction=competition_fraction)
+            essential_metabolites=self.essential_metabolites)
 
     @TargetOptimization.simulation_method.setter
     def simulation_method(self, simulation_method):
