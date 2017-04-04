@@ -14,7 +14,7 @@
 
 from cameo.parallel import SequentialView
 
-try:
+try:  # pragma: no cover
     import pyopencl as cl
     MF = cl.mem_flags
     cl_available = True
@@ -31,7 +31,7 @@ import numpy as np
 from pandas import DataFrame
 
 from marsi.utils import timing
-from marsi.algorithms import _nearest_neighbors_ext as nn_ext
+from marsi.nearest_neighbors import model_ext
 
 # Tanimoto coefficient calculation is implemented based on to OpenBabel's implementation
 # https://github.com/openbabel/openbabel/blob/master/include/openbabel/fingerprint.h#L86
@@ -65,6 +65,20 @@ __kernel void nn(__global float *distances, __global int *fingerprint, __constan
 
 
 class KNN(object):
+    """
+    K-Nearest Neighbors runner object.
+
+    It is assigned to a model and runs the `knn` function.
+
+    Attributes
+    ----------
+    fp : numpy.array
+        A numpy.array with the fingerprint values.
+    k : int
+        The maximum number of neighbors to retrieve.
+    mode : str
+        'native' to run python implementation or 'cl' to run OpenCL implementation if available.
+    """
     def __init__(self, fingerprint, k, mode):
         self.fp = np.array(list(fingerprint), dtype=np.int32)
         self.k = k
@@ -82,8 +96,23 @@ class KNN(object):
 
 
 class RNN(object):
+    """
+    R-Nearest Neighbors runner object.
+
+    It is assigned to a model and runs the `rnn` function.
+
+    Attributes
+    ----------
+    fp : numpy.array
+        A numpy.array with the fingerprint values.
+    radius : float
+        A distance radius ]0, 1].
+    mode : str
+        'native' to run python implementation or 'cl' to run OpenCL implementation if available.
+    """
     def __init__(self, fingerprint, radius, mode):
         self.fp = np.array(list(fingerprint), dtype=np.int32)
+        assert 0 < radius <= 1
         self.radius = radius
         self.mode = mode
 
@@ -99,6 +128,18 @@ class RNN(object):
 
 
 class Distance(object):
+    """
+    Distance runner object.
+
+    It is assigned to a model and runs the `distance` function.
+
+    Attributes
+    ----------
+    fp : numpy.array
+        A numpy.array with the fingerprint values.
+    mode : str
+        'native' to run python implementation or 'cl' to run OpenCL implementation if available.
+    """
     def __init__(self, fingerprint, mode):
         self.fp = np.array(list(fingerprint), dtype=np.int32)
         self.mode = mode
@@ -115,10 +156,36 @@ class Distance(object):
 
 
 class DistributedNearestNeighbors(object):
+    """
+    Nearest Neighbors distributed implementation.
+
+    Attributes
+    ----------
+    index : numpy.array
+        The index of all entries across multiple models.
+    """
     def __init__(self, nns):
         self._nns = nns
 
     def k_nearest_neighbors(self, fingerprint, k=5, mode="native", view=SequentialView()):
+        """
+        Retrieves the K nearest neighbors to a fingerprint.
+
+        Parameters
+        ----------
+        fingerprint : list, np.array, tuple
+            A fingerprint to use as query.
+        k : int
+            The number of neighbors to retrieve.
+        mode : str
+            'native' to run python implementation or 'cl' to run OpenCL implementation if available.
+        view : cameo.parallel.ParallelView, cameo.parallel.SequentialView
+            A parallel mode runner.
+        Returns
+        -------
+        dict
+            A dictionary with the InChI Key as key and the distance as value.
+        """
         func = KNN(fingerprint, k, mode)
         results = view.map(func, self._nns)
         neighbors = {}
@@ -126,6 +193,24 @@ class DistributedNearestNeighbors(object):
         return dict(sorted(neighbors.items(), key=lambda x: x[1])[:k])
 
     def radius_nearest_neighbors(self, fingerprint, radius=0.25, mode="native", view=SequentialView()):
+        """
+        Retrieves the nearest neighbors to a fingerprint within a distance radius.
+
+        Parameters
+        ----------
+        fingerprint : list, np.array, tuple
+            A fingerprint to use as query.
+        radius : float
+            A distance radius ]0, 1].
+        mode : str
+            'native' to run python implementation or 'cl' to run OpenCL implementation if available.
+        view : cameo.parallel.ParallelView, cameo.parallel.SequentialView
+            A parallel mode runner.
+        Returns
+        -------
+        dict
+            A dictionary with the InChI Key as key and the distance as value.
+        """
         func = RNN(fingerprint, radius, mode)
         results = view.map(func, self._nns)
         neighbors = {}
@@ -133,6 +218,22 @@ class DistributedNearestNeighbors(object):
         return neighbors
 
     def distances(self, fingerprint, mode="native", view=SequentialView()):
+        """
+        Retrieves the distance a fingerprint and all elements in the model.
+
+        Parameters
+        ----------
+        fingerprint : list, np.array, tuple
+            A fingerprint to use as query.
+        mode : str
+            'native' to run python implementation or 'cl' to run OpenCL implementation if available.
+        view : cameo.parallel.ParallelView, cameo.parallel.SequentialView
+            A parallel mode runner.
+        Returns
+        -------
+        dict
+            A dictionary with the InChI Key as key and the distance as value.
+        """
         func = Distance(fingerprint, mode)
         results = view.map(func, self._nns)
         distances = {}
@@ -150,14 +251,40 @@ class DistributedNearestNeighbors(object):
         return np.concatenate([nn.index for nn in self._nns])
 
     def distance_matrix(self, mode="native"):
+        """
+        Generates a distance matrix between all elements in the models.
+
+        Parameters
+        ----------
+        mode : str
+            'native' to run python implementation or 'cl' to run OpenCL implementation if available.
+
+        Returns
+        -------
+        numpy.array
+            The distance matrix.
+        """
         index = self.index
-        matrix = np.zeros((len(index), len(index)), dtype=np.float)
-        for i in range(len(index)):
+        size = len(index)
+        matrix = np.zeros((size, size), dtype=np.float)
+        for i in range(size):
             matrix[i] = self.distances(self.feature(i), mode=mode)
 
         return matrix
 
     def feature(self, index):
+        """
+        Retrieves the fingerprint at a given index. The index is global for the ensemble of models.
+
+        Returns
+        -------
+        numpy.array
+            The fingerprint.
+
+        Raises
+        ------
+        IndexError
+        """
         total = len(self)
         if index >= total:
             raise IndexError(index)
@@ -175,7 +302,7 @@ class DistributedNearestNeighbors(object):
         return sum(len(nn) for nn in self._nns)
 
 
-class NearestNeighbors(nn_ext.CNearestNeighbors):
+class NearestNeighbors(model_ext.CNearestNeighbors):
     def __init__(self, index, features, features_lengths, use_cl=False, opencl_context=None):
         features = np.concatenate(features).astype(np.int32)
         features_lengths = np.array(features_lengths, dtype=np.int32)
@@ -233,20 +360,20 @@ class NearestNeighbors(nn_ext.CNearestNeighbors):
         """
         K-Nearest Neighbors
 
-        Attributes
+        Parameters
         ----------
 
-        fingerprint: ndarray
+        fingerprint : ndarray
             The fingerprint to search for.
-        k: int
+        k : int
             The number of neighbors to return.
-        mode: str
-            'native' to run python implementation or 'cl' to run OpenCL implementation if available
+        mode : str
+            'native' to run python implementation or 'cl' to run OpenCL implementation if available.
 
         Returns
         -------
-            dict
-                (Index --> Distance)
+        dict
+            (Index --> Distance)
 
         """
         distances = self.distances(fingerprint, mode)
@@ -257,20 +384,19 @@ class NearestNeighbors(nn_ext.CNearestNeighbors):
         """
         Radius-Nearest Neighbors
 
-        Attributes
+        Parameters
         ----------
-
-        fingerprint: ndarray
+        fingerprint : ndarray
             The fingerprint to search for.
-        r: float
+        radius : float
             The maximum distance of neighbors to return.
-        mode: str
-            'native' to run python implementation or 'cl' to run OpenCL implementation if available
+        mode : str
+            'native' to run python implementation or 'cl' to run OpenCL implementation if available.
 
         Returns
         -------
-            dict
-                (Index --> Distance)
+        dict
+            (Index --> Distance)
 
         """
         distances = self.distances(fingerprint, mode)
@@ -334,6 +460,14 @@ class NearestNeighbors(nn_ext.CNearestNeighbors):
 
     @property
     def data_frame(self):
+        """
+        Create a DataFrame with this model.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A data frame.
+        """
         df = DataFrame([self[i] for i in range(len(self))],
                        index=["fingerprint"], columns=self._index)
         return df.T
