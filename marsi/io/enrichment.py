@@ -17,7 +17,6 @@ import pubchempy
 from bioservices.chebi import ChEBI
 from bioservices.kegg import KEGG
 from bioservices.uniprot import UniProt
-from math import ceil
 
 from marsi.chemistry.openbabel import mol_str_to_inchi
 
@@ -51,9 +50,9 @@ try:
         """
         Queries ChEBI using InChI Key.
 
-        Arguments
-        ---------
-        metabolite: Metabolite
+        Parameters
+        ----------
+        metabolite : Metabolite
 
         Returns
         -------
@@ -70,9 +69,9 @@ try:
         """
         Queries PubChem Compound using InChI Key.
 
-        Arguments
-        ---------
-        metabolite: Metabolite
+        Parameters
+        ----------
+        metabolite : Metabolite
 
         Returns
         -------
@@ -86,6 +85,26 @@ try:
             raise KeyError("%s not found in PubChem Compound" % metabolite.inchi_key)
 
 except Exception:
+    from warnings import warn
     __all__ = ['no_services_available']
-
     no_services_available = "Please check your internet connection"
+
+    def map_uniprot_from_pdb_ids(pdb_ids):
+        raise RuntimeError(no_services_available)
+
+
+    def inchi_from_chebi(chebi_id):
+        raise RuntimeError(no_services_available)
+
+
+    def inchi_from_kegg(kegg_id):
+        raise RuntimeError(no_services_available)
+
+
+    def find_chebi_id(metabolite):
+        raise RuntimeError(no_services_available)
+
+    def find_pubchem_id(metabolite):
+        raise RuntimeError(no_services_available)
+
+    warn(no_services_available)
