@@ -47,6 +47,8 @@ nosetests.xml
 
 docs/_build
 docs/xml
+docs/apidoc_output
+docs/examples
 
 tests/.coverage
 tests/.benchmarks
