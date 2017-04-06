@@ -19,7 +19,7 @@ from pandas import DataFrame
 from marsi.utils import BIOMASS_RE
 from marsi.cobra.strain_design import RandomMutagenesisDesign, ALEDesign
 from marsi.cobra.strain_design.design_methods import CURRENCY_METABOLITES
-from marsi.cobra.strain_design.post_processing import replace_knockouts
+from marsi.cobra.strain_design.post_processing import replace_design
 from marsi.utils import default_carbon_sources, unique
 
 
@@ -187,7 +187,9 @@ class OptimizationController(CementBaseController):
 
         objective_function = biomass_product_coupled_yield(biomass, target, carbon_source)
 
-        result = replace_knockouts(model, knockouts, objective_function, pfba, {}, CURRENCY_METABOLITES)
+        knockouts['designs'] = knockouts.reactions.apply(lambda s: s)
+
+        result = replace_design(model, knockouts, objective_function, pfba, {}, CURRENCY_METABOLITES)
         result.to_csv(output_file)
 
         print("Finished")

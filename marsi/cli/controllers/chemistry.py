@@ -13,20 +13,24 @@
 # limitations under the License.
 from numbers import Number
 
+import os
+import pybel
 import six
 from cement.core.controller import CementBaseController, expose
 from pandas import DataFrame
+from pymongo.errors import ServerSelectionTimeoutError
 
-from marsi import config
-from marsi.algorithms.nearest_neighbors import load_nn_model
+from marsi import config, utils
+from marsi.nearest_neighbors import load_nearest_neighbors_model, build_feature_table
 from marsi.chemistry import openbabel as ob, rdkit as rd
 from mongoengine import connect
 
 from marsi.io import write_excel_file
-from marsi.io.mongodb import Metabolite
+from marsi.io.mongodb import Metabolite, Database
 
 from IProgress import ProgressBar, Percentage, ETA, Bar
 
+from marsi.utils import pickle_large
 
 OUTPUT_WRITERS = {
     'csv': lambda df, path, *args: df.to_csv(path),
@@ -50,7 +54,7 @@ class ChemistryController(CementBaseController):
             (['--inchi'], dict(help="The metabolite InChI to search")),
             (['--sdf'], dict(help="The metabolite SDF to search")),
             (['--mol'], dict(help="The metabolite MOL to search")),
-            (['--fingerprint-format', '-fp'], dict(help="The fingerprint format", default='fp4', action='store')),
+            (['--fingerprint-format', '-fp'], dict(help="The fingerprint format", default='maccs', action='store')),
             (['--neighbors', '-k'], dict(help="Filter the first K hits")),
             (['--radius', '-r'], dict(help="Filter hits within R distance radius")),
             (['--atoms-weight', '-aw'], dict(help="The weight of the atoms for structural similarity")),
@@ -63,6 +67,43 @@ class ChemistryController(CementBaseController):
     def default(self):
         print("Welcome to MARSI chemistry package")
         print("Here you can find the tools to find and sort analogs for metabolites")
+
+    @expose(help="Build a nearest neighbors model with the specified fingerprints")
+    def nearest_neighbors_model(self):
+        connect(config.db_name)
+        fpformat = self.app.pargs.fingerprint_format
+        if fpformat not in pybel.fps:
+            print("Invalid 'fingerprint-format' %s. Use of of %s" % (fpformat, ", ".join(pybel.fps)))
+
+        solubility = "high"
+
+        print("This process will take several hours, please confirm the following information:")
+        print("+--------------------+---------------+")
+        print("| Fingerprint format |        %s |" % fpformat.rjust(6))
+        print("+--------------------+---------------+")
+        print("|         Solubility |        %s |" % solubility.rjust(6))
+        print("+--------------------+---------------+")
+
+        value = input("Do you want to continue y/n [y]: ")
+
+        if len(value) == 0:
+            value = "y"
+
+        if value != "y":
+            print("Cancelled")
+            exit(1)
+
+        model_file = os.path.join(utils.data_dir, "fingerprints_default_%s_sol_%s.pickle" % (fpformat, solubility))
+        print("File will be saved as %s" % model_file)
+
+        try:
+            indices, features, lengths = build_feature_table(Database.metabolites, fpformat=fpformat,
+                                                             solubility=solubility, chunk_size=1e5)
+            pickle_large((indices, features, lengths), model_file, progress=True)
+            print("Completed")
+        except ServerSelectionTimeoutError:
+            print("Error: cannot connect to database. Make sure your mongodb is running and accessible.")
+            exit(1)
 
     @expose(help="Find analogs for a metabolite")
     def find_analogs(self):
@@ -121,7 +162,7 @@ class ChemistryController(CementBaseController):
         try:
             fpformat = self.app.pargs.fingerprint_format
             fingerprint = ob_molecule.calcfp(fpformat).fp
-            fingerprint_db = load_nn_model(fpformat=fpformat)
+            fingerprint_db = load_nearest_neighbors_model(fpformat=fpformat)
         except ValueError as e:
             print(e)
             exit(1)
