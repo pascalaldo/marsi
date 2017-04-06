@@ -31,9 +31,8 @@ addons:
     - libglpk-dev
     - glpk-utils
     - pandoc
-    - openbabel
     - libopenbabel-dev
-    - rdkit
+    - python-rdkit
 before_install:
 - pip install pip --upgrade
 - pip install codecov
