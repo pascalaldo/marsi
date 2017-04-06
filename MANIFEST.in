@@ -1,0 +1,2 @@
+include versioneer.py
+include marsi/_version.py
