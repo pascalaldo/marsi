@@ -11,23 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import zlib
 
 import pybel
 from cameo.parallel import SequentialView
-from pandas import DataFrame
-from numpy import ndarray, zeros, array
-
-from mongoengine import Document, StringField, ListField, ReferenceField, MapField, IntField, BinaryField, FloatField, \
+from mongoengine import Document, StringField, ListField, ReferenceField, MapField, IntField, FloatField, \
     BooleanField, ValidationError
-
 from mongoengine.base import BaseField
+from numpy import ndarray, zeros, array
+from pandas import DataFrame
 
-from marsi.io.plots import summary_plot
 from marsi.chemistry import INCHI_KEY_REGEX, openbabel, rdkit
+from marsi.io.enrichment import map_uniprot_from_pdb_ids
+from marsi.io.plots import summary_plot
 from marsi.utils import INCHI_KEY_TYPE, unique
-from marsi.algorithms.enrichment import map_uniprot_from_pdb_ids
-
 
 __all__ = ['Database', 'Metabolite']
 
@@ -57,20 +53,6 @@ class PointField(BaseField):
             return value
 
         return super(PointField, self).prepare_query_value(op, value)
-
-
-class CompressedStringField(BinaryField):
-    def to_mongo(self, value):
-        if value is None:
-            super(CompressedStringField, self).to_mongo(value)
-        else:
-            binary = zlib.compress(bytes(value, ENCODING))
-            super(CompressedStringField, self).to_mongo(binary)
-
-    def to_python(self, value):
-        if value is not None:
-            binary = zlib.decompress(value)
-            return binary.decode(ENCODING)
 
 
 class ColumnVector(object):
@@ -146,6 +128,12 @@ class Metabolite(Document):
     _fingerprints = MapField(ListField(IntField()))
     analog = BooleanField(default=False)
     force_field_coordinates = ListField(PointField())
+    sdf = StringField()
+
+    _atoms = IntField(min_value=2)
+    _bonds = IntField(min_value=1)
+
+    _volume = FloatField()
 
     @classmethod
     def summary(cls, plot=True, iterator=iter):
@@ -191,8 +179,8 @@ class Metabolite(Document):
         """
         Retrieves a metabolite using the InChI Key.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         inchi_key: str
             A valid InChi Key.
 
@@ -216,8 +204,8 @@ class Metabolite(Document):
         """
         Search the metabolites database using references from external database.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         reference: str
             A reference.
 
@@ -246,10 +234,29 @@ class Metabolite(Document):
             metabolite = cls(inchi_key=openbabel.mol_to_inchi_key(molecule),
                              inchi=openbabel.mol_to_inchi(molecule),
                              references=references,
-                             analog=analog)
+                             analog=analog,
+                             sdf=openbabel.molecule_to_sdf(molecule))
         metabolite.save()
 
         return metabolite
+
+    @property
+    def num_atoms(self):
+        if self._atoms is None:
+            molecule = self.molecule('openbabel', get3d=False)
+            self._atoms = molecule.OBMol.NumAtoms()
+            self._bonds = molecule.OBMol.NumBonds()
+            self.save()
+        return self._atoms
+
+    @property
+    def num_bonds(self):
+        if self._bonds is None:
+            molecule = self.molecule('openbabel', get3d=False)
+            self._atoms = molecule.OBMol.NumAtoms()
+            self._bonds = molecule.OBMol.NumBonds()
+            self.save()
+        return self._bonds
 
     @property
     def atom_coordinates(self):
@@ -261,15 +268,40 @@ class Metabolite(Document):
         return self.force_field_coordinates
 
     @property
+    def formula(self):
+        return self.molecule('openbabel', get3d=False).formula
+
+
+    @property
     def volume(self):
         mol = self.molecule(library='openbabel')
-        return openbabel.monte_carlo_volume(mol, self.atom_coordinates, tolerance=0.01, max_iterations=1000)
+        return openbabel.monte_carlo_volume(mol, self.atom_coordinates, tolerance=1, max_iterations=100)
 
-    def molecule(self, library='openbabel'):
+    def molecule(self, library='openbabel', get3d=True):
         if library == 'openbabel':
-            return openbabel.inchi_to_molecule(str(self))
+            if get3d and self.sdf is not None:
+                molecule = openbabel.sdf_to_molecule(self._sdf, from_file=False)
+                molecule.title = ""
+                return molecule
+            else:
+                return openbabel.inchi_to_molecule(str(self))
         elif library == 'rdkit':
-            return rdkit.inchi_to_molecule(str(self))
+            if get3d and self.sdf is not None:
+                return rdkit.sdf_to_molecule(self._sdf, from_file=False)
+            else:
+                return rdkit.inchi_to_molecule(str(self))
+        else:
+            raise ValueError("Invalid library: %s, please choose between `openbabel` or `rdkit`")
+
+    # NOTE: Hack to get SDF files correct
+    @property
+    def _sdf(self):
+        if self.sdf is None:
+            raise ValueError("SDF is not available")
+        if self.sdf.startswith("OpenBabel"):
+            return "QuickFix1234\n" + self.sdf
+        else:
+            return self.sdf
 
     def fingerprint(self, fpformat='ecfp10', hash=False, bits=1024):
         if fpformat not in self._fingerprints:
@@ -284,14 +316,6 @@ class Metabolite(Document):
             return openbabel.fingerprint_to_bits(pybel.Fingerprint(uint_vector), bits=bits)
         else:
             return array(self._fingerprints[fpformat])
-
-    @property
-    def sdf(self):
-        if self._sdf is None:
-            # TODO: retrieve best sequence
-            return None
-        else:
-            return self._sdf
 
     @property
     def solubility(self):
