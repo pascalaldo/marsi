@@ -1,5 +1,4 @@
-# Copyright 2016 Chr. Hansen A/S.
-
+# Copyright 2016 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -41,7 +40,7 @@ extra_requirements = {
 extra_requirements['all'] = sum([list(values) for values in extra_requirements.values()], [])
 
 
-ext_modules = cythonize(["marsi/chemistry/common_ext.pyx", "marsi/algorithms/_nearest_neighbors_ext.pyx"],
+ext_modules = cythonize(["marsi/chemistry/common_ext.pyx", "marsi/nearest_neighbors/model_ext.pyx"],
                         include_dirs=[numpy.get_include()])
 
 include_dirs = [numpy.get_include()]
