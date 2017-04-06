@@ -38,7 +38,7 @@ before_install:
 - pip install codecov
 
 install:
-- pip install flake8 numpy scipy pyzmq pandas pytest pytest-cov pytest-benchmark
+- pip install flake8 cython numpy scipy pyzmq pandas pytest pytest-cov pytest-benchmark
 - pip install .[swiglpk,test,parallel,cli]
 before_script:
 - if [[ $TRAVIS_PYTHON_VERSION == "3.6" ]]; then flake8 .; fi
