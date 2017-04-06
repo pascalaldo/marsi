@@ -31,11 +31,11 @@ cdef float _tanimoto_coefficient(np.ndarray[INT32_t, ndim=1] fingerprint1, np.nd
     """
     Calculate the Tanimoto coefficient for 2 fingerprints.
 
-    Arguments
-    ---------
-    fingerprint1: ndarray
+    Parameters
+    ----------
+    fingerprint1 : ndarray
         First fingerprint.
-    fingerprint2: ndarray
+    fingerprint2 : ndarray
         Second fingerprint.
 
     Returns
@@ -90,11 +90,11 @@ def tanimoto_coefficient(np.ndarray[INT32_t, ndim=1] fingerprint1, np.ndarray[IN
     """
     Calculate the Tanimoto coefficient for 2 fingerprints.
 
-    Arguments
-    ---------
-    fingerprint1: ndarray
+    Parameters
+    ----------
+    fingerprint1 : ndarray
         First fingerprint.
-    fingerprint2: ndarray
+    fingerprint2 : ndarray
         Second fingerprint.
 
     Returns
@@ -109,11 +109,11 @@ def tanimoto_distance(np.ndarray[INT32_t, ndim=1] fingerprint1, np.ndarray[INT32
     """
     Calculate the Tanimoto distance for 2 fingerprints (1 - tanimoto coefficient).
 
-     Arguments
-    ---------
-    fingerprint1: ndarray
+    Parameters
+    ----------
+    fingerprint1 : ndarray
         First fingerprint.
-    fingerprint2: ndarray
+    fingerprint2 : ndarray
         Second fingerprint.
 
     Returns
@@ -129,13 +129,13 @@ def rmsd(np.ndarray[FLOAT32_t, ndim=3] v, np.ndarray[FLOAT32_t, ndim=3] w):
     """
     Root-mean-squared deviation of XYZ.
 
-    $$RMSD = \sqrt{\frac{1}{n}\sum_{i=1}^{n}{(v - t)^2}}$$
+    $$RMSD = \sqrt{\frac{1}{n} \sum_{i=1}^{n}{(v - t)^2}}}$$
 
-    Arguments
-    ---------
-    v: list
+    Parameters
+    ----------
+    v : list
         List of x, y, z
-    w: list
+    w : list
         List of x, y, z
     """
 
@@ -212,6 +212,9 @@ cdef _monte_carlo_volume(np.ndarray[FLOAT32_t, ndim=2] coords, np.ndarray[FLOAT3
     cdef float box_z_len = box_z_max - box_z_min
     cdef float box_volume = box_x_len * box_y_len * box_z_len
 
+    if verbose:
+        print("Box volume %.5f" % box_volume)
+
     # calculate the ratio of points inside and outside the VdW shell of the molecule
 
     # one hundred thousand points to start
@@ -226,17 +229,17 @@ cdef _monte_carlo_volume(np.ndarray[FLOAT32_t, ndim=2] coords, np.ndarray[FLOAT3
         points_in_molecule += point_in_molecule(coords, vdw_radii, point)
 
     # Adding more points until reach some convergence
-    cdef float volume = float(points_in_molecule) / float(total_points) * box_volume
+    cdef float volume = box_volume * float(points_in_molecule) / float(total_points)
     cdef float new_volume = 0.0
     cdef j = 0
-    while abs(volume - new_volume) > tolerance or j <= max_iterations:
+    while abs(volume - new_volume) > tolerance and j <= max_iterations:
         points = np.random.uniform(box_x_min, box_x_max, (step_size, 3)).astype(np.float32)
         for i in range(step_size):
             point = points[i]
             points_in_molecule += point_in_molecule(coords, vdw_radii, point)
         total_points += step_size
         volume = new_volume
-        new_volume = float(points_in_molecule) / float(total_points) * box_volume
+        new_volume =  box_volume * float(points_in_molecule) / float(total_points)
         if verbose:
             print("Iteration %i, volume: %.5f, new volume: %.5f" % (j, volume, new_volume))
         j += 1
