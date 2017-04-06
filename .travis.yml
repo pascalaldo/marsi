@@ -43,7 +43,7 @@ install:
 before_script:
 - if [[ $TRAVIS_PYTHON_VERSION == "3.6" ]]; then flake8 .; fi
 
-script: pytest -v -rsx --cov --cov-report=xml
+script: pytest -v -rsx --cov=marsi /tests
 after_success:
 - codecov
 before_deploy:
