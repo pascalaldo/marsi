@@ -63,10 +63,14 @@ def compete_metabolite(model, metabolite, reference_dist, fraction=0.5, time_mac
     with TimeMachine() as tm:
         model.fix_objective_as_constraint(time_machine=tm, fraction=1)
         flux_dist = fba(model, objective=exchange)
+        min_value = flux_dist[exchange]
 
-    min_value = flux_dist[exchange]
     flux_dist = fba(model, objective=exchange)
     max_value = flux_dist[exchange]
+
+    if max_value == 0:
+        raise ValueError(metabolite.id + " cannot be overproduced")
+
     exchange_flux = float_floor(fraction * (max_value - min_value) + min_value, ndecimals)
     exchange.change_bounds(lb=exchange_flux, time_machine=time_machine)
 
