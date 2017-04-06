@@ -21,8 +21,6 @@ from cameo.strain_design.heuristic.evolutionary.objective_functions import bioma
 from cameo.util import TimeMachine
 from pandas import DataFrame
 
-from marsi.cobra.strain_design.operations import AntiMetaboliteFilter, CombinedSubstratesAntiMetaboliteFilter
-
 from marsi.cobra.strain_design.evolutionary import OptMet
 from marsi.cobra.strain_design.post_processing import replace_design
 
@@ -61,16 +59,6 @@ class GenericMARSIDesignMethod(object):
         for i, m in enumerate(self.essential_metabolites):
             if isinstance(m, str):
                 self.essential_metabolites[i] = model.metabolites.get_by_id(m)
-
-    def map_metabolite_neighbors(self, metabolite_id, fpformat='fp4', mode='cl'):
-        anti_metabolite_filter = AntiMetaboliteFilter(self.nearest_neighbors_model)
-        metabolite = self.model.metabolites.get_by_id(metabolite_id)
-        return anti_metabolite_filter(metabolite, min_tanimoto=self.min_tanimoto, fpformat=fpformat, mode=mode)
-
-    def transition_state_neighbors(self, metabolite_ids, fpformat='fp4', mode='cl'):
-        anti_metabolite_filter = CombinedSubstratesAntiMetaboliteFilter(self.nearest_neighbors_model)
-        metabolites = [self.model.metabolites.get_by_id(mid) for mid in metabolite_ids]
-        return anti_metabolite_filter(metabolites, min_tanimoto=self.min_tanimoto, fpformat=fpformat, mode=mode)
 
     def optimize_with_reaction(self, target, max_interventions=1, substrate=None,
                                biomass=None, design_method=OptKnock, max_results=100,
@@ -199,11 +187,3 @@ class ALEDesign(GenericMARSIDesignMethod):
     def optimize_with_metabolites(self, target, max_interventions=1, substrate=None, biomass=None,
                                   max_results=100, max_evaluations=20000, **design_kwargs):
         raise NotImplementedError
-        # target_flux = self.model._reaction_for(target)
-        #
-        # designer = OptMet(model=self.model, essential_metabolites=CURRENCY_METABOLITES, **design_kwargs)
-        # knockouts = designer.run(max_knockouts=max_interventions, biomass=biomass, substrate=substrate,
-        #                          target=target_flux, max_results=max_results, max_evaluations=max_evaluations,
-        #                          mutation_rate=0.5, inhibition_fraction=0.2, competition_fraction=0.2)
-        #
-        # return knockouts.data_frame
