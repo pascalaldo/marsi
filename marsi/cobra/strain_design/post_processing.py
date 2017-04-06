@@ -303,8 +303,8 @@ def replace_design(model, strain_design, fitness, objective_function, simulation
                 for species_id, target in anti_metabolite_targets.items():
                     assert isinstance(target, AntiMetaboliteManipulationTarget)
                     with TimeMachine() as another_tm:
-                        target.apply(model, time_machine=another_tm, reference=reference)
                         try:
+                            target.apply(model, time_machine=another_tm, reference=reference)
                             new_solution = simulation_method(model, **simulation_kwargs)
                             new_fitness = objective_function(model, new_solution, all_targets)
                             logger.debug("New fitness %s" % new_fitness)
