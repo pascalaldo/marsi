@@ -1,6 +1,8 @@
 marsi - Metabolite Analogues for Strain Improvement
 ===================================================
 
+[![Build Status](https://travis-ci.org/biosustain/marsi.svg?branch=master)](https://travis-ci.org/biosustain/marsi)
+
 marsi is an open-source software to created to identify non-GMO strain design
 targets 
 

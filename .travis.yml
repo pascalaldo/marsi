@@ -1,0 +1,53 @@
+language: python
+sudo: required
+dist: trusty
+
+python:
+  - '2.7'
+  - '3.4'
+  - '3.5'
+  - '3.6'
+
+matrix:
+  fast_finish: true
+
+branches:
+ only:
+ - master
+ - devel
+ - /^[0-9]+\.[0-9]+\.[0-9]+[.0-9ab]*$/
+
+cache:
+- pip: true
+services:
+- redis-server
+- mongodb
+addons:
+  apt:
+    packages:
+    - swig
+    - libzmq3-dev
+    - libgmp-dev
+    - libglpk-dev
+    - glpk-utils
+    - pandoc
+    - openbabel
+    - libopenbabel-dev
+    - rdkit
+before_install:
+- pip install pip --upgrade
+- pip install codecov
+
+install:
+- pip install flake8 numpy scipy pyzmq pandas pytest pytest-cov pytest-benchmark
+- pip install .[swiglpk,test,parallel,cli]
+before_script:
+- if [[ $TRAVIS_PYTHON_VERSION == "3.6" ]]; then flake8 .; fi
+
+script: pytest -v -rsx --cov --cov-report=xml
+after_success:
+- codecov
+before_deploy:
+  - pip install twine
+  - python setup.py sdist bdist_wheel
+
