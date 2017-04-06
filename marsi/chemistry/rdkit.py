@@ -16,6 +16,7 @@ import math
 import time
 import numpy as np
 from functools import lru_cache
+from bitarray import bitarray
 
 from marsi.chemistry.common import monte_carlo_volume as mc_vol
 
@@ -23,7 +24,7 @@ try:  # pragma: no cover
     import rdkit
 
     from rdkit import Chem
-    from rdkit.Chem import MCS, AllChem
+    from rdkit.Chem import MCS, AllChem, MACCSkeys, EState
 
     periodic_table = Chem.GetPeriodicTable()
 except ImportError:
@@ -35,6 +36,9 @@ except ImportError:
             raise NotImplementedError("RDKit is not installed")
     rdkit = RDKitFail()
     periodic_table = None
+
+
+fps = ["maccs", "morgan2", "morgan3", "morgan4", "morgan5"]
 
 
 @lru_cache(maxsize=256)
@@ -160,13 +164,13 @@ def mol_to_inchi(mol):
     return Chem.MolToInchi(mol)
 
 
-def fingerprint(mol, fpformat='maccs'):
+def fingerprint(molecule, fpformat='maccs'):
     """
     Returns the Fingerprint of the molecule.
 
     Parameters
     ----------
-    mol : rdkit.Chem.rdchem.Mol
+    molecule : rdkit.Chem.rdchem.Mol
         A molecule.
 
     fpformat : str
@@ -175,9 +179,49 @@ def fingerprint(mol, fpformat='maccs'):
     Returns
     -------
     Fingerprint
-        A fingerprint
+        rdkit.DataStructs.cDataStructs.ExplicitBitVect
     """
-    raise NotImplemented
+    assert isinstance(molecule, Chem.rdchem.Mol)
+    assert isinstance(fpformat, str)
+    fp = None
+
+    if fpformat not in fps:
+        raise AssertionError("'%s' is not a valid fingerprint format" % fpformat)
+    if fpformat == "maccs":
+        fp = MACCSkeys.FingerprintMol(molecule)
+    elif fpformat == "morgan2":
+        fp = AllChem.GetMorganFingerprintAsBitVect(molecule, 2)
+    elif fpformat == "morgan3":
+        fp = AllChem.GetMorganFingerprintAsBitVect(molecule, 3)
+    elif fpformat == "morgan4":
+        fp = AllChem.GetMorganFingerprintAsBitVect(molecule, 4)
+    elif fpformat == "morgan5":
+        fp = AllChem.GetMorganFingerprintAsBitVect(molecule, 5)
+
+    return fp
+
+
+def fingerprint_to_bits(fp, bits=1024):
+    """
+    Converts a pybel.Fingerprint into a binary array
+
+    Parameters
+    ----------
+    fp : rdkit.DataStructs.cDataStructs.ExplicitBitVect
+        A fingerprint molecule.
+    bits : int
+        Number of bits (default is 1024)
+    Returns
+    -------
+    bitarray
+    """
+    bits_list = bitarray(bits)
+
+    for i in range(fp.GenNumBits()):
+        if fp.GetBit(i):
+            bits_list[i-1] = 1
+
+    return bits_list
 
 
 def maximum_common_substructure(reference, molecule, match_rings=True, match_fraction=0.6, timeout=None):
@@ -207,7 +251,7 @@ def maximum_common_substructure(reference, molecule, match_rings=True, match_fra
     min_num_atoms = math.ceil(reference.GetNumAtoms()) * match_fraction
 
     return MCS.FindMCS([reference, molecule], ringMatchesRingOnly=match_rings,
-                       minNumAtoms=min_num_atoms, timeout=timeout, atomCompare='any')
+                       minNumAtoms=min_num_atoms, timeout=timeout, atomCompare='any', bondCompare="any")
 
 
 def mcs_similarity(mcs_result, molecule, atoms_weight=0.5, bonds_weight=0.5):

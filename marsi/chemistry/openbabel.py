@@ -24,6 +24,8 @@ __all__ = ['has_radical', 'mol_to_inchi', 'mol_to_inchi_key', 'mol_to_svg', 'mol
            'mol_pubchem_id', 'mol_str_to_inchi', 'align_molecules', 'inchi_to_molecule', 'smiles_to_molecule',
            'fingerprint', 'fingerprint_to_bits', 'get_spectrophore_data', 'inchi_to_inchi_key', 'solubility']
 
+fps = pybel.fps
+
 
 def has_radical(mol):
     """
@@ -317,7 +319,7 @@ def fingerprint_to_bits(fp, bits=1024):
         Number of bits (default is 1024)
     Returns
     -------
-    list
+    bitarray
     """
     bits_list = bitarray(bits)
 
