@@ -13,12 +13,41 @@
 # limitations under the License.
 
 import os
-import pytest
+from cameo import fba
+from cameo.core.strain_design import StrainDesign
+from cameo.strain_design.heuristic.evolutionary.objective_functions import biomass_product_coupled_yield
 
-from marsi.cobra.strain_design.evolutionary import OptMet, OptMetResult
+
+from marsi.cobra.strain_design.evolutionary import OptMet, OptMetResult, process_metabolite_knockout_solution
 
 CURRENT_DIRECTORY = os.path.dirname(__file__)
 FIXTURES = os.path.join(CURRENT_DIRECTORY, 'fixtures')
+
+
+def test_design_processing_function(model):
+    orignal_oxigen_uptake = model.reactions.EX_o2_e.lower_bound
+    target = "EX_succ_e"
+    substrate = "EX_glc__D_e"
+    objective_function = biomass_product_coupled_yield(model.biomass, target, substrate)
+    solution = ["mal__D"]
+    try:
+        model.reactions.EX_o2_e.lower_bound = 0
+        result = process_metabolite_knockout_solution(model, solution, fba, {}, model.biomass, target,
+                                                      substrate, objective_function)
+    finally:
+        model.reactions.EX_o2_e.lower_bound = orignal_oxigen_uptake
+
+    design, size, fva_min, fva_max, target_flux, biomass_flux, _yield, fitness = result
+
+    assert isinstance(design, StrainDesign)
+    assert size == len(solution)
+    assert size == 1
+    assert fva_min > 0
+    assert fva_max >= fva_min
+    assert target_flux > 0
+    assert biomass_flux > 0
+    assert _yield > 0
+    assert fitness > 0
 
 
 def test_succinate(model):

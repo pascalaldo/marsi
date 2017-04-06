@@ -18,7 +18,7 @@ from cameo.strain_design.heuristic.evolutionary.objective_functions import bioma
 from cameo.util import TimeMachine, flatten
 
 from marsi.cobra.strain_design.post_processing import find_anti_metabolite_knockouts, find_anti_metabolite_modulation, \
-    convert_target, replace_in_design
+    convert_target, replace_design
 from marsi.cobra.strain_design.target import MetaboliteKnockoutTarget, AntiMetaboliteManipulationTarget
 
 
@@ -69,8 +69,8 @@ def test_convert_design(model, essential_metabolites):
         solution = fba(model, objective=model.biomass)
         fitness = objective_function(model, solution, targets)
 
-    replacement = replace_in_design(model, strain_design, fitness, objective_function,
-                                    fba, essential_metabolites=essential_metabolites)
+    replacement = replace_design(model, strain_design, fitness, objective_function,
+                                 fba, essential_metabolites=essential_metabolites)
 
     model.reactions.EX_o2_e.lower_bound = 1000
 

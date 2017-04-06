@@ -13,12 +13,11 @@
 # limitations under the License.
 
 import pytest
-from cameo import pfba
+from cameo import pfba, fba
 from cameo.util import TimeMachine
 
 from marsi.cobra.flux_analysis.analysis import sensitivity_analysis
 from marsi.utils import search_metabolites
-from marsi.cobra.graphs.graph_based_model import degree, in_degree, out_degree
 from marsi.cobra.flux_analysis.manipulation import knockout_metabolite, compete_metabolite, inhibit_metabolite
 
 
@@ -38,18 +37,6 @@ def test_search_metabolites(model):
 
     results = search_metabolites(model, "glc__D", ignore_external=False)
     assert any(met.id[-2:] == "_e" for met in results)
-
-
-def test_metabolite_degree_test(model):
-    _2ddecg3p_c = model.metabolites.get_by_id('2ddecg3p_c')
-    assert in_degree(_2ddecg3p_c) == 1
-    assert out_degree(_2ddecg3p_c) == 1
-    assert degree(_2ddecg3p_c) == out_degree(_2ddecg3p_c) + in_degree(_2ddecg3p_c)
-
-    g3p_c = model.metabolites.g3p_c
-    assert in_degree(g3p_c) == 10
-    assert out_degree(g3p_c) == 13
-    assert degree(g3p_c) == in_degree(g3p_c) + out_degree(g3p_c)
 
 
 def test_inhibit_metabolite(model, allow_accumulation, benchmark):
@@ -164,7 +151,11 @@ def test_compete_metabolite_test(model, amino_acid, benchmark):
         compete_metabolite(model, aa, reference, time_machine=time_machine)
         time_machine.reset()
 
-    benchmark(_compete_metabolite, time_machine)
+    try:
+        benchmark(_compete_metabolite, time_machine)
+    except ValueError:
+        assert fba(model, objective=aa).objective_value <= 1e-6
+        return
 
     with time_machine as tm:
         exchange = compete_metabolite(model, aa, fraction=0.1, reference_dist=reference, time_machine=tm)
