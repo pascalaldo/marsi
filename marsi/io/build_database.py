@@ -53,7 +53,7 @@ def build_database(data, data_dir):
     i = upload_pubchem_entries(pubchem_sdf_files_dir, data.pubchem, i=i)
     print("Added %i" % i)
     zinc_data_file = os.path.join(data_dir, "zinc_16.sdf.gz")
-    i = upload_zin_entries(zinc_data_file, i=i)
+    i = upload_zinc_entries(zinc_data_file, i=i)
     print("Added %i" % i)
     return i
 
@@ -164,7 +164,7 @@ def upload_pubchem_entries(pubchem_sdf_files_dir, pubchem_data, i=0):
     return i
 
 
-def upload_zin_entries(zinc_data_file, i=0):
+def upload_zinc_entries(zinc_data_file, i=0):
     """
     Add ZINC
     """
