@@ -84,6 +84,9 @@ class MetaboliteKnockoutTarget(AntiMetaboliteManipulationTarget):
         for metabolite in self.metabolites(model):
             knockout_metabolite(model, metabolite, self.ignore_transport, self.allow_accumulation, time_machine)
 
+    def _repr_html_(self):  # pragma: no cover
+        return "&#x2623;%s" % self.id
+
     def __str__(self):
         if in_ipnb():
             return self._repr_html_()
@@ -92,6 +95,3 @@ class MetaboliteKnockoutTarget(AntiMetaboliteManipulationTarget):
 
     def __repr__(self):
         return "<MetaboliteKnockout %s>" % self.id
-
-    def _repr_html_(self):  # pragma: no cover
-        return "&#x2623;%s" % self.id
