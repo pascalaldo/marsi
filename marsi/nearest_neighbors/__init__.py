@@ -12,14 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import math
+from multiprocessing.pool import Pool
+
 import os
 
 import numpy as np
+import six
+from IProgress import ProgressBar, Bar, ETA
 from mongoengine import connect
 
-from cameo.parallel import SequentialView
+from cameo.parallel import SequentialView, MultiprocessingView
+from pandas import DataFrame
 
 from marsi import config
+from marsi.chemistry import openbabel
+from marsi.chemistry import rdkit
+from marsi.chemistry.molecule import Molecule
 from marsi.nearest_neighbors.model import NearestNeighbors, DistributedNearestNeighbors
 
 from marsi.utils import data_dir, INCHI_KEY_TYPE, unpickle_large, pickle_large
@@ -74,8 +82,8 @@ class FeatureReader(object):
         return _indices, fingerprints, fingerprint_lengths
 
 
-def _build_feature_table(database, fpformat='ecfp10', chunk_size=None, solubility='high',
-                         database_name=config.db_name, view=SequentialView()):
+def build_feature_table(database, fpformat='ecfp10', chunk_size=None, solubility='high',
+                        database_name=config.db_name, view=SequentialView()):
     reader = FeatureReader(database_name, fpformat=fpformat, solubility=solubility)
     chunk_size = math.ceil(chunk_size)
     n_chunks = math.ceil(len(database)/chunk_size)
@@ -125,8 +133,8 @@ def build_nearest_neighbors_model(database, fpformat='fp4', solubility='high', n
         The number of NearestNeighbors models.
     """
 
-    indices, features, lens = _build_feature_table(database, fpformat=fpformat, chunk_size=chunk_size,
-                                                   solubility=solubility, view=view)
+    indices, features, lens = build_feature_table(database, fpformat=fpformat, chunk_size=chunk_size,
+                                                  solubility=solubility, view=view)
     return _build_nearest_neighbors_model(indices, features, lens, n_models)
 
 
@@ -159,13 +167,90 @@ def load_nearest_neighbors_model(chunk_size=1e6, fpformat="fp4", solubility='all
         _indices, _features, _lengths = unpickle_large(model_file, progress=True)
     else:
         print("Building search model (fp: %s, solubility: %s)" % (fpformat, solubility))
-        _indices, _features, _lengths = _build_feature_table(Database.metabolites,
-                                                             chunk_size=chunk_size,
-                                                             fpformat=fpformat,
-                                                             solubility=solubility,
-                                                             view=view)
+        _indices, _features, _lengths = build_feature_table(Database.metabolites,
+                                                            chunk_size=chunk_size,
+                                                            fpformat=fpformat,
+                                                            solubility=solubility,
+                                                            view=view)
         pickle_large((_indices, _features, _lengths), model_file, progress=True)
 
     n_models = math.ceil(len(_indices) / model_size)
     nn_model = _build_nearest_neighbors_model(_indices, _features, _lengths, n_models)
     return nn_model
+
+
+class MoleculeFilter(object):
+    def __init__(self, database, atoms_diff, bonds_diff, similarity_cut):
+        self._database = database
+        self._atoms_diff = atoms_diff
+        self._bonds_diff = bonds_diff
+        self._similarity_cut = similarity_cut
+
+    def __call__(self, molecule, inchi_key, tanimoto_distance):
+        metabolite = Database.metabolites.collection.get(inchi_key)
+        if abs(metabolite.num_atoms - molecule.num_atoms) >= self._atoms_diff:
+            return None
+        if abs(metabolite.num_bonds - molecule.num_bonds) >= self._bonds_diff:
+            return None
+
+        structural_similarity = rdkit.structural_similarity(molecule._rd_mol, metabolite.molecule('rdkit'))
+        if structural_similarity >= self._similarity_cut:
+            return inchi_key, metabolite.formula, metabolite.num_atoms, metabolite.num_bonds, \
+                   1 - tanimoto_distance, structural_similarity
+
+
+def search_closest_compounds(molecule, nn_model, fp_cut=0.5, fpformat="maccs", atoms_diff=5,
+                             bonds_diff=5, similarity_cut=0.6):
+    """
+
+    Parameters
+    ----------
+    molecule : marsi.chemistry.molecule.Molecule
+        A molecule representation.
+    nn_model : marsi.nearest_neighbors.model.DistributedNearestNeighbors
+        A nearest neighbors model.
+    fp_cut : float
+        A cutoff value for fingerprint similarity.
+    fpformat : str
+        A valid fingerprint format.
+    atoms_diff : int
+        The max number of atoms that can be different (in number, not type).
+    bonds_diff : int
+        The max number of bonds that can be different (in number, not type).
+    similarity_cut : float
+        A cutoff value for fingerprint similarity.
+
+    Returns
+    -------
+    pandas.DataFrame
+        A data frame with the closest InChI Keys as index and the properties calculated for each hit.
+    """
+    assert isinstance(molecule, Molecule)
+    assert isinstance(nn_model, DistributedNearestNeighbors)
+
+    pool = Pool(processes=os.cpu_count() - 1)
+
+    filter = MoleculeFilter(config.db_name, atoms_diff, bonds_diff, similarity_cut)
+
+    fingerprint = openbabel.fingerprint(molecule._ob_mol, fpformat=fpformat).fp
+
+    neighbors = nn_model.radius_nearest_neighbors(fingerprint, radius=fp_cut)
+
+    dataframe = DataFrame(columns=["formula", "atoms", "bonds", "tanimoto_similarity", "structural_similarity"])
+
+    progress = ProgressBar(maxval=len(neighbors), widgets=["Processing Neighbors: ", Bar(), ETA()])
+    progress.start()
+
+    def _callback(result):
+        if result is not None:
+            dataframe.loc[result[0]] = result[1:]
+        progress.update(progress.currval + 1)
+
+    for key, distance in six.iteritems(neighbors):
+        pool.apply_async(filter, args=(molecule, key, distance), callback=_callback)
+
+    pool.close()
+    pool.join()
+    progress.finish()
+
+    return dataframe
