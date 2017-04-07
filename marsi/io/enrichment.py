@@ -11,14 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from functools import lru_cache
+
+from functools import partial
 
 import pubchempy
 from bioservices.chebi import ChEBI
 from bioservices.kegg import KEGG
 from bioservices.uniprot import UniProt
 
+from cachetools import cached, LRUCache
+from cachetools.keys import hashkey
+
 from marsi.chemistry.openbabel import mol_str_to_inchi
+
+lru_cache = LRUCache(maxsize=1024)
 
 
 try:
@@ -28,18 +34,18 @@ try:
     kegg_client = KEGG()
     uniprot_client = UniProt()
 
-    @lru_cache(256)
+    @cached(lru_cache, key=partial(hashkey, 'uniprot'))
     def map_uniprot_from_pdb_ids(pdb_ids):
         return uniprot_client.mapping(fr="PDB_ID", to="ACC", query=pdb_ids)
 
-    @lru_cache(256)
+    @cached(lru_cache, key=partial(hashkey, 'uniprot'))
     def inchi_from_chebi(chebi_id):
         try:
             return chebi_client.getCompleteEntity(chebi_id).inchi.strip()
         except AttributeError:
             return None
 
-    @lru_cache(256)
+    @cached(lru_cache, key=partial(hashkey, 'uniprot'))
     def inchi_from_kegg(kegg_id):
         try:
             return mol_str_to_inchi(kegg_client.get(kegg_id, 'mol'))

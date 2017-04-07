@@ -13,11 +13,12 @@
 # limitations under the License.
 import logging
 
-from functools import lru_cache
 from collections import Counter
 
 from IProgress.progressbar import ProgressBar
 from IProgress.widgets import Percentage, Bar, ETA
+
+from cachetools import cached, LRUCache
 
 from marsi import bigg_api
 from marsi.io.bigg import bigg_metabolites
@@ -25,6 +26,9 @@ from marsi.io.enrichment import inchi_from_chebi, inchi_from_kegg
 
 
 __all__ = ['find_inchi_for_bigg_metabolite', 'annotate_metabolite', 'annotate_model']
+
+
+lru_cache = LRUCache(maxsize=1024)
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +38,7 @@ CHEBI = 'CHEBI'
 KEGG = "KEGG Compound"
 
 
-@lru_cache(maxsize=1024)
+@cached(lru_cache)
 def find_inchi_for_bigg_metabolite(model_id, metabolite_id):
     try:
         links = bigg_metabolites.loc[metabolite_id].database_links

@@ -14,13 +14,19 @@
 
 import re
 import numpy as np
+from cachetools import LRUCache
 from scipy.spatial import ConvexHull
 
 from marsi.chemistry.common_ext import tanimoto_coefficient, tanimoto_distance, rmsd, monte_carlo_volume
 from scipy.spatial.qhull import QhullError
 
+
 __all__ = ["rmsd", "tanimoto_coefficient", "tanimoto_distance", "monte_carlo_volume",
            "INCHI_KEY_REGEX", 'SOLUBILITY']
+
+
+inchi_key_lru_cache = LRUCache(maxsize=512)
+
 
 SOLUBILITY = {
     "high": lambda sol: sol > 0.00006,

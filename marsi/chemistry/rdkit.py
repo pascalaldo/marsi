@@ -13,35 +13,28 @@
 # limitations under the License.
 import math
 
+import rdkit
+from cachetools import cached, LRUCache
+
+from rdkit import Chem
+from rdkit.Chem import MCS, AllChem, MACCSkeys, EState
+
 import time
 import numpy as np
-from functools import lru_cache
 from bitarray import bitarray
 
-from marsi.chemistry.common import monte_carlo_volume as mc_vol
+from marsi.chemistry.common import monte_carlo_volume as mc_vol, inchi_key_lru_cache
 
-try:  # pragma: no cover
-    import rdkit
 
-    from rdkit import Chem
-    from rdkit.Chem import MCS, AllChem, MACCSkeys, EState
+lru_cache = LRUCache(maxsize=256)
 
-    periodic_table = Chem.GetPeriodicTable()
-except ImportError:
-    class RDKitFail:
-        def __dir__(self):
-            return ["rdkit_not_available"]
-
-        def __getattr__(self, item):
-            raise NotImplementedError("RDKit is not installed")
-    rdkit = RDKitFail()
-    periodic_table = None
+periodic_table = Chem.GetPeriodicTable()
 
 
 fps = ["maccs", "morgan2", "morgan3", "morgan4", "morgan5"]
 
 
-@lru_cache(maxsize=256)
+@cached(lru_cache)
 def inchi_to_molecule(inchi):
     """
     Returns a molecule from a InChI string.
@@ -112,7 +105,7 @@ def sdf_to_molecule(file_or_molecule_desc, from_file=True):
     return mol
 
 
-@lru_cache(maxsize=256)
+@cached(inchi_key_lru_cache)
 def inchi_to_inchi_key(inchi):
     """
     Makes an InChI Key from a InChI string.

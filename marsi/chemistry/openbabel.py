@@ -16,7 +16,14 @@ import time
 import numpy as np
 import pybel
 from bitarray import bitarray
-from functools import lru_cache
+
+from marsi.chemistry.common import inchi_key_lru_cache
+
+from cachetools import cached, LRUCache
+
+
+lru_cache = LRUCache(maxsize=256)
+
 
 from marsi.chemistry.common import convex_hull_volume, monte_carlo_volume as mc_vol
 
@@ -96,7 +103,7 @@ def mol_to_inchi_key(mol):
     return mol.write(format="inchikey", opt=dict(errorlevel=0)).strip()
 
 
-@lru_cache(maxsize=256)
+@cached(inchi_key_lru_cache)
 def inchi_to_inchi_key(inchi):
     """
     Makes an InChI Key from a InChI string.
@@ -186,7 +193,7 @@ def fingerprint(mol, fpformat='maccs'):
     return mol.calcfp(fptype=fpformat)
 
 
-@lru_cache(maxsize=256)
+@cached(lru_cache)
 def inchi_to_molecule(inchi):
     """
     Returns a molecule from a InChI string.
