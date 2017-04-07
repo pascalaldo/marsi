@@ -69,10 +69,15 @@ except IOError as e:
     logger.debug("Not available %s" % str(e))
     config = default
 
-prj_dir = os.path.abspath(config['marsi']['prj_dir'])
-logger.info("Working dir %s" % prj_dir)
+if six.PY2:
+    prj_dir = os.path.abspath(config['marsi']['prj_dir'])
+    logger.info("Working dir %s" % prj_dir)
+    db_name = config.get('marsi', 'db_name')
 
-db_name = config['marsi']['db_name']
+else:
+    prj_dir = os.path.abspath(config.get('marsi', 'prj_dir'))
+    logger.info("Working dir %s" % prj_dir)
+    db_name = config['marsi']['db_name']
 
 if not os.path.exists(prj_dir):
     os.mkdir(prj_dir)
