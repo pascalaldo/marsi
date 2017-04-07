@@ -330,16 +330,16 @@ def fingerprint_to_bits(fp, bits=1024):
     return bits_list
 
 
-def align_molecules(reference, *molecules, include_h=True, symmetry=True):
+def align_molecules(reference, molecule, include_h=True, symmetry=True):
     """
-    Align molecules to a reference.
+    Align molecule to a reference.
 
     Parameters
     ----------
     reference : pybel.Molecule
         A reference molecule.
-    molecules : pybel.Molecule
-        Molecules to align.
+    molecule : pybel.Molecule
+        Molecule to align.
     include_h : bool
         Include implicit hydrogen atoms.
     symmetry : bool
@@ -350,7 +350,7 @@ def align_molecules(reference, *molecules, include_h=True, symmetry=True):
     """
 
     align = pybel.ob.OBAlign
-    return [align(reference, molecule, include_h, symmetry) for molecule in molecules]
+    return align(reference, molecule, include_h, symmetry)
 
 
 def get_spectrophore_data(molecule):
