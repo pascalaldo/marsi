@@ -28,7 +28,8 @@ requirements = ['pandas>=0.18.1',
                 'bitarray>=0.8.1',
                 'Cython>=0.24',
                 'cement>2.10',
-                'pubchempy>=1.0.3 ']
+                'pubchempy>=1.0.3 ',
+                'cachetools>=2.0.0']
 
 extra_requirements = {
     'docs': ['Sphinx>=1.3.5', 'numpydoc>=0.5'],
