@@ -73,7 +73,7 @@ if isinstance(config, dict) or six.PY3:
     prj_dir = os.path.abspath(config['marsi']['prj_dir'])
     db_name = config['marsi']['db_name']
 
-else six.PY2:
+else:
     prj_dir = os.path.abspath(config.get('marsi', 'prj_dir'))
     db_name = config.get('marsi', 'db_name')
 
