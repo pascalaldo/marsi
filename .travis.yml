@@ -67,6 +67,12 @@ script: pytest -v -rsx --cov=marsi tests
 after_success:
 - codecov
 
+before_deploy:
+  - cd docs
+  - make apidoc
+  - make html
+  - touch _build/html/.nojekyll
+
 deploy:
   provider: pages
   skip_cleanup: true
