@@ -27,7 +27,8 @@ requirements = ['pandas>=0.18.1',
                 'mongoengine>=0.10.6',
                 'bitarray>=0.8.1',
                 'Cython>=0.24',
-                'cement>2.10']
+                'cement>2.10',
+                'pubchempy>=1.0.3 ']
 
 extra_requirements = {
     'docs': ['Sphinx>=1.3.5', 'numpydoc>=0.5'],
