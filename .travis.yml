@@ -63,9 +63,17 @@ before_script:
 - if [[ $TRAVIS_PYTHON_VERSION == "3.6" ]]; then flake8 .; fi
 
 script: pytest -v -rsx --cov=marsi tests
+
 after_success:
 - codecov
-before_deploy:
-  - pip install twine
-  - python setup.py sdist bdist_wheel
 
+deploy:
+  provider: pages
+  skip_cleanup: true
+  local_dir: docs/_build/html
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN # Set in travis-ci.org dashboard
+  target-branch: gh-pages
+  on:
+    branch: master
+    repo: biosustain/marsi
