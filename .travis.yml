@@ -57,7 +57,7 @@ install:
 - conda install patchelf
 - git clone https://github.com/rdkit/conda-rdkit
 - cd conda-rdkit
-- conda build rdkit boost
+- conda install --use-local rdkit boost
 - cd $TRAVIS_BUILD_DIR
 - pip install flake8 cython numpy scipy pyzmq pandas pytest pytest-cov pytest-benchmark
 - pip install .[swiglpk,test,parallel,cli]
