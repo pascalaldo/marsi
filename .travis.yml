@@ -54,9 +54,10 @@ before_install:
 install:
 # install eigen from conda-forge
 - conda install -q -c conda-forge eigen
+- conda install patchelf
 - git clone https://github.com/rdkit/conda-rdkit
 - cd conda-rdkit
-- conda install -q --use-local rdkit boost
+- conda build rdkit boost
 - cd $TRAVIS_BUILD_DIR
 - pip install flake8 cython numpy scipy pyzmq pandas pytest pytest-cov pytest-benchmark
 - pip install .[swiglpk,test,parallel,cli]
