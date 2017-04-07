@@ -59,7 +59,7 @@ log = LogConf()
 log.level = Level.INFO
 
 config = six.moves.configparser.ConfigParser()
-config['marsi'] = {'prj_dir': "%s/.marsi" % os.getenv('HOME'), 'db_name': 'marsi-db'}
+default = {'marsi': {'prj_dir': "%s/.marsi" % os.getenv('HOME'), 'db_name': 'marsi-db'}}
 
 try:
     logger.debug("Looking for setup.cfg")
@@ -67,6 +67,7 @@ try:
         config.readfp(file)
 except IOError as e:
     logger.debug("Not available %s" % str(e))
+    config = default
 
 prj_dir = os.path.abspath(config['marsi']['prj_dir'])
 logger.info("Working dir %s" % prj_dir)
