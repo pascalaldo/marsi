@@ -92,7 +92,7 @@ def test_knockout_metabolite_knockout_exchangeable(model, allow_accumulation, ig
     succ_c = model.metabolites.succ_c
 
     succ_c_transport_in = ["SUCCt2_2pp", "SUCCt2_3pp"]
-    succ_c_transport_out = ["CITt7pp",  "SUCCt3pp"]
+    succ_c_transport_out = ["CITt7pp", "SUCCt3pp"]
     succ_c_transport_both = ["SUCFUMtpp", "TARTRt7pp"]
 
     succ_c_transport_reactions = [model.reactions.get_by_id(rid) for rid in succ_c_transport_in]

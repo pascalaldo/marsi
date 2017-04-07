@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from marsi.cobra.strain_design.design_methods import GenericMARSIDesignMethod, RandomMutagenesisDesign, ALEDesign
+from marsi.cobra.strain_design.design_methods import RandomMutagenesisDesign, ALEDesign
 from marsi.cobra.strain_design.evolutionary import OptMet
 
 __all__ = ["OptMet", "RandomMutagenesisDesign", "ALEDesign"]

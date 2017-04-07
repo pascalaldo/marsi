@@ -21,8 +21,8 @@ from marsi.io.build_database import build_database
 from marsi.io.parsers import parse_chebi_data, parse_pubchem, parse_kegg_brite
 from marsi.io.retriaval import retrieve_chebi_names, retrieve_chebi_relation, retrieve_chebi_vertice, \
     retrieve_chebi_structures, retrieve_drugbank_open_structures, retrieve_drugbank_open_vocabulary, \
-    retrieve_bigg_reactions, retrieve_bigg_metabolites, retrieve_zinc_properties, retrieve_kegg_brite, \
-    retrieve_pubchem_mol_files, retrieve_kegg_mol_files, retrieve_zinc_structures
+    retrieve_bigg_reactions, retrieve_bigg_metabolites, retrieve_kegg_brite, retrieve_pubchem_mol_files, \
+    retrieve_kegg_mol_files, retrieve_zinc_structures
 from marsi.utils import data_dir
 
 

@@ -12,4 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from marsi.chemistry.common import *
+from marsi.chemistry.common import INCHI_KEY_REGEX, SOLUBILITY
+from marsi.chemistry.common import convex_hull_volume, monte_carlo_volume, tanimoto_coefficient, tanimoto_distance
+
+__all__ = ["INCHI_KEY_REGEX", "SOLUBILITY", "convex_hull_volume", "monte_carlo_volume", "tanimoto_distance",
+           "tanimoto_coefficient"]

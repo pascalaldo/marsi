@@ -34,7 +34,7 @@ requirements = ['pandas>=0.18.1',
 extra_requirements = {
     'docs': ['Sphinx>=1.3.5', 'numpydoc>=0.5'],
     'jupyter': ['jupyter>=1.0.0', 'ipywidgets>=4.1.1'],
-    'test': ['nose>=1.3.7', 'rednose>=0.4.3', 'coverage>=4.0.3'],
+    'test': ['pytest>=1.3.7', 'pytest-cov>=2.4', 'pytest-benchmark>=3.0'],
     '3d': ['imolecule>=0.1.13'],
     'opencl': ['pyopencl>=2016.1']
 }

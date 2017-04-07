@@ -18,7 +18,7 @@ from cameo.core.strain_design import StrainDesign
 from cameo.strain_design.heuristic.evolutionary.objective_functions import biomass_product_coupled_yield
 
 
-from marsi.cobra.strain_design.evolutionary import OptMet, OptMetResult, process_metabolite_knockout_solution
+from marsi.cobra.strain_design.evolutionary import OptMet, process_metabolite_knockout_solution
 
 CURRENT_DIRECTORY = os.path.dirname(__file__)
 FIXTURES = os.path.join(CURRENT_DIRECTORY, 'fixtures')
@@ -53,8 +53,8 @@ def test_design_processing_function(model):
 def test_succinate(model):
     optimization = OptMet(model=model, plot=False)
 
-    optimization_kwargs = dict(max_evaluations=1000, max_knockouts=6, target="succ_e",
-                               substrate="EX_glc__D_e", biomass=model.biomass)
+    # optimization_kwargs = dict(max_evaluations=1000, max_knockouts=6, target="succ_e",
+    #                            substrate="EX_glc__D_e", biomass=model.biomass)
 
     assert optimization.manipulation_type == "metabolites"
 

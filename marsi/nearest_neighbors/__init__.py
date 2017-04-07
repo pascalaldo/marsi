@@ -21,7 +21,7 @@ import six
 from IProgress import ProgressBar, Bar, ETA
 from mongoengine import connect
 
-from cameo.parallel import SequentialView, MultiprocessingView
+from cameo.parallel import SequentialView
 from pandas import DataFrame
 
 from marsi import config
@@ -86,8 +86,8 @@ def build_feature_table(database, fpformat='ecfp10', chunk_size=None, solubility
                         database_name=config.db_name, view=SequentialView()):
     reader = FeatureReader(database_name, fpformat=fpformat, solubility=solubility)
     chunk_size = math.ceil(chunk_size)
-    n_chunks = math.ceil(len(database)/chunk_size)
-    chunks = [((i-1) * chunk_size, i*chunk_size) for i in range(1, n_chunks + 1)]
+    n_chunks = math.ceil(len(database) / chunk_size)
+    chunks = [((i - 1) * chunk_size, i * chunk_size) for i in range(1, n_chunks + 1)]
     res = view.map(reader, chunks)
     indices = np.ndarray((0, 1), dtype=INCHI_KEY_TYPE)
     fingerprints = []
@@ -100,8 +100,8 @@ def build_feature_table(database, fpformat='ecfp10', chunk_size=None, solubility
 
 
 def _build_nearest_neighbors_model(indices, features, lengths, n_models):
-    chunk_size = math.ceil(len(indices)/n_models)
-    chunks = [((i-1) * chunk_size, i*chunk_size) for i in range(1, n_models+1)]
+    chunk_size = math.ceil(len(indices) / n_models)
+    chunks = [((i - 1) * chunk_size, i * chunk_size) for i in range(1, n_models + 1)]
     models = []
     for start, end in chunks:
         models.append(NearestNeighbors(indices[start:end], features[start:end], lengths[start:end]))
@@ -195,8 +195,8 @@ class MoleculeFilter(object):
 
         structural_similarity = rdkit.structural_similarity(molecule._rd_mol, metabolite.molecule('rdkit'))
         if structural_similarity >= self._similarity_cut:
-            return inchi_key, metabolite.formula, metabolite.num_atoms, metabolite.num_bonds, \
-                   1 - tanimoto_distance, structural_similarity
+            return (inchi_key, metabolite.formula, metabolite.num_atoms, metabolite.num_bonds,
+                    1 - tanimoto_distance, structural_similarity)
 
 
 def search_closest_compounds(molecule, nn_model, fp_cut=0.5, fpformat="maccs", atoms_diff=5,

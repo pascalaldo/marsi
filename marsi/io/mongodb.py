@@ -172,7 +172,7 @@ class Metabolite(Document):
         if context:
             return [func(getattr(o, context), *args, **kwargs) for o in cls.objects]
         else:
-            return view.apply(func, cls.objects,  *args, **kwargs)
+            return view.apply(func, cls.objects, *args, **kwargs)
 
     @classmethod
     def get(cls, inchi_key):
@@ -270,7 +270,6 @@ class Metabolite(Document):
     @property
     def formula(self):
         return self.molecule('openbabel', get3d=False).formula
-
 
     @property
     def volume(self):

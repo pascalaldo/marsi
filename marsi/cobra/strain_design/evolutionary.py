@@ -24,14 +24,13 @@ from cameo.exceptions import SolveError
 from cameo.strain_design.heuristic.evolutionary.archives import ProductionStrainArchive
 from cameo.strain_design.heuristic.evolutionary.objective_functions import biomass_product_coupled_min_yield, \
     biomass_product_coupled_yield
-from cameo.strain_design.heuristic.evolutionary_based import OptGeneResult
 from cameo.util import TimeMachine
 from cameo.visualization.plotting import plotter
 from pandas import DataFrame
 from sympy.tensor.tests.test_tensor import numpy
 
-from marsi.cobra.metaheuristic.optimization import MetaboliteKnockoutOptimization
-from marsi.cobra.flux_analysis.manipulation import apply_anti_metabolite, knockout_metabolite
+from marsi.cobra.strain_design.metaheuristic import MetaboliteKnockoutOptimization
+from marsi.cobra.flux_analysis.manipulation import knockout_metabolite
 from marsi.cobra.strain_design.target import MetaboliteKnockoutTarget
 from marsi.utils import search_metabolites
 

@@ -17,7 +17,7 @@ import rdkit
 from cachetools import cached, LRUCache
 
 from rdkit import Chem
-from rdkit.Chem import MCS, AllChem, MACCSkeys, EState
+from rdkit.Chem import MCS, AllChem, MACCSkeys
 
 import time
 import numpy as np
@@ -212,7 +212,7 @@ def fingerprint_to_bits(fp, bits=1024):
 
     for i in range(fp.GenNumBits()):
         if fp.GetBit(i):
-            bits_list[i-1] = 1
+            bits_list[i - 1] = 1
 
     return bits_list
 

@@ -14,4 +14,4 @@
 
 from marsi.cli.app import MarsiApp
 
-
+__all__ = ['MarsiApp']

@@ -20,12 +20,11 @@ from bitarray import bitarray
 from marsi.chemistry.common import inchi_key_lru_cache
 
 from cachetools import cached, LRUCache
+from marsi.chemistry.common import convex_hull_volume, monte_carlo_volume as mc_vol
 
 
 lru_cache = LRUCache(maxsize=256)
 
-
-from marsi.chemistry.common import convex_hull_volume, monte_carlo_volume as mc_vol
 
 __all__ = ['has_radical', 'mol_to_inchi', 'mol_to_inchi_key', 'mol_to_svg', 'mol_chebi_id', 'mol_drugbank_id',
            'mol_pubchem_id', 'mol_str_to_inchi', 'align_molecules', 'inchi_to_molecule', 'smiles_to_molecule',
@@ -332,7 +331,7 @@ def fingerprint_to_bits(fp, bits=1024):
 
     for i in fp.bits:
         if i <= bits:
-            bits_list[i-1] = 1
+            bits_list[i - 1] = 1
 
     return bits_list
 
@@ -397,6 +396,9 @@ def solubility(molecule, log_value=True):
     Parameters
     ----------
     molecule : pybel.Molecule
+         A molecule.
+    log_value : bool
+        Return log(Solubility) if true (default).
 
     Returns
     -------
@@ -410,7 +412,7 @@ def solubility(molecule, log_value=True):
     mwt = descriptors['MW']
     rb = molecule.OBMol.NumRotors()
     atoms = molecule.atoms
-    ap = len([a for a in atoms if a.OBAtom.IsAromatic()])/descriptors['atoms']
+    ap = len([a for a in atoms if a.OBAtom.IsAromatic()]) / descriptors['atoms']
 
     log_sw = 0.16 - 0.62 * log_p - 0.0062 * mwt + 0.066 * rb - 0.74 * ap
     if log_value:

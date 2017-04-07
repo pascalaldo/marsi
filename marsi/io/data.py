@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-from pandas import DataFrame, read_csv
+from pandas import DataFrame
 
 from marsi.utils import data_dir
 

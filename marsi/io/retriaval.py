@@ -11,9 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import gzip
-
-import io
 from IProgress import ProgressBar, Bar, ETA
 from io import BytesIO
 
@@ -73,7 +70,7 @@ def retrieve_bigg_reactions(dest=os.path.join(data_dir, "bigg_models_reactions.t
     Retrieves bigg reactions file
     """
     bigg_reactions_file = "bigg_models_reactions.txt"
-    urlretrieve(BIGG_BASE_URL+bigg_reactions_file, dest)
+    urlretrieve(BIGG_BASE_URL + bigg_reactions_file, dest)
 
 
 def retrieve_bigg_metabolites(dest=os.path.join(data_dir, "bigg_models_metabolites.txt")):
@@ -81,7 +78,7 @@ def retrieve_bigg_metabolites(dest=os.path.join(data_dir, "bigg_models_metabolit
     Retrieves bigg metabolites file
     """
     bigg_metabolites_file = "bigg_models_metabolites.txt"
-    urlretrieve(BIGG_BASE_URL+bigg_metabolites_file, dest)
+    urlretrieve(BIGG_BASE_URL + bigg_metabolites_file, dest)
 
 
 def retrieve_drugbank_open_structures(db_version="5.0.3", dest=os.path.join(data_dir, "drugbank_open_structures.sdf")):
@@ -102,7 +99,7 @@ def retrieve_drugbank_open_structures(db_version="5.0.3", dest=os.path.join(data
     os.rename(os.path.join(data_dir, "open structures.sdf"), dest)
 
 
-def retrieve_drugbank_open_vocabulary(db_version="5.0.3", dest=os.path.join(data_dir,"drugbank_open_vocabulary.csv")):
+def retrieve_drugbank_open_vocabulary(db_version="5.0.3", dest=os.path.join(data_dir, "drugbank_open_vocabulary.csv")):
     """
     Retrieves Drugbank Open Vocabulary.
 

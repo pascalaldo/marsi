@@ -16,7 +16,8 @@ from pandas import DataFrame
 
 
 def parse_kegg_brite(brite_file):
-    kegg = DataFrame(columns=['group', 'family', 'level', 'target', 'generic_name', 'name', 'drug_type', 'kegg_drug_id'])
+    kegg = DataFrame(columns=['group', 'family', 'level', 'target', 'generic_name',
+                              'name', 'drug_type', 'kegg_drug_id'])
 
     with open(brite_file) as kegg_data:
         group = None

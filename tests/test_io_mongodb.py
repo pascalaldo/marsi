@@ -17,7 +17,6 @@ import pytest
 import pybel
 import rdkit
 from marsi.io.mongodb import Metabolite, Database, Reference
-from marsi.chemistry.openbabel import fingerprint_to_bits
 
 from mongoengine import connect
 

@@ -12,4 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from marsi.cobra.flux_analysis.analysis import *
+from marsi.cobra.flux_analysis.analysis import metabolite_knockout_fitness, metabolite_knockout_phenotype
+from marsi.cobra.flux_analysis.analysis import sensitivity_analysis
+
+__all__ = ["metabolite_knockout_fitness", "metabolite_knockout_phenotype", "sensitivity_analysis"]

@@ -215,7 +215,7 @@ class ChemistryController(CementBaseController):
                                                              bonds_weight=bonds_weight,
                                                              atoms_weight=atoms_weight)
 
-            distances = [1-tanimoto_distance, structural_similarity]
+            distances = [1 - tanimoto_distance, structural_similarity]
 
             results.loc[inchi_key] = distances + descriptors_changes + extra_descriptors_values
             progress.update(progress.currval + 1)

@@ -75,7 +75,7 @@ class MetaboliteKnockoutFitness(Result):
         show(Line(data, 'x', 'fitness', title=title, plot_width=width, plot_height=height))
 
     def _repr_html_(self):
-        return self.plot(height=500, width=12*len(self._data_frame), title="Metabolite knockout fitness landscape")
+        return self.plot(height=500, width=12 * len(self._data_frame), title="Metabolite knockout fitness landscape")
 
 
 def metabolite_knockout_fitness(model, simulation_method=pfba, compartments=None, elements=BASE_ELEMENTS,
@@ -243,7 +243,7 @@ class SensitivityAnalysisResult(Result):
             fig.extra_y_ranges = {"growth_rate": Range1d(start=0, end=data[self._biomass.id].max())}
             fig.add_layout(LinearAxis(y_range_name="growth_rate", axis_label="Growth rate (h-1)"), 'right')
             fig.line(data['fraction'].apply(lambda v: v if self._is_essential else 1 - v) * 100,
-                                            data[self._species_id]/data[self._biomass.id],
+                                            data[self._species_id] / data[self._biomass.id],
                      line_color='orange')
             fig.line(data['fraction'].apply(lambda v: v if self._is_essential else 1 - v) * 100,
                      data[self._biomass.id], line_color='green',
@@ -281,7 +281,8 @@ def sensitivity_analysis(model, metabolite, biomass=None, is_essential=False, st
 
                 exchange_fluxes.append(flux)
                 fractions.append(fraction)
-                logger.debug("Feasible: %s (%.3f) essential: %s flux: %.3f" % (species_id, fraction, is_essential, flux))
+                logger.debug("Feasible: %s (%.3f) essential: %s flux: %.3f" %
+                             (species_id, fraction, is_essential, flux))
             except Infeasible:
                 logger.debug("Infeasible: %s (%.3f) essential: %s" % (species_id, fraction, is_essential))
                 if biomass is not None:

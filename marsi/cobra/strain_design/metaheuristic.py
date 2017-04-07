@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-import inspyred
 
 from cameo import pfba
 from cameo.exceptions import SolveError

@@ -292,11 +292,11 @@ class DistributedNearestNeighbors(object):
         group = 0
         off = 0
         for nn in self._nns:
-            if index+1 > len(nn):
+            if index + 1 > len(nn):
                 group += 1
                 off += len(nn)
 
-        return self._nns[group][index-off]
+        return self._nns[group][index - off]
 
     def __len__(self):
         return sum(len(nn) for nn in self._nns)
@@ -346,7 +346,7 @@ class NearestNeighbors(model_ext.CNearestNeighbors):
     def __getitem__(self, index):
         start = self.start_positions[index]
         length = self.start_positions[index]
-        end = start+length
+        end = start + length
         return self._features[start:end]
 
     def __setstate__(self, state):

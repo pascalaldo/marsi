@@ -39,9 +39,10 @@ class OptimizationController(CementBaseController):
             (['--model', '-m'], dict(help="path or identifier of the model to be used")),
             (['--carbon-source'], dict(help="(optional) the carbon source exchange reaction. "
                                             "It will be auto-detected if not defined")),
-            (['--target', '-t'], dict(help="The exchange reaction of the target phenotype or the metabolite to accumulate")),
+            (['--target', '-t'], dict(help="The exchange reaction of the target phenotype or "
+                                           "the metabolite to accumulate")),
             (['--approach', '-a'], dict(help="classic: use reaction search; metabolites: search for "
-                                       "metabolite targets directly. (default: classic)")),
+                                             "metabolite targets directly. (default: classic)")),
             (['--biomass'], dict(help="(optional) the biomass reaction (needed if there is none or many reactions "
                                       "containing biomass on their ids or names")),
             (['--max-interventions', '-mi'], dict(help="(optional) maximum number of interventions (default: 2)")),

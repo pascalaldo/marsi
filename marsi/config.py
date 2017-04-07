@@ -84,6 +84,3 @@ if not os.path.exists(prj_dir):
 
 
 log.level = Level.ERROR
-
-
-

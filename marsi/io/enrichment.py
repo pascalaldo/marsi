@@ -98,14 +98,11 @@ except Exception:
     def map_uniprot_from_pdb_ids(pdb_ids):
         raise RuntimeError(no_services_available)
 
-
     def inchi_from_chebi(chebi_id):
         raise RuntimeError(no_services_available)
 
-
     def inchi_from_kegg(kegg_id):
         raise RuntimeError(no_services_available)
-
 
     def find_chebi_id(metabolite):
         raise RuntimeError(no_services_available)

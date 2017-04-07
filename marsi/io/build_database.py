@@ -91,6 +91,7 @@ def upload_chebi_entries(chebi_structures_file, chebi_data, i=0):
         chebi_id = openbabel.mol_chebi_id(mol)
         chebi_id_int = int(chebi_id.split(":")[1])
         chebi_rows = chebi_data.query('compound_id == @chebi_id_int')
+        assert chebi_id_int == "CHEBI:%i" % chebi_id_int
         if len(chebi_rows) > 0:
             synonyms = list(chebi_rows.name)
             _add_molecule(mol, synonyms, 'chebi', chebi_id, True)

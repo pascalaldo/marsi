@@ -37,7 +37,7 @@ INCHI_KEY_TYPE = np.dtype("a27")
 
 BIOMASS_RE = re.compile("biomass", re.IGNORECASE)
 
-MAX_BYTES = 2**31 - 1
+MAX_BYTES = 2 ** 31 - 1
 
 logger = logging.getLogger(__name__)
 
@@ -49,10 +49,10 @@ def pickle_large(obj, file_path, progress=False):
         if progress:
             pbar = ProgressBar(maxval=output_size, widgets=["Writing ", Percentage()])
             for idx in pbar(range(0, output_size, MAX_BYTES)):
-                model_handler.write(bytes_out[idx:idx+MAX_BYTES])
+                model_handler.write(bytes_out[idx:idx + MAX_BYTES])
         else:
             for idx in range(0, output_size, MAX_BYTES):
-                model_handler.write(bytes_out[idx:idx+MAX_BYTES])
+                model_handler.write(bytes_out[idx:idx + MAX_BYTES])
 
 
 def unpickle_large(file_path, progress=False):
@@ -97,10 +97,10 @@ def frange(start, stop=None, steps=10):
         stop = start
         start = 0
 
-    step_size = (stop-start) / steps
+    step_size = (stop - start) / steps
     logger.debug("Step size %f" % step_size)
     for i in range(steps):
-        logger.debug("Iteration %i: %f" % (i+1, i * step_size))
+        logger.debug("Iteration %i: %f" % (i + 1, i * step_size))
         yield start + i * step_size
 
 

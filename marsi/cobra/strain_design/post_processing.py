@@ -135,7 +135,7 @@ def find_anti_metabolite_modulation(reaction, fold_change, essential_metabolites
 
     # Use a link function to convert fold change into ]0, 1]
     if fold_change > 0:
-        fraction = 1/(1 + numpy.exp(-0.5 * fold_change - 5))
+        fraction = 1 / (1 + numpy.exp(-0.5 * fold_change - 5))
     else:
         fraction = 1 - fold_change
 
@@ -320,7 +320,7 @@ def replace_design(model, strain_design, fitness, objective_function, simulation
                             fitness2targets[new_fitness].append(target)
                             try:
                                 logger.debug("Applying %s yields %f (loss: %f)" %
-                                             (species_id, new_fitness, (new_fitness - fitness)/new_fitness))
+                                             (species_id, new_fitness, (new_fitness - fitness) / new_fitness))
                             except ZeroDivisionError:
                                 logger.debug("Applying %s yields %f (loss: %f)" %
                                              (species_id, new_fitness, 1))

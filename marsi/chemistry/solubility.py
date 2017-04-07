@@ -37,7 +37,7 @@ def calc_solubility(molecules, i, log_p, mw, hbd, hba, mp, mr, abonds, rb, ap):
         desc = molecule.calcdesc()
 
         rotatable_bounds = molecule.OBMol.NumRotors()
-        aromatic_partition = len([a for a in molecule.atoms if a.OBAtom.IsAromatic()])/desc['atoms']
+        aromatic_partition = len([a for a in molecule.atoms if a.OBAtom.IsAromatic()]) / desc['atoms']
 
         y[j] = i + log_p * desc['logP'] + mw * desc['MW'] + hbd * desc['HBD'] + hba * desc['HBA2'] + \
                mp * desc['MP'] + mr * desc['MR'] + abonds * desc['abonds'] + rb * rotatable_bounds + \

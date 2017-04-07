@@ -25,4 +25,3 @@ bigg_metabolites.model_list = bigg_metabolites.model_list.apply(str.split, args=
 bigg_reactions = DataFrame.from_csv(os.path.join(data_dir, "bigg_models_reactions.txt"), sep="\t")
 bigg_reactions.database_links = bigg_reactions.database_links.apply(eval)
 bigg_reactions.model_list = bigg_reactions.model_list.apply(str.split, args=(", ",))
-
