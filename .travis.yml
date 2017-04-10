@@ -28,6 +28,7 @@ addons:
     - libgmp-dev
     - libglpk-dev
     - glpk-utils
+    - libopenbabel-dev
     - pandoc
 
 before_install:
@@ -49,9 +50,6 @@ before_install:
 - pip install codecov
 
 install:
-- conda install -q -c openbabel openbabel
-# Hack...
-- cp /home/travis/conda/envs/tenv/lib/libopenbabel.so.5 /home/travis/conda/envs/tenv/lib/libopenbabel.so.4
 # install rdkit from rdkit
 - conda install -q -c rdkit boost rdkit=2016.09.4
 
