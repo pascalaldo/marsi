@@ -154,7 +154,14 @@ def test_compete_metabolite_test(model, amino_acid, benchmark):
     try:
         benchmark(_compete_metabolite, time_machine)
     except ValueError:
-        assert fba(model, objective=aa).objective_value <= 1e-6
+        ex = "EX_%s_e" % amino_acid[:-2]
+        if ex in model.reactions:
+            target = model.reaction.get_by_id(ex)
+        else:
+            with time_machine as tm:
+                target = model.add_demand(aa)
+
+        assert fba(model, objective=target).objective_value <= 1e-6
         return
 
     with time_machine as tm:
