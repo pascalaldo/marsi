@@ -30,6 +30,7 @@ addons:
     - libglpk-dev
     - glpk-utils
     - pandoc
+    - libopenbabel-dev
     - python-rdkit
 
 before_install:
@@ -51,16 +52,15 @@ before_install:
 - pip install codecov
 
 install:
-# install eigen from conda-forge
-- conda install -q -c conda-forge eigen
 # install rdkit from rdkit
 - conda install -q -c rdkit boost rdkit
-- conda install -q -c openbabel openbabel
+
 - pip install flake8 cython numpy scipy pyzmq pandas pytest pytest-cov pytest-benchmark
-- pip install .[swiglpk,test,parallel,cli]
+- pip install .[test]
 before_script:
 - if [[ $TRAVIS_PYTHON_VERSION == "3.5" ]]; then flake8 .; fi
 - python -c 'import rdkit'
+- python -c 'import pybel'
 - mongoimport -d marsi-db -c metabolites tests/fixtures/metabolites.sample
 script: pytest -v -rsx --cov=marsi tests
 
