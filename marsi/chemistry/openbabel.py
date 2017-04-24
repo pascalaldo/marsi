@@ -334,7 +334,7 @@ def fingerprint_to_bits(fp, bits=1024):
     bitarray
     """
     bits_list = bitarray(bits)
-    bits_list.fill(0)
+    bits_list.setall(0)
     for i in fp.bits:
         if i <= bits:
             bits_list[i - 1] = 1

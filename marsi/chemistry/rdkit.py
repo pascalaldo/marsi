@@ -209,7 +209,7 @@ def fingerprint_to_bits(fp, bits=1024):
     bitarray
     """
     bits_list = bitarray(bits)
-    bits_list.fill(0)
+    bits_list.setall(0)
 
     for i in range(fp.GenNumBits()):
         if fp.GetBit(i):
@@ -364,12 +364,16 @@ def monte_carlo_volume(molecule, coordinates=None, tolerance=1, max_iterations=1
 
         conformer = molecule.GetConformer(0)
         coordinates = []
-        vdw_radii = []
+
         for index, atom in enumerate(molecule.GetAtoms()):
             pos = tuple(conformer.GetAtomPosition(index))
-            radius = periodic_table.GetRvdw(atom.GetAtomicNum())
             coordinates.append(pos)
-            vdw_radii.append(radius)
+
+    vdw_radii = []
+    for index, atom in enumerate(molecule.GetAtoms()):
+        radius = periodic_table.GetRvdw(atom.GetAtomicNum())
+        vdw_radii.append(radius)
+
     coordinates = np.array(coordinates, dtype=np.float32)
     vdw_radii = np.array(vdw_radii, dtype=np.float32)
     return mc_vol(coordinates, vdw_radii, tolerance, max_iterations, step_size, seed, int(verbose))
