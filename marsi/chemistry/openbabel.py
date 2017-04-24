@@ -33,6 +33,12 @@ __all__ = ['has_radical', 'mol_to_inchi', 'mol_to_inchi_key', 'mol_to_svg', 'mol
 fps = pybel.fps
 
 
+fp_bits = {
+    'maccs': 167,
+    'fp2': 1024,
+}
+
+
 def has_radical(mol):
     """
     Finds if a pybel.Molecule has Radicals.
@@ -328,7 +334,7 @@ def fingerprint_to_bits(fp, bits=1024):
     bitarray
     """
     bits_list = bitarray(bits)
-
+    bits_list.fill(0)
     for i in fp.bits:
         if i <= bits:
             bits_list[i - 1] = 1

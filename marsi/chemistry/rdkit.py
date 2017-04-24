@@ -209,6 +209,7 @@ def fingerprint_to_bits(fp, bits=1024):
     bitarray
     """
     bits_list = bitarray(bits)
+    bits_list.fill(0)
 
     for i in range(fp.GenNumBits()):
         if fp.GetBit(i):
