@@ -12,7 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from sklearn import neighbors
+
 from cameo.parallel import SequentialView
+from sqlalchemy.orm import load_only
+
+from marsi.io.db import Metabolite
+
 
 try:  # pragma: no cover
     import pyopencl as cl
@@ -474,6 +480,119 @@ class NearestNeighbors(model_ext.CNearestNeighbors):
 
     def __repr__(self):
         return "NearestNeighbors %i rows" % (len(self))
+
+    def __len__(self):
+        return len(self._index)
+
+
+class DBNearestNeighbors(object):
+    def __init__(self, index, session, fingerprint_format, metric='jaccard'):
+        self._index = index
+        self._session = session
+        self.fingerprint_format = fingerprint_format
+        self._neighbors = None
+        self._metric = metric
+
+    @property
+    def neighbors(self):
+        if self._neighbors is None:
+            self._neighbors = neighbors.NearestNeighbors(algorithm='brute', metric=self._metric)
+            self._neighbors.fit(self.features)
+
+        return self._neighbors
+
+    def __getitem__(self, index):
+        key = self._index[index]
+        metabolite = self._session.query(Metabolite).filter(Metabolite.inchi_key == key).one()
+        return metabolite.fingerprings[self.fingerprint_format]
+
+    def knn(self, fingerprint, k, mode="native"):
+        """
+        K-Nearest Neighbors
+
+        Parameters
+        ----------
+
+        fingerprint : ndarray
+            The fingerprint to search for.
+        k : int
+            The number of neighbors to return.
+        mode : str
+            'native' to run python implementation or 'cl' to run OpenCL implementation if available.
+
+        Returns
+        -------
+        dict
+            (Index --> Distance)
+
+        """
+        fingerprint = fingerprint.reshape(1, -1)
+        distances, indices = self.neighbors.kneighbors(fingerprint, k, True)
+        distances, indices = distances[0], indices[0]
+        return {self.index[i]: d for i, d in zip(indices, distances)}
+
+    def rnn(self, fingerprint, radius, mode="native"):
+        """
+        Radius-Nearest Neighbors
+
+        Parameters
+        ----------
+        fingerprint : ndarray
+            The fingerprint to search for.
+        radius : float
+            The maximum distance of neighbors to return.
+        mode : str
+            'native' to run python implementation or 'cl' to run OpenCL implementation if available.
+
+        Returns
+        -------
+        dict
+            (Index --> Distance)
+
+        """
+        fingerprint = fingerprint.reshape(1, -1)
+        distances, indices = self.neighbors.radius_neighbors(fingerprint, radius, True)
+        distances, indices = distances[0], indices[0]
+        return {self.index[i]: d for i, d in zip(indices, distances)}
+
+    def distances(self, fingerprint, mode="native"):
+        fingerprint = fingerprint.reshape(1, -1)
+        distances, indices = self.neighbors.radius_neighbors(fingerprint, 0, True)
+        distances, indices = distances[0], indices[0]
+        return {self.index[i]: d for i, d in zip(indices, distances)}
+
+    @property
+    def index(self):
+        return [b.decode() for b in self._index[:, 0]]
+
+    @property
+    def features(self):
+        features = []
+        query = self._session.query(Metabolite).filter(
+            Metabolite.inchi_key.in_(self.index)
+        ).options(load_only('id'))
+
+        for metabolite in query.yield_per(1000):
+            features.append(metabolite.fingerprints[self.fingerprint_format])
+
+        return features
+
+    @property
+    def data_frame(self):
+        """
+        Create a DataFrame with this model.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A data frame.
+        """
+        df = DataFrame([self[i] for i in range(len(self))],
+                       index=["fingerprint"], columns=self._index)
+        return df.T
+
+    def __repr__(self):
+        return "DBNearestNeighbors %i rows" % (len(self))
 
     def __len__(self):
         return len(self._index)
