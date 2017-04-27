@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import getpass
 
 import os
 import six
@@ -84,3 +85,31 @@ if not os.path.exists(prj_dir):
 
 
 log.level = Level.ERROR
+
+db_config = {}
+
+try:
+    db_engine = db_config.get('db_engine', "postgresql")
+    username = db_config.get('db_user', getpass.getuser())
+    password = db_config.get('db_pass', None)
+    host = db_config.get("db_host", "localhost")
+    port = db_config.get("db_port", 5432)
+    if password is None:
+        useraccess = username
+    else:
+        useraccess = "%s:%s" % (username, password)
+
+    url = '{engine}://{user_access}@{host}:{port}/{db}'.format(engine=db_engine,
+                                                               user_access=useraccess,
+                                                               host=host,
+                                                               port=port,
+                                                               db=db_name)
+except:
+    default_session = None
+else:
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    engine = create_engine(url, client_encoding='utf8')
+    Session = sessionmaker(engine)
+    default_session = Session()
