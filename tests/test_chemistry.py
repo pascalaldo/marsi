@@ -19,13 +19,42 @@ import pytest
 
 from marsi.chemistry.common import SOLUBILITY, tanimoto_coefficient, tanimoto_distance
 from marsi.chemistry import openbabel, rdkit
-
+from marsi.chemistry.molecule import Molecule
 
 TEST_DIR = os.path.dirname(__file__)
 
 MOL_VOLUMES = {
-    "Diphenylketene": 173.769
+    "Diphenylketene": 173.769,
+    "Acetate": None,
+    "Cobamamide": None
 }
+
+MOL_RINGS = {
+    "Diphenylketene": 2,
+    "Acetate": 0,
+    "Cobamamide": 15
+}
+
+MOL_BONDS = {
+    "Diphenylketene": 26,
+    "Acetate": 6,
+    "Cobamamide": 223
+}
+
+MOL_ATOMS = {
+    "Diphenylketene": 25,
+    "Acetate": 7,
+    "Cobamamide": 209
+
+}
+
+MOL_CARBONS = {
+    "Diphenylketene": 14,
+    "Acetate": 2,
+    "Cobamamide": 72
+}
+
+molecules = list(MOL_CARBONS.keys())
 
 
 CARBON_ATOMIC_NUMBER = 6
@@ -154,7 +183,7 @@ def test_inchi_to_inchi_key(chemlib, benchmark):
 
 
 @pytest.fixture(params=['large', 'medium', 'small'])
-def molecule(request):
+def inchi(request):
     if request.param == "large":
         # Raspberry ellagitannin
         return "InChI=1S/C116H76O74/c117-30-1-18(2-31(118)61(30)130)100(158)189-115-98-95(183-107(165)" \
@@ -179,24 +208,24 @@ def molecule(request):
         return "InChI=1S/C3H4O3/c1-2(4)3(5)6/h1H3,(H,5,6)/p-1"
 
 
-def test_structural_similarity_is_1(molecule, benchmark):
-    mol = rdkit.inchi_to_molecule(molecule)
+def test_structural_similarity_is_1(inchi, benchmark):
+    mol = rdkit.inchi_to_molecule(inchi)
     similarity = benchmark(rdkit.structural_similarity, mol, mol)
     assert similarity == 1
 
 
-def test_structural_similarity_to_glucose(molecule, benchmark):
-    mol = rdkit.inchi_to_molecule(molecule)
+def test_structural_similarity_to_glucose(inchi, benchmark):
+    mol = rdkit.inchi_to_molecule(inchi)
     glucose = rdkit.inchi_to_molecule("InChI=1S/C6H12O6/c7-1-2-3(8)4(9)5(10)6(11)12-2/h2-11H,1H2/t2-,3-,4+,5-,6-/m1/s1")
     similarity = benchmark(rdkit.structural_similarity, glucose, mol)
     assert similarity < 1
 
 
-def test_mol_to_inchi(chemlib, molecule, benchmark):
-    mol = benchmark(chemlib[0].inchi_to_molecule, molecule)
-    inchi = chemlib[0].mol_to_inchi(mol)
-    assert inchi == molecule
-    assert chemlib[0].inchi_to_inchi_key(inchi) == chemlib[0].mol_to_inchi_key(mol)
+def test_mol_to_inchi(chemlib, inchi, benchmark):
+    mol = benchmark(chemlib[0].inchi_to_molecule, inchi)
+    inchi_ = chemlib[0].mol_to_inchi(mol)
+    assert inchi_ == inchi
+    assert chemlib[0].inchi_to_inchi_key(inchi_) == chemlib[0].mol_to_inchi_key(mol)
 
 
 class Mol3D(object):
@@ -205,10 +234,20 @@ class Mol3D(object):
         self.volume = volume
 
 
-@pytest.fixture(params=["Diphenylketene"])
+@pytest.fixture(params=molecules)
 def mol3d(request):
     molecule = os.path.join(TEST_DIR, "fixtures", "%s.sdf" % request.param)
     return Mol3D(molecule, MOL_VOLUMES[request.param])
+
+
+@pytest.fixture(params=molecules)
+def molecule(request):
+    mol_path = os.path.join(TEST_DIR, "fixtures", "%s.sdf" % request.param)
+    ob_mol = openbabel.sdf_to_molecule(mol_path)
+    rd_mol = rdkit.sdf_to_molecule(mol_path)
+    mol = Molecule(ob_mol, rd_mol)
+    setattr(mol, 'id', request.param)
+    return mol
 
 
 @pytest.mark.skip("Not working as expected - also not part of the main workflow")
@@ -216,3 +255,15 @@ def test_volume(chemlib, mol3d, benchmark):
     molecule = chemlib[0].sdf_to_molecule(mol3d.molecule)
     volume = benchmark(chemlib[0].monte_carlo_volume, molecule, max_iterations=1000)
     assert mol3d.volume * .9 <= volume <= mol3d.volume * 1.1
+
+
+def test_atom_count(molecule):
+    assert molecule.num_atoms == MOL_ATOMS[molecule.id]
+
+
+def test_bond_count(molecule):
+    assert molecule.num_bonds == MOL_BONDS[molecule.id]
+
+
+def test_ring_count(molecule):
+    assert molecule.num_rings == MOL_RINGS[molecule.id]
