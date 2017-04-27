@@ -19,7 +19,7 @@ from marsi.chemistry import rdkit
 
 from marsi.chemistry import openbabel
 
-from sqlalchemy import Boolean, Integer, String, Table, Text, Float
+from sqlalchemy import Boolean, Integer, String, Table, Text
 from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint
 from sqlalchemy import TypeDecorator
 from sqlalchemy.ext.associationproxy import association_proxy
@@ -32,7 +32,7 @@ from sqlalchemy.sql.elements import and_
 from marsi.chemistry.common import INCHI_KEY_REGEX
 from marsi.config import default_session
 
-__all__ = ['Database', 'Metabolite', 'Reference']
+__all__ = ['Metabolite', 'Reference']
 
 
 Base = declarative_base()
@@ -89,14 +89,12 @@ class Fingerprint(TypeDecorator):
 
 
 references_table = Table('metabolite_references', Base.metadata,
-    Column('metabolite_id', Integer, ForeignKey('metabolites.id')),
-    Column('reference_id', Integer, ForeignKey('references.id'))
-)
+                         Column('metabolite_id', Integer, ForeignKey('metabolites.id')),
+                         Column('reference_id', Integer, ForeignKey('references.id')))
 
 synonyms_table = Table('metabolite_synonyms', Base.metadata,
-    Column('metabolite_id', Integer, ForeignKey('metabolites.id')),
-    Column('synonym_id', Integer, ForeignKey('synonyms.id'))
-)
+                       Column('metabolite_id', Integer, ForeignKey('metabolites.id')),
+                       Column('synonym_id', Integer, ForeignKey('synonyms.id')))
 
 
 class Synonym(Base):
