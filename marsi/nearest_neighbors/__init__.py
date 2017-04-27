@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import math
-from multiprocessing.pool import Pool
 
 import os
 
@@ -25,14 +24,17 @@ from cameo.parallel import SequentialView
 from pandas import DataFrame
 
 from marsi import config
-from marsi.chemistry import openbabel
 from marsi.chemistry import rdkit
 from marsi.chemistry.molecule import Molecule
-from marsi.nearest_neighbors.model import NearestNeighbors, DistributedNearestNeighbors
+from marsi.config import default_session
+from marsi.io.db import Metabolite
+from marsi.nearest_neighbors.model import NearestNeighbors, DistributedNearestNeighbors, DBNearestNeighbors
 
 from marsi.utils import data_dir, INCHI_KEY_TYPE, unpickle_large, pickle_large
 from marsi.io.mongodb import Database
 from marsi.chemistry import SOLUBILITY
+
+from sqlalchemy import and_
 
 __all__ = ['build_nearest_neighbors_model', 'load_nearest_neighbors_model']
 
@@ -138,10 +140,79 @@ def build_nearest_neighbors_model(database, fpformat='fp4', solubility='high', n
     return _build_nearest_neighbors_model(indices, features, lens, n_models)
 
 
-def load_nearest_neighbors_model(chunk_size=1e6, fpformat="fp4", solubility='all',
-                                 view=SequentialView(), model_size=100000):
+def load_nearest_neighbors_model(chunk_size=1e6, fpformat="fp4", solubility='all', session=default_session,
+                                 view=SequentialView(), model_size=100000, source="db", costum_query=None):
     """
     Loads a NN model.
+
+    If a 'default_model.pickle' exists in data it will load the model. Otherwise it will build a model from the
+    Database. This can take several hours depending on the size of the database.
+
+    Parameters
+    ----------
+    chunk_size : int
+        Maximum number of entries per chunk.
+    fpformat : str
+        The format of the fingerprint (see pybel.fps)
+    solubility : str
+        One of high, medium, low or all.
+    view : cameo.parallel.SequentialView, cameo.parallel.MultiprocesingView
+        A view to control parallelization.
+    model_size : int
+        The size of each NearestNeighbor in the ensemble.
+    """
+
+    if source == "file":
+        load_nearest_neighbors_model_from_file(chunk_size=chunk_size, fpformat=fpformat, solubility=solubility,
+                                               view=view, model_size=model_size)
+    else:
+        load_nearest_neighbors_model_from_db(fpformat=fpformat, solubility=solubility,
+                                             model_size=model_size, session=session, costum_query=costum_query)
+
+
+def load_nearest_neighbors_model_from_db(fpformat="fp4", solubility='all', model_size=10000, session=default_session,
+                                         custom_query=None):
+    """
+    Loads a NN model.
+
+    If a 'default_model.pickle' exists in data it will load the model. Otherwise it will build a model from the
+    Database. This can take several hours depending on the size of the database.
+
+    Parameters
+    ----------
+    fpformat : str
+        The format of the fingerprint (see pybel.fps)
+    solubility : str
+        One of high, medium, low or all.
+    model_size : int
+        The size of each NearestNeighbor in the ensemble.
+    session : Session
+        SQLAlchemy session.
+    custom_query : ClauseElement
+        A query to filter elements from the database.
+
+    """
+
+    if custom_query is not None:
+        indices = np.array(session.query(Metabolite.inchi_key).filter(custom_query).all(), dtype=INCHI_KEY_TYPE)
+    else:
+        indices = np.array(session.query(Metabolite.inchi_key).all(), dtype=INCHI_KEY_TYPE)
+
+    n_models = math.ceil(len(indices) / model_size)
+    chunk_size = math.ceil(len(indices) / n_models)
+    chunks = [((i - 1) * chunk_size, i * chunk_size) for i in range(1, n_models + 1)]
+    models = []
+
+    for start, end in chunks:
+        models.append(DBNearestNeighbors(indices[start:end], session, fpformat))
+
+    return DistributedNearestNeighbors(models)
+
+
+def load_nearest_neighbors_model_from_file(chunk_size=1e6, fpformat="fp4", solubility='all',
+                                           view=SequentialView(), model_size=100000):
+    """
+    Loads a NN model from file.
 
     If a 'default_model.pickle' exists in data it will load the model. Otherwise it will build a model from the
     Database. This can take several hours depending on the size of the database.
@@ -179,28 +250,8 @@ def load_nearest_neighbors_model(chunk_size=1e6, fpformat="fp4", solubility='all
     return nn_model
 
 
-class MoleculeFilter(object):
-    def __init__(self, database, atoms_diff, bonds_diff, similarity_cut):
-        self._database = database
-        self._atoms_diff = atoms_diff
-        self._bonds_diff = bonds_diff
-        self._similarity_cut = similarity_cut
-
-    def __call__(self, molecule, inchi_key, tanimoto_distance):
-        metabolite = Database.metabolites.collection.get(inchi_key)
-        if abs(metabolite.num_atoms - molecule.num_atoms) >= self._atoms_diff:
-            return None
-        if abs(metabolite.num_bonds - molecule.num_bonds) >= self._bonds_diff:
-            return None
-
-        structural_similarity = rdkit.structural_similarity(molecule._rd_mol, metabolite.molecule('rdkit'))
-        if structural_similarity >= self._similarity_cut:
-            return (inchi_key, metabolite.formula, metabolite.num_atoms, metabolite.num_bonds,
-                    1 - tanimoto_distance, structural_similarity)
-
-
-def search_closest_compounds(molecule, nn_model, fp_cut=0.5, fpformat="maccs", atoms_diff=5,
-                             bonds_diff=5, similarity_cut=0.6):
+def search_closest_compounds(molecule, nn_model=None, fp_cut=0.5, fpformat="maccs", atoms_diff=3,
+                             bonds_diff=3, rings_diff=2, similarity_cut=0.6, session=default_session):
     """
 
     Parameters
@@ -217,8 +268,12 @@ def search_closest_compounds(molecule, nn_model, fp_cut=0.5, fpformat="maccs", a
         The max number of atoms that can be different (in number, not type).
     bonds_diff : int
         The max number of bonds that can be different (in number, not type).
+    rings_diff : int
+        The max number of rings that can be different (in number, not type).
     similarity_cut : float
         A cutoff value for fingerprint similarity.
+    session : Session
+        SQLAlchemy session.
 
     Returns
     -------
@@ -226,31 +281,34 @@ def search_closest_compounds(molecule, nn_model, fp_cut=0.5, fpformat="maccs", a
         A data frame with the closest InChI Keys as index and the properties calculated for each hit.
     """
     assert isinstance(molecule, Molecule)
+
+    if nn_model is None:
+        query = and_(Metabolite.num_atoms >= molecule.num_atoms - atoms_diff,
+                     Metabolite.num_atoms <= molecule.num_atoms + atoms_diff,
+                     Metabolite.num_bonds >= molecule.num_bonds - bonds_diff,
+                     Metabolite.num_bonds <= molecule.num_bonds + bonds_diff,
+                     Metabolite.num_rings >= molecule.num_rings - rings_diff,
+                     Metabolite.num_rings <= molecule.num_rings + rings_diff)
+
+        nn_model = load_nearest_neighbors_model_from_db(fpformat=fpformat, custom_query=query, session=session)
+
     assert isinstance(nn_model, DistributedNearestNeighbors)
 
-    pool = Pool(processes=os.cpu_count() - 1)
-
-    filter = MoleculeFilter(config.db_name, atoms_diff, bonds_diff, similarity_cut)
-
-    fingerprint = openbabel.fingerprint(molecule._ob_mol, fpformat=fpformat).fp
-
-    neighbors = nn_model.radius_nearest_neighbors(fingerprint, radius=fp_cut)
+    neighbors = nn_model.radius_nearest_neighbors(molecule.fingerprint(fpformat), radius=fp_cut)
 
     dataframe = DataFrame(columns=["formula", "atoms", "bonds", "tanimoto_similarity", "structural_similarity"])
 
     progress = ProgressBar(maxval=len(neighbors), widgets=["Processing Neighbors: ", Bar(), ETA()])
-    progress.start()
 
-    def _callback(result):
-        if result is not None:
-            dataframe.loc[result[0]] = result[1:]
-        progress.update(progress.currval + 1)
-
-    for key, distance in six.iteritems(neighbors):
-        pool.apply_async(filter, args=(molecule, key, distance), callback=_callback)
-
-    pool.close()
-    pool.join()
-    progress.finish()
+    for (inchi_key, distance) in progress(six.iteritems(neighbors)):
+        metabolite = Metabolite.get(inchi_key=inchi_key)
+        try:
+            structural_similarity = rdkit.structural_similarity(molecule._rd_mol, metabolite.molecule('rdkit', get3d=False))
+            if structural_similarity >= similarity_cut:
+                dataframe.loc[inchi_key] = [metabolite.formula, metabolite.num_atoms, metabolite.num_bonds,
+                                            1 - distance, structural_similarity]
+        except Exception as e:
+            print(e)
+            continue
 
     return dataframe
