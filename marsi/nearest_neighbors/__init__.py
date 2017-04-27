@@ -303,7 +303,8 @@ def search_closest_compounds(molecule, nn_model=None, fp_cut=0.5, fpformat="macc
     for (inchi_key, distance) in progress(six.iteritems(neighbors)):
         metabolite = Metabolite.get(inchi_key=inchi_key)
         try:
-            structural_similarity = rdkit.structural_similarity(molecule._rd_mol, metabolite.molecule('rdkit', get3d=False))
+            structural_similarity = rdkit.structural_similarity(molecule._rd_mol,
+                                                                metabolite.molecule('rdkit', get3d=False))
             if structural_similarity >= similarity_cut:
                 dataframe.loc[inchi_key] = [metabolite.formula, metabolite.num_atoms, metabolite.num_bonds,
                                             1 - distance, structural_similarity]
