@@ -26,7 +26,7 @@ BIOMASS_IDS = {
 }
 
 
-@pytest.fixture(params=["iJO1366", "iAF1260"], scope="function")
+@pytest.fixture(params=["iJO1366", "iAF1260"], scope="global")
 def model(request):
     """
     Genome-scale metabolic model. Loaded using cameo.load_model.
@@ -41,11 +41,11 @@ def model(request):
     return model
 
 
-@pytest.fixture(params=["ala__L_c", "ser__L_c", "trp__L_c", "glu__L_c"], scope='session')
+@pytest.fixture(params=["ala__L_c", "ser__L_c", "trp__L_c", "glu__L_c"], scope='global')
 def amino_acid(request):
     return request.param
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='global')
 def essential_metabolites(model):
     return model.essential_metabolites()

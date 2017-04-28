@@ -45,7 +45,6 @@ MOL_ATOMS = {
     "Diphenylketene": 25,
     "Acetate": 7,
     "Cobamamide": 209
-
 }
 
 MOL_CARBONS = {
