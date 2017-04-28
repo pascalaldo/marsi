@@ -18,6 +18,9 @@ import os
 import six
 
 from openbabel import obErrorLog, obError, obWarning, obInfo, obDebug
+import sqlalchemy.pool as pool
+import psycopg2
+
 
 __all__ = ['Level', 'log', 'prj_dir']
 
@@ -88,6 +91,9 @@ log.level = Level.ERROR
 
 db_config = {}
 
+
+
+
 try:
     db_engine = db_config.get('db_engine', "postgresql")
     username = db_config.get('db_user', getpass.getuser())
@@ -99,17 +105,18 @@ try:
     else:
         useraccess = "%s:%s" % (username, password)
 
-    url = '{engine}://{user_access}@{host}:{port}/{db}'.format(engine=db_engine,
-                                                               user_access=useraccess,
-                                                               host=host,
-                                                               port=port,
-                                                               db=db_name)
+    def getconn():
+        c = psycopg2.connect(user=username, password=password, host=host, port=port, dbname=db_name)
+        return c
 except:
     default_session = None
 else:
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
 
-    engine = create_engine(url, client_encoding='utf8')
+    connection_pool = pool.QueuePool(getconn, max_overflow=10, pool_size=5)
+
+    engine = create_engine('postgresql://', client_encoding='utf8', pool=connection_pool)
+
     Session = sessionmaker(engine)
     default_session = Session()
