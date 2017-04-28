@@ -16,6 +16,8 @@ import pytest
 
 import pybel
 import rdkit
+from sqlalchemy.exc import IntegrityError
+
 from marsi.chemistry import openbabel
 
 from marsi.io.db import Metabolite, Reference, Database
@@ -41,11 +43,13 @@ def metabolite(request):
     return default_session.query(Metabolite).filter(Metabolite.id == int(request.param) + 1).one()
 
 
+def _calc_fp(metabolite):
+    return openbabel.fingerprint_to_bits(metabolite.molecule(library='openbabel').calcfp('maccs'))
+
+
 def test_fingerprint_method(metabolite, benchmark):
-    if 'maccs' in metabolite._fingerprints:
-        del metabolite._fingerprints['maccs']
-    fp = benchmark(metabolite.fingerprint.__getitem__, 'maccs')
-    ob_fp = openbabel.fingerprint_to_bits(metabolite.molecule(library='openbabel').calcfp('maccs'))
+    fp = metabolite.fingerprint, 'maccs'
+    ob_fp = benchmark(_calc_fp, metabolite)
     assert (fp == ob_fp.fp).all()
 
 
@@ -74,10 +78,12 @@ def test_add_reference():
     assert ref3.database == database
     assert ref3.accession == accession2
 
-    with pytest.raises(mongoengine.errors.NotUniqueError):
+    with pytest.raises(IntegrityError):
         ref4 = Reference(database=database, accession=accession1)
-        ref4.save()
+        default_session.add(ref4)
+        default_session.commit()
 
     default_session.delete(ref1)
     default_session.delete(ref2)
     default_session.delete(ref3)
+    default_session.commit()
