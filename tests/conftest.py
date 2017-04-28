@@ -20,13 +20,21 @@ from cameo import load_model
 TEST_DIR = os.path.dirname(__file__)
 
 
+def load_model_fixture(model_id):
+    return load_model(os.path.join(TEST_DIR, 'fixtures', '%s.json' % model_id))
+
+
 BIOMASS_IDS = {
     "iJO1366": "BIOMASS_Ec_iJO1366_core_53p95M",
     "iAF1260": "BIOMASS_Ec_iAF1260_core_59p81M"
 }
 
+MODELS = {model_id: load_model_fixture(model_id) for model_id in BIOMASS_IDS}
 
-@pytest.fixture(params=["iJO1366", "iAF1260"], scope="global")
+ESSENTIAL_METABOLITES = {model_id: MODELS[model_id].essential_metabolites() for model_id in BIOMASS_IDS}
+
+
+@pytest.fixture(params=["iJO1366", "iAF1260"], scope="function")
 def model(request):
     """
     Genome-scale metabolic model. Loaded using cameo.load_model.
@@ -35,17 +43,18 @@ def model(request):
     -------
     cameo.SolverBasedModel
     """
-    model = load_model(os.path.join(TEST_DIR, 'fixtures', '%s.json' % request.param))
-    setattr(model, 'biomass', BIOMASS_IDS[request.param])
+    m = MODELS[request.param].copy()
+    setattr(m, 'biomass', BIOMASS_IDS[request.param])
 
-    return model
+    return m
 
 
-@pytest.fixture(params=["ala__L_c", "ser__L_c", "trp__L_c", "glu__L_c"], scope='global')
+@pytest.fixture(params=["ala__L_c", "ser__L_c", "trp__L_c", "glu__L_c"], scope='session')
 def amino_acid(request):
     return request.param
 
 
-@pytest.fixture(scope='global')
+@pytest.fixture(scope='function')
 def essential_metabolites(model):
-    return model.essential_metabolites()
+    metabolites = ESSENTIAL_METABOLITES[model.id]
+    return [model.metabolites.get_by_id(m.id) for m in metabolites]
