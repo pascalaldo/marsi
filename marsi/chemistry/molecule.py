@@ -1,4 +1,4 @@
-# Copyright 2017 The Novo Nordisk Foundation Center for Biosustainability, DTU.
+# Copyright 2017 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ class Molecule(object):
         """
         from_file = os.path.isfile(path_or_str)
         ob_mol = openbabel.sdf_to_molecule(path_or_str, from_file)
+        ob_mol._settitle("")
         rd_mol = rdkit.sdf_to_molecule(path_or_str, from_file)
         return cls(ob_mol, rd_mol)
 
@@ -97,17 +98,17 @@ class Molecule(object):
     def num_bonds(self):
         return self._ob_mol.OBMol.NumBonds()
 
+    @property
+    def num_rings(self):
+        return len(self._ob_mol.OBMol.GetLSSR())
+
     def fingerprint(self, fpformat='maccs', bits=None):
         if fpformat not in VALID_FP_FORMATS:
             raise ValueError("Fingerprint '%s' is not valid. Use of of %s" % (fpformat, ", ".join(VALID_FP_FORMATS)))
 
         if fpformat in openbabel.fps:
             fp = openbabel.fingerprint(self._ob_mol, fpformat)
-            if bits is None:
-                if fpformat == "maccs":
-                    bits = 167
-                else:
-                    bits = max(fp.bits)
+            bits = openbabel.fp_bits.get(fpformat, max(fp.bits))
             return openbabel.fingerprint_to_bits(fp, bits=bits)
         else:
             fp = rdkit.fingerprint(self._rd_mol, fpformat)
@@ -115,3 +116,6 @@ class Molecule(object):
                 bits = fp.GetNumBits()
 
             return rdkit.fingerprint_to_bits(fp, bits=bits)
+
+    def _repr_html_(self):
+        return self._ob_mol._repr_html_() or openbabel.mol_to_svg(self._ob_mol)

@@ -17,12 +17,12 @@ from pybel import readfile
 
 from numpy import nan
 
-from marsi.io.mongodb import Metabolite
-from marsi.io.mongodb import Reference
+from marsi.config import default_session
+from marsi.io.db import Metabolite, Reference, Synonym
 from marsi.chemistry import openbabel
 
 
-def build_database(data, data_dir):
+def build_database(data, data_dir, with_zinc=True, session=default_session):
     """
     Builds then Molecules database.
     It requires that the input files have been downloaded.
@@ -39,26 +39,34 @@ def build_database(data, data_dir):
         The path to where data is stored.
 
     """
+    keys = set()
     i = 0
     chebi_structures_file = os.path.join(data_dir, "chebi_lite_3star.sdf")
-    i = upload_chebi_entries(chebi_structures_file, data.chebi, i=i)
+    i = upload_chebi_entries(chebi_structures_file, data.chebi, i=i, session=session, keys=keys)
     print("Added %i" % i)
+    session.commit()
     drugbank_structures_file = os.path.join(data_dir, "drugbank_open_structures.sdf")
-    i = upload_drugbank_entries(drugbank_structures_file, data.drugbank, i=i)
+    i = upload_drugbank_entries(drugbank_structures_file, data.drugbank, i=i, session=session, keys=keys)
     print("Added %i" % i)
+    session.commit()
     kegg_mol_files_dir = os.path.join(data_dir, "kegg_mol_files")
-    i = upload_kegg_entries(kegg_mol_files_dir, data.kegg, i=i)
+    i = upload_kegg_entries(kegg_mol_files_dir, data.kegg, i=i, session=session, keys=keys)
     print("Added %i" % i)
+    session.commit()
     pubchem_sdf_files_dir = os.path.join(data_dir, "pubchem_sdf_files")
-    i = upload_pubchem_entries(pubchem_sdf_files_dir, data.pubchem, i=i)
+    i = upload_pubchem_entries(pubchem_sdf_files_dir, data.pubchem, i=i, session=session, keys=keys)
     print("Added %i" % i)
+    session.commit()
     zinc_data_file = os.path.join(data_dir, "zinc_16.sdf.gz")
-    i = upload_zinc_entries(zinc_data_file, i=i)
-    print("Added %i" % i)
+    if with_zinc:
+        i = upload_zinc_entries(zinc_data_file, i=i, session=session, keys=keys)
+        print("Added %i" % i)
+
+    session.commit()
     return i
 
 
-def _add_molecule(mol, synonyms, database, identifier, is_analog):
+def _add_molecule(mol, synonyms, database, identifier, is_analog, session=default_session, keys=None):
     """
     Add a molecule to the database. It checks for radicals, and it only adds complete molecules.
 
@@ -78,12 +86,16 @@ def _add_molecule(mol, synonyms, database, identifier, is_analog):
     """
     if not openbabel.has_radical(mol):
         inchi_key = openbabel.mol_to_inchi_key(mol)
-        if len(inchi_key) > 0:
+        if len(inchi_key) > 0 and inchi_key not in keys:
             reference = Reference.add_reference(database, identifier)
-            Metabolite.from_molecule(mol, [reference], synonyms, is_analog)
+            synonyms = list(synonyms)
+            for i, synonym in enumerate(synonyms):
+                synonyms[i] = Synonym.add_synonym(synonym)
+            Metabolite.from_molecule(mol, [reference], synonyms, is_analog, session=session, first_time=True)
+            keys.add(inchi_key)
 
 
-def upload_chebi_entries(chebi_structures_file, chebi_data, i=0):
+def upload_chebi_entries(chebi_structures_file, chebi_data, i=0, session=default_session, keys=None):
     """
     Import ChEBI data
     """
@@ -91,16 +103,16 @@ def upload_chebi_entries(chebi_structures_file, chebi_data, i=0):
         chebi_id = openbabel.mol_chebi_id(mol)
         chebi_id_int = int(chebi_id.split(":")[1])
         chebi_rows = chebi_data.query('compound_id == @chebi_id_int')
-        assert chebi_id_int == "CHEBI:%i" % chebi_id_int
+        assert chebi_id == "CHEBI:%i" % chebi_id_int, (chebi_id, "CHEBI:%i" % chebi_id_int)
+
         if len(chebi_rows) > 0:
             synonyms = list(chebi_rows.name)
-            _add_molecule(mol, synonyms, 'chebi', chebi_id, True)
-
-        i += 1
+            _add_molecule(mol, synonyms, 'chebi', chebi_id, True, session=session, keys=keys)
+            i += 1
     return i
 
 
-def upload_drugbank_entries(drugbank_structures_file, drugbank_data, i=0):
+def upload_drugbank_entries(drugbank_structures_file, drugbank_data, i=0, session=default_session, keys=None):
     """
     Import DrugBank
     """
@@ -108,13 +120,13 @@ def upload_drugbank_entries(drugbank_structures_file, drugbank_data, i=0):
         drugbank_id = openbabel.mol_drugbank_id(mol)
         drugbank_rows = drugbank_data.query("id == @drugbank_id")
         if len(drugbank_rows) > 0:
-            _add_molecule(mol, drugbank_rows.iloc[0].synonyms[0], 'drugbank', drugbank_id, False)
-
+            _add_molecule(mol, [drugbank_rows.iloc[0].synonyms[0]], 'drugbank', drugbank_id, False,
+                          session=session, keys=keys)
         i += 1
     return i
 
 
-def upload_kegg_entries(kegg_mol_files_dir, kegg_data, i=0):
+def upload_kegg_entries(kegg_mol_files_dir, kegg_data, i=0, session=default_session, keys=None):
     """
     Import KEGG
     """
@@ -132,16 +144,16 @@ def upload_kegg_entries(kegg_mol_files_dir, kegg_data, i=0):
             if nan in synonyms:
                 synonyms.remove(nan)
             try:
-                _add_molecule(mol, synonyms, 'kegg', kegg_id, False)
+                _add_molecule(mol, synonyms, 'kegg', kegg_id, False, session=session, keys=keys)
+                i += 1
             except Exception as e:
                 print(synonyms)
                 raise e
 
-        i += 1
     return i
 
 
-def upload_pubchem_entries(pubchem_sdf_files_dir, pubchem_data, i=0):
+def upload_pubchem_entries(pubchem_sdf_files_dir, pubchem_data, i=0, session=default_session, keys=None):
     """
     Import PubChem
     """
@@ -158,21 +170,24 @@ def upload_pubchem_entries(pubchem_sdf_files_dir, pubchem_data, i=0):
             if None in synonyms:
                 synonyms.remove(None)
 
-            _add_molecule(mol, synonyms, 'pubchem', pubchem_id, True)
-
-        i += 1
+            _add_molecule(mol, synonyms, 'pubchem', pubchem_id, True, session=session, keys=keys)
+            i += 1
 
     return i
 
 
-def upload_zinc_entries(zinc_data_file, i=0):
+def upload_zinc_entries(zinc_data_file, i=0, session=default_session, keys=None):
     """
     Add ZINC
     """
     if os.path.isfile(zinc_data_file):
         zinc = pybel.readfile('sdf', zinc_data_file)
-        for molecule in zinc:
-            _add_molecule(molecule, [], 'zinc', molecule.title, False)
-            i += 1
+        for j, molecule in enumerate(zinc):
+            if not openbabel.has_radical(molecule):
+                _add_molecule(molecule, [], 'zinc', molecule.title, False, session=session, keys=keys)
+                i += 1
+
+            if j % 20000 == 0:
+                session.commit()
 
         return i

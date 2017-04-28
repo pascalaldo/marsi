@@ -276,7 +276,10 @@ def mcs_similarity(mcs_result, molecule, atoms_weight=0.5, bonds_weight=0.5):
 
     if mcs_result.completed:
         atoms_score = atoms_weight * (mcs_result.numAtoms / molecule.GetNumAtoms())
-        bonds_score = bonds_weight * (mcs_result.numBonds / molecule.GetNumBonds())
+        try:
+            bonds_score = bonds_weight * (mcs_result.numBonds / molecule.GetNumBonds())
+        except ZeroDivisionError:
+            bonds_score = 0
         return atoms_score + bonds_score
 
     else:

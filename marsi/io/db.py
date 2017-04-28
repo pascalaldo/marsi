@@ -32,7 +32,7 @@ from sqlalchemy.sql.elements import and_
 from marsi.chemistry.common import INCHI_KEY_REGEX
 from marsi.config import default_session
 
-__all__ = ['Metabolite', 'Reference']
+__all__ = ['Database', 'Metabolite', 'Reference']
 
 
 Base = declarative_base()
@@ -63,7 +63,7 @@ class CollectionWrapper(object):
         return self.session.query(self.collection).yield_per(1000)
 
     def __getitem__(self, item):
-        return self.session.query(self.collection).filer(self.collection.id == item).one()
+        return self.session.query(self.collection).filter(self.collection.id == item + 1).one()
 
     def __getattribute__(self, item):
         try:
@@ -307,16 +307,19 @@ class Metabolite(Base):
         mol = self.molecule(library='openbabel')
         mol.make3D(forcefield='mmff94')
         structure = mol._repr_html_() or openbabel.mol_to_svg(mol)
+        references = "; ".join(str(r) for r in self.references)
+        synonyms = ", ".join(self.synonyms)
         return """
 <table>
     <tbody>
+        <tr><td><strong>Formula</strong></td><td>%s</td></tr>
         <tr><td><strong>InChi</strong></td><td>%s</td></tr>
         <tr><td><strong>InChi Key</strong></td><td>%s</td></tr>
         <tr><td><strong>Structure</strong></td><td>%s</td></tr>
         <tr><td><strong>DBs</strong></td><td>%s</td></tr>
-        <tr><td><strong>Formula</strong></td><td>%s</td></tr>
+        <tr><td><strong>Synonyms</strong></td><td>%s</td></tr>
     </tbody>
-</table>""" % (self.inchi, self.inchi_key, structure, "; ".join(str(r) for r in self.references), mol.formula)
+</table>""" % (mol.formula, self.inchi, self.inchi_key, structure, references, synonyms)
 
     def __repr__(self):
         return "Metabolite %s [%s]" % (self.inchi_key, ", ".join(str(r) for r in self.references))
@@ -327,3 +330,7 @@ class Metabolite(Base):
 
         """
         return self.inchi
+
+
+class Database:
+    metabolites = CollectionWrapper(Metabolite)
