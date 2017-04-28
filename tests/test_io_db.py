@@ -44,13 +44,14 @@ def metabolite(request):
 
 
 def _calc_fp(metabolite):
-    return openbabel.fingerprint_to_bits(metabolite.molecule(library='openbabel').calcfp('maccs'))
+    return openbabel.fingerprint_to_bits(metabolite.molecule(library='openbabel').calcfp('maccs'),
+                                         openbabel.fp_bits['maccs'])
 
 
 def test_fingerprint_method(metabolite, benchmark):
-    fp = metabolite.fingerprint, 'maccs'
+    fp = metabolite.fingerprint('maccs')
     ob_fp = benchmark(_calc_fp, metabolite)
-    assert (fp == ob_fp.fp).all()
+    assert (fp == ob_fp)
 
 
 def test_collection_wrapper():
@@ -77,6 +78,8 @@ def test_add_reference():
 
     assert ref3.database == database
     assert ref3.accession == accession2
+
+    default_session.commit()
 
     with pytest.raises(IntegrityError):
         ref4 = Reference(database=database, accession=accession1)
