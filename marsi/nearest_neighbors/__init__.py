@@ -14,6 +14,8 @@
 import math
 
 import os
+import multiprocessing
+from queue import Empty
 
 import numpy as np
 import six
@@ -21,12 +23,14 @@ from IProgress import ProgressBar, Bar, ETA
 from mongoengine import connect
 
 from cameo.parallel import SequentialView
-from pandas import DataFrame
+from pandas import DataFrame, Series
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from marsi import config
 from marsi.chemistry import rdkit
 from marsi.chemistry.molecule import Molecule
-from marsi.config import default_session
+from marsi.config import default_session, connection_pool
 from marsi.io.db import Metabolite
 from marsi.nearest_neighbors.model import NearestNeighbors, DistributedNearestNeighbors, DBNearestNeighbors
 
@@ -35,6 +39,7 @@ from marsi.io.mongodb import Database
 from marsi.chemistry import SOLUBILITY
 
 from sqlalchemy import and_
+
 
 __all__ = ['build_nearest_neighbors_model', 'load_nearest_neighbors_model']
 
@@ -170,7 +175,7 @@ def load_nearest_neighbors_model(chunk_size=1e6, fpformat="fp4", solubility='all
                                              model_size=model_size, session=session, costum_query=costum_query)
 
 
-def load_nearest_neighbors_model_from_db(fpformat="fp4", solubility='all', model_size=10000, session=default_session,
+def load_nearest_neighbors_model_from_db(fpformat="fp4", solubility='all', model_size=1000, session=default_session,
                                          custom_query=None):
     """
     Loads a NN model.
@@ -250,9 +255,60 @@ def load_nearest_neighbors_model_from_file(chunk_size=1e6, fpformat="fp4", solub
     return nn_model
 
 
+class DataBuilder(multiprocessing.Process):
+    def __init__(self, inchi, similarity_cut, task_queue, results_queue, *args, **kwargs):
+        super(DataBuilder, self).__init__(*args, **kwargs)
+        self._inchi = inchi
+        self._similarity_cut = similarity_cut
+        self._session = None
+        self._tasks = task_queue
+        self._results = results_queue
+
+    @property
+    def session(self):
+        if self._session is None:
+            engine = create_engine('postgresql://', pool=connection_pool)
+            session_maker = sessionmaker(engine)
+            self._session = session_maker()
+        return self._session
+
+    @property
+    def molecule(self):
+        return rdkit.inchi_to_molecule(self._inchi)
+
+    def run(self):
+        while True:
+            try:
+                inchi_key, distance = self._tasks.get()
+            except Empty:
+                break
+            else:
+                result = self.apply_similarity_cut(inchi_key, distance)
+                self._results.put(result)
+
+        if self._session is not None:
+            self.session.close()
+            self.session.bind.dispose()
+
+    def apply_similarity_cut(self, inchi_key, distance):
+        met = Metabolite.get(inchi_key=inchi_key, session=self.session)
+
+        try:
+            structural_similarity = rdkit.structural_similarity(self.molecule, met.molecule('rdkit', get3d=False))
+            if structural_similarity >= self._similarity_cut:
+                return [inchi_key, met.formula, met.num_atoms, met.num_bonds, 1 - distance, structural_similarity]
+            else:
+                return None
+        except Exception as e:
+            print(e)
+            return None
+
+
 def search_closest_compounds(molecule, nn_model=None, fp_cut=0.5, fpformat="maccs", atoms_diff=3,
                              bonds_diff=3, rings_diff=2, similarity_cut=0.6, session=default_session):
     """
+    Finds the closest compounds given a Molecule.
+
 
     Parameters
     ----------
@@ -294,22 +350,42 @@ def search_closest_compounds(molecule, nn_model=None, fp_cut=0.5, fpformat="macc
 
     assert isinstance(nn_model, DistributedNearestNeighbors)
 
+    tasks_queue = multiprocessing.Queue()
+    results_queue = multiprocessing.Queue()
+
+    results = []
+
     neighbors = nn_model.radius_nearest_neighbors(molecule.fingerprint(fpformat), radius=fp_cut)
 
     dataframe = DataFrame(columns=["formula", "atoms", "bonds", "tanimoto_similarity", "structural_similarity"])
 
     progress = ProgressBar(maxval=len(neighbors), widgets=["Processing Neighbors: ", Bar(), ETA()])
 
-    for (inchi_key, distance) in progress(six.iteritems(neighbors)):
-        metabolite = Metabolite.get(inchi_key=inchi_key)
+    jobs = []
+    for i in range(multiprocessing.cpu_count()):
+        job = DataBuilder(molecule.inchi, similarity_cut, tasks_queue, results_queue)
+        jobs.append(job)
+        job.start()
+
+    for inchi_key, distance in six.iteritems(neighbors):
+        tasks_queue.put((inchi_key, distance))
+
+    progress.start()
+
+    while len(results) < len(neighbors):
         try:
-            structural_similarity = rdkit.structural_similarity(molecule._rd_mol,
-                                                                metabolite.molecule('rdkit', get3d=False))
-            if structural_similarity >= similarity_cut:
-                dataframe.loc[inchi_key] = [metabolite.formula, metabolite.num_atoms, metabolite.num_bonds,
-                                            1 - distance, structural_similarity]
-        except Exception as e:
-            print(e)
+            res = results_queue.get(timeout=500)
+        except Empty:
             continue
+        else:
+            results.append(res)
+            if res is not None:
+                dataframe.loc[res[0]] = res[1:]
+            progress.update(len(results))
+
+    progress.finish()
+
+    for job in jobs:
+        job.terminate()
 
     return dataframe

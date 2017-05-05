@@ -11,14 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import logging
 from sklearn import neighbors
 
 from cameo.parallel import SequentialView
 from sqlalchemy.orm import load_only
 
 from marsi.io.db import Metabolite
-
 
 try:  # pragma: no cover
     import pyopencl as cl
@@ -38,6 +37,8 @@ from pandas import DataFrame
 
 from marsi.utils import timing
 from marsi.nearest_neighbors import model_ext
+
+logger = logging.getLogger(__name__)
 
 # Tanimoto coefficient calculation is implemented based on to OpenBabel's implementation
 # https://github.com/openbabel/openbabel/blob/master/include/openbabel/fingerprint.h#L86
@@ -496,9 +497,9 @@ class DBNearestNeighbors(object):
     @property
     def neighbors(self):
         if self._neighbors is None:
+            logger.info("db-nn: building NearestNeighbors")
             self._neighbors = neighbors.NearestNeighbors(algorithm='brute', metric=self._metric)
             self._neighbors.fit(self.features)
-
         return self._neighbors
 
     def __getitem__(self, index):
@@ -526,7 +527,9 @@ class DBNearestNeighbors(object):
             (Index --> Distance)
 
         """
+        logger.info("db-nn: searching for k-nearest-neighbors (%i)" % k)
         fingerprint = fingerprint.reshape(1, -1)
+        logger.debug("Reshaped fingerprint %s" % fingerprint)
         distances, indices = self.neighbors.kneighbors(fingerprint, k, True)
         distances, indices = distances[0], indices[0]
         return {self.index[i]: d for i, d in zip(indices, distances)}
@@ -550,12 +553,15 @@ class DBNearestNeighbors(object):
             (Index --> Distance)
 
         """
+        logger.info("db-nn: searching for radius-nearest-neighbors (%.4f)" % radius)
         fingerprint = fingerprint.reshape(1, -1)
+        logger.debug("Reshaped fingerprint %s" % fingerprint)
         distances, indices = self.neighbors.radius_neighbors(fingerprint, radius, True)
         distances, indices = distances[0], indices[0]
         return {self.index[i]: d for i, d in zip(indices, distances)}
 
     def distances(self, fingerprint, mode="native"):
+        logger.info("db-nn: calculating all distances")
         fingerprint = fingerprint.reshape(1, -1)
         distances, indices = self.neighbors.radius_neighbors(fingerprint, 0, True)
         distances, indices = distances[0], indices[0]
