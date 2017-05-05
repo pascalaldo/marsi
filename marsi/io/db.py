@@ -299,7 +299,8 @@ class Metabolite(Base):
         if fingerprint_format not in self.fingerprints:
             ob_molecule = self.molecule(get3d=False)
             fingerprint = openbabel.fingerprint(ob_molecule, fingerprint_format)
-            self.fingerprints[fingerprint_format] = openbabel.fingerprint_to_bits(fingerprint, max(fingerprint.bits))
+            bits = openbabel.fp_bits.get('maccs', 2048)
+            self.fingerprints[fingerprint_format] = openbabel.fingerprint_to_bits(fingerprint, bits)
 
         return self.fingerprints[fingerprint_format]
 
