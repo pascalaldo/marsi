@@ -32,6 +32,9 @@ lru_cache = LRUCache(maxsize=1024)
 
 logger = logging.getLogger(__name__)
 
+CURRENCY_METABOLITES = ["atp", "adp", "nad", "nadh", "nadp", "nadph", "amp",
+                        "h2o", "h", "coa", "acp", "pi", 'pppi', 'ppi']
+
 DATABASE_LINKS = 'database_links'
 
 CHEBI = 'CHEBI'
@@ -74,3 +77,7 @@ def annotate_metabolite(metabolite):
 def annotate_model(model):
     pbar = ProgressBar(maxval=len(model.metabolites), widgets=["Annotating: ", Percentage(), Bar(), ETA()])
     [annotate_metabolite(m) for m in pbar(model.metabolites)]
+
+
+def essential_species_ids(model):
+    return {m.id[:-2] for m in model.essentail_metabolites()}

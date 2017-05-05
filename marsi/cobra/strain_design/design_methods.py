@@ -23,9 +23,7 @@ from pandas import DataFrame
 
 from marsi.cobra.strain_design.evolutionary import OptMet
 from marsi.cobra.strain_design.post_processing import replace_design
-
-CURRENCY_METABOLITES = ["atp", "adp", "nad", "nadh", "nadp", "nadph", "amp",
-                        "h2o", "h", "coa", "acp", "pi", 'pppi', 'ppi']
+from marsi.cobra.utils import CURRENCY_METABOLITES
 
 
 class GenericMARSIDesignMethod(object):
