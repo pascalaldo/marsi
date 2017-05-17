@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 def compete_metabolite(model, metabolite, reference_dist, fraction=0.5, time_machine=None):
     """
-    Inhibits the usage of a metabolite based on a reference flux distributions.
+    Increases the usage of a metabolite based on a reference flux distributions.
 
     Parameters
     ----------
@@ -106,36 +106,41 @@ def inhibit_metabolite(model, metabolite, reference_dist, fraction=0.5, allow_ac
         If allow accumulation returns the exchange reaction associated with the metabolite.
 
     """
-    reactions = metabolite.reactions
+    reactions = [r for r in metabolite.reactions if len(set(m.compartment for m in r.metabolites)) == 1]
 
     if not isinstance(reference_dist, (dict, FluxDistributionResult)):
         raise ValueError("'reference_dist' must be a dict or FluxDistributionResult")
 
-    missing = []
-
-    if len(missing):
-        raise ValueError("reactions %s are not accounted in 'fraction'" % ", ".join("'%s'" % r.id for r in missing))
-
     exchanges = DictList(model.exchanges)
+
+    if allow_accumulation:
+        species_id = metabolite.id[:-2]
+        if "EX_%s_e" % species_id not in exchanges:
+            exchange = model.add_exchange(metabolite, prefix="INHIBIT_", time_machine=time_machine)
+        else:
+            exchange = model.reactions.get_by_id("EX_%s_e" % species_id)
+    else:
+        exchange = None
 
     aux_variables = {}
     ind_variables = {}
-    turnover = 0
+    turnover = sum(abs(r.metabolites[metabolite] * reference_dist[r.id]) for r in metabolite.reactions)
     for reaction in reactions:
         coefficient = reaction.metabolites[metabolite]
 
+        # Optimization to reduce y variables and problem complexity:
+        # Irreversible reactions that only produce the metabolite can be ignored because they will not contribute
+        # to the consumption turnover. Reactions that only consume the metabolite can be added directly into the
+        # sum constraint. This allows for a less complex problem with less variables.
+
         if not reaction.reversibility:
-            if coefficient > 0:
+            if coefficient > 0:  # skip reactions that can only produce the metabolite
                 continue
-            else:
-                aux_variables[reaction.id] = reaction.flux_expression * coefficient
+            else:  # keep the v*coefficient value for reactions that can only consume the metabolite
+                aux_variables[reaction.id] = - reaction.flux_expression * coefficient
                 continue
 
-        add = []
-
-        t = coefficient * reference_dist[reaction.id]
-        if t > 0:
-            turnover += t
+        to_add = []
 
         ind_var_id = "y_%s" % reaction.id
         aux_var_id = "u_%s" % reaction.id
@@ -145,7 +150,7 @@ def inhibit_metabolite(model, metabolite, reference_dist, fraction=0.5, allow_ac
         except KeyError:
             ind_var = model.solver.interface.Variable(ind_var_id, type='binary')
             aux_var = model.solver.interface.Variable(aux_var_id, lb=0)
-            add += [ind_var, aux_var]
+            to_add += [ind_var, aux_var]
 
         aux_variables[reaction.id] = aux_var
         ind_variables[reaction.id] = ind_var
@@ -162,70 +167,71 @@ def inhibit_metabolite(model, metabolite, reference_dist, fraction=0.5, allow_ac
             model.solver.constraints[upper_indicator_constraint_name]
         except KeyError:
 
-            # constraint y to be 0 if abs(v) == 0
+            # constraint y to be 0 if Sv >= 0 (production)
 
-            #  -M             0                M
-            # v <-------------|---------------->
-            #        y=0      |      y=1
+            #   -M             0                M
+            # Sv <-------------|---------------->
+            #         y=0      |      y=1
 
-            # v - My <= 0
-            # if y = 1 then v <= M
-            # if y = 0 then v <= 0
-            upper_indicator_expression = reaction.flux_expression - ind_var * constant
+            # -Sv - My <= 0
+            # if y = 1 then Sv <= M
+            # if y = 0 then Sv >= 0
+            upper_indicator_expression = - coefficient * reaction.flux_expression - ind_var * constant
             ind_constraint_u = model.solver.interface.Constraint(upper_indicator_expression,
                                                                  name=upper_indicator_constraint_name,
                                                                  ub=0)
 
-            # v + M(1-y) >= 0
-            # if y = 1 then v >= 0
-            # if y = 0 then v >= -M
-            lower_indicator_expression = reaction.flux_expression + constant - ind_var * constant
+            # -Sv + M(1-y) >= 0
+            # if y = 1 then Sv <= 0
+            # if y = 0 then Sv <= M
+            lower_indicator_expression = - coefficient * reaction.flux_expression + constant - ind_var * constant
             ind_constraint_l = model.solver.interface.Constraint(lower_indicator_expression,
                                                                  name=lower_indicator_constraint_name,
                                                                  lb=0)
 
-            # a) -M(1-y) + u <= 0
-            # b) M(1-y) + u >= 0
+            # a) -My + u <= 0
+            # b) My + u >= 0
 
-            # if y = 1, u = 0
-            # if y = 0, -M <= u <= M
-            aux_indicator_expression_a = -constant * (1 - ind_var) + aux_var
+            # if y = 0, u = 0
+            # if y = 1, -M <= u <= M
+            aux_indicator_expression_a = -constant * ind_var + aux_var
             aux_constraint_a = model.solver.interface.Constraint(aux_indicator_expression_a,
                                                                  name=auxiliary_constraint_a_name,
                                                                  ub=0)
 
-            aux_indicator_expression_b = constant * (1 - ind_var) + aux_var
+            aux_indicator_expression_b = constant * ind_var + aux_var
             aux_constraint_b = model.solver.interface.Constraint(aux_indicator_expression_b,
                                                                  name=auxiliary_constraint_b_name,
                                                                  lb=0)
             #
-            # # c) -My + u - viSi <= 0
-            # # d) My + u - viSi >= 0
+            # # c) -M(1-y) + u + viSi <= 0
+            # # d) M(1-y) + u + viSi >= 0
             #
-            # # if y = 0 then 0 <= -u - viSi <= 0
-            # # if y = 1 then -M <= -u - viSi <= M
-            aux_indicator_expression_c = -constant * ind_var - aux_var - reaction.flux_expression * coefficient
+            # # if y = 1 then 0 <= u + viSi <= 0
+            # # if y = 0 then -M <= u + viSi <= M
+            aux_indicator_expression_c = -constant * (1 - ind_var) + aux_var + reaction.flux_expression * coefficient
             aux_constraint_c = model.solver.interface.Constraint(aux_indicator_expression_c,
                                                                  name=auxiliary_constraint_c_name,
                                                                  ub=0)
 
-            aux_indicator_expression_d = constant * ind_var - aux_var - reaction.flux_expression * coefficient
+            aux_indicator_expression_d = constant * (1 - ind_var) + aux_var + reaction.flux_expression * coefficient
             aux_constraint_d = model.solver.interface.Constraint(aux_indicator_expression_d,
                                                                  name=auxiliary_constraint_d_name,
                                                                  lb=0)
 
-            add += [ind_constraint_l, ind_constraint_u, aux_constraint_a,
-                    aux_constraint_b, aux_constraint_c, aux_constraint_d]
+            to_add += [ind_constraint_l, ind_constraint_u, aux_constraint_a,
+                       aux_constraint_b, aux_constraint_c, aux_constraint_d]
 
             if time_machine:
-                time_machine(do=partial(model.solver.add, add), undo=partial(model.solver.remove, add))
+                time_machine(do=partial(model.solver.add, to_add), undo=partial(model.solver.remove, to_add))
             else:
-                model.solver.add(add)
+                model.solver.add(to_add)
 
     model.solver.update()
-    max_production_turnover = (1 - fraction) * turnover
+    max_production_turnover = (1 - fraction) * (turnover / 2)
+    # sum(u) <= (1-fraction) * uWT
     decrease_turnover_constraint = model.solver.interface.Constraint(sum(aux_variables.values()),
-                                                                     name="make_less_%s" % metabolite.id,
+                                                                     name="take_less_%s" % metabolite.id,
                                                                      ub=max_production_turnover)
 
     if time_machine:
@@ -234,14 +240,7 @@ def inhibit_metabolite(model, metabolite, reference_dist, fraction=0.5, allow_ac
     else:
         model.solver.add(decrease_turnover_constraint)
 
-    if allow_accumulation:
-        species_id = metabolite.id[:-2]
-        if "EX_%s_e" % species_id not in exchanges:
-            exchange = model.add_exchange(metabolite, prefix="INHIBIT_", time_machine=time_machine)
-        else:
-            exchange = model.reactions.get_by_id("EX_%s_e" % species_id)
-
-        return exchange
+    return exchange
 
 
 def knockout_metabolite(model, metabolite, ignore_transport=True, allow_accumulation=True, time_machine=None):
