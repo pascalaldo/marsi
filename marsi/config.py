@@ -91,9 +91,6 @@ log.level = Level.ERROR
 
 db_config = {}
 
-
-
-
 try:
     db_engine = db_config.get('db_engine', "postgresql")
     username = db_config.get('db_user', getpass.getuser())
@@ -108,7 +105,8 @@ try:
     def getconn():
         c = psycopg2.connect(user=username, password=password, host=host, port=port, dbname=db_name)
         return c
-except:
+except Exception as e:
+    logger.error(e)
     default_session = None
 else:
     from sqlalchemy import create_engine
