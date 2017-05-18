@@ -23,6 +23,7 @@ import time
 import numpy as np
 from bitarray import bitarray
 
+
 from marsi.chemistry.common import monte_carlo_volume as mc_vol, inchi_key_lru_cache
 
 
@@ -51,6 +52,7 @@ def inchi_to_molecule(inchi):
     """
     mol = Chem.MolFromInchi(inchi)
     mol = Chem.AddHs(mol)
+
     return mol
 
 
@@ -233,7 +235,7 @@ def maximum_common_substructure(reference, molecule, match_rings=True, match_fra
     match_fraction : float
         Match is fraction of the reference atoms (default: 0.6)
     timeout: int
-
+        Time out in seconds.
     Returns
     -------
     rdkit.Chem.MCS.MCSResult
@@ -245,7 +247,8 @@ def maximum_common_substructure(reference, molecule, match_rings=True, match_fra
     min_num_atoms = math.ceil(reference.GetNumAtoms()) * match_fraction
 
     return MCS.FindMCS([reference, molecule], ringMatchesRingOnly=match_rings,
-                       minNumAtoms=min_num_atoms, timeout=timeout, atomCompare='any', bondCompare="any")
+                       minNumAtoms=min_num_atoms, timeout=timeout,
+                       atomCompare='any', bondCompare="any")
 
 
 def mcs_similarity(mcs_result, molecule, atoms_weight=0.5, bonds_weight=0.5):
@@ -308,11 +311,16 @@ def structural_similarity(reference, molecule, atoms_weight=0.5, bonds_weight=0.
     match_fraction : float
         Match is fraction of the reference atoms (default: 0.6).
     timeout : int
+        Time out in seconds.
+
     Returns
     -------
     float
         Similarity between reference and molecule.
     """
+
+    reference = Chem.RemoveHs(reference, implicitOnly=True, updateExplicitCount=True)
+    molecule = Chem.RemoveHs(molecule, implicitOnly=True, updateExplicitCount=True)
 
     mcs_res = maximum_common_substructure(reference, molecule, match_rings=match_rings,
                                           match_fraction=match_fraction, timeout=timeout)
