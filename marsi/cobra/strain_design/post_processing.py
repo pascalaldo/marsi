@@ -15,8 +15,11 @@
 import logging
 
 import numpy
+import six
 from cameo.core.strain_design import StrainDesign
 from cameo.core.target import ReactionKnockoutTarget, ReactionModulationTarget
+from cameo.flux_analysis.structural import create_stoichiometric_array, find_coupled_reactions_nullspace
+from cameo.flux_analysis.structural import nullspace
 from pandas import DataFrame
 
 from cameo.util import TimeMachine
@@ -24,8 +27,10 @@ from cameo.exceptions import SolveError
 from cameo.core.solver_based_model import SolverBasedModel
 from cameo.core.reaction import Reaction
 from cameo.strain_design.heuristic.evolutionary.objective_functions import ObjectiveFunction
+from sympy.physics.quantum.spin import _couple
 
 from marsi.cobra.strain_design.target import AntiMetaboliteManipulationTarget, MetaboliteKnockoutTarget
+from marsi.cobra import utils
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +116,10 @@ def find_anti_metabolite_modulation(reaction, fold_change, essential_metabolites
     """
 
     if ignore_metabolites is None:
-        ignore_metabolites = []
+        ignore_metabolites = set(utils.CURRENCY_METABOLITES)
+
+    if essential_metabolites is None and reaction.model is not None:
+        essential_metabolites = utils.essential_species_ids(reaction.model)
 
     assert isinstance(reaction, Reaction)
     assert isinstance(ignore_metabolites, (list, set, tuple))
@@ -145,6 +153,167 @@ def find_anti_metabolite_modulation(reaction, fold_change, essential_metabolites
                                                               allow_accumulation=allow_accumulation)
 
     return result
+
+
+def convert_strain_design_results(model, results, objective_function, simulation_method, simulation_kwargs=None,
+                                  ignore_metabolites=None, ignore_transport=True, allow_accumulation=True,
+                                  nullspace_matrix=None, essential_metabolites=None, max_loss=0.2):
+    """
+    Converts a StrainDesignMethodResult into a DataFrame of possible substitutions.
+
+    Parameters
+    ----------
+    model : cobra.Model
+        A COBRA model.
+    results : cameo.core.strain_design.StrainDesignMethodResult
+        The results of a strain design method.
+    objective_function : cameo.strain_design.heuristic.evolutionary.objective_functions.ObjectiveFunction
+        The cellular objective to evaluate.
+    simulation_method : cameo.flux_analysis.simulation.fba or equivalent
+        The method to compute a flux distribution using a COBRA model.
+    simulation_kwargs : dict
+        The arguments for the simulation_method.
+    ignore_metabolites : list
+        A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc).
+    ignore_transport : bool
+        If False, also knockout the transport reactions.
+    allow_accumulation : bool
+        If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.
+    nullspace_matrix : numpy.ndarray
+        The nullspace of the model.
+    essential_metabolites : list
+        A list of essential metabolites.
+    max_loss : float
+        A number between 0 and 1 for how much the fitness is allowed to drop with the metabolite target.
+
+    Returns
+    -------
+    pandas.DataFrame
+        A data frame with the possible replacements.
+    """
+
+    if essential_metabolites is None:
+        essential_metabolites = utils.essential_species_ids(model)
+
+    if ignore_metabolites is None:
+        ignore_metabolites = set(utils.CURRENCY_METABOLITES)
+
+    if nullspace_matrix is None:
+        nullspace_matrix = nullspace(create_stoichiometric_array(model))
+
+    if simulation_kwargs is None:
+        simulation_kwargs = {}
+
+    replacements = DataFrame()
+    for index, design in enumerate(results):
+        with TimeMachine() as tm:
+            design.apply(model, tm)
+            solution = simulation_method(model, **simulation_kwargs)
+            fitness = objective_function(model, solution, design.targets)
+        if fitness <= 0:
+            continue
+
+        res = convert_design(model, design, fitness, objective_function, simulation_method,
+                             simulation_kwargs=simulation_kwargs, ignore_metabolites=ignore_metabolites,
+                             ignore_transport=ignore_transport, allow_accumulation=allow_accumulation,
+                             nullspace_matrix=nullspace_matrix, essential_metabolites=essential_metabolites,
+                             max_loss=max_loss)
+
+        res['index'] = index
+        replacements = replacements.append(res, ignore_index=True)
+
+    return replacements
+
+
+def convert_design(model, strain_design, fitness, objective_function, simulation_method, simulation_kwargs=None,
+                   ignore_metabolites=None, ignore_transport=True, allow_accumulation=True, nullspace_matrix=None,
+                   essential_metabolites=None, max_loss=0.2):
+    """
+    Converts a StrainDesign into a DataFrame of possible substitutions.
+
+    Parameters
+    ----------
+    model: cobra.Model
+        A COBRA model.
+    strain_design : cameo.core.strain_design.StrainDesign
+        The results of a strain design method.
+    objective_function : cameo.strain_design.heuristic.evolutionary.objective_functions.ObjectiveFunction
+        The cellular objective to evaluate.
+    simulation_method : cameo.flux_analysis.simulation.fba or equivalent
+        The method to compute a flux distribution using a COBRA model.
+    simulation_kwargs : dict
+        The arguments for the simulation_method.
+    ignore_metabolites : list
+        A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc).
+    ignore_transport : bool
+        If False, also knockout the transport reactions.
+    allow_accumulation : bool
+        If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.
+    nullspace_matrix : numpy.ndarray
+        The nullspace of the model.
+    essential_metabolites : list
+        A list of essential metabolites.
+    max_loss : float
+        A number between 0 and 1 for how much the fitness is allowed to drop with the metabolite target.
+
+    Returns
+    -------
+    pandas.DataFrame
+        A data frame with the possible replacements.
+    """
+
+    if simulation_kwargs is None:
+        simulation_kwargs = {}
+
+    if simulation_kwargs.get('reference', None) is None:
+        reference = {}
+    else:
+        reference = simulation_kwargs['reference']
+
+    if essential_metabolites is None:
+        essential_metabolites = utils.essential_species_ids(model)
+
+    if ignore_metabolites is None:
+        ignore_metabolites = set(utils.CURRENCY_METABOLITES)
+
+    if nullspace_matrix is None:
+        nullspace_matrix = nullspace(create_stoichiometric_array(model))
+
+    coupled_reactions = find_coupled_reactions_nullspace(model, ns=nullspace_matrix)
+    coupled_reactions = [{r.id: c for r, c in six.iteritems(g)} for g in coupled_reactions]
+
+    assert isinstance(model, SolverBasedModel)
+    assert isinstance(objective_function, ObjectiveFunction)
+    assert isinstance(nullspace_matrix, numpy.ndarray)
+
+    def valid_loss(val, base):
+        fitness_loss = fitness - val
+
+        return fitness_loss / fitness < max_loss and val - base > 1e-6
+
+    testable_targets = [t for t in strain_design.targets
+                        if isinstance(t, (ReactionKnockoutTarget, ReactionModulationTarget))]
+
+    non_testable_targets = {t for t in strain_design.targets
+                            if not isinstance(t, (ReactionKnockoutTarget, ReactionModulationTarget))}
+    coupled_targets = {}
+    for t in testable_targets:
+        group = next((g for g in coupled_reactions if t in g), None)
+        if group:
+            group = frozenset(group)
+            if group not in coupled_targets:
+                coupled_targets[group] = []
+            coupled_targets[group].append(t)
+
+    coupled_targets = {k: t for k, t in six.iteritems(coupled_targets) if len(t) > 1}
+    non_coupled_targets = {t for t in testable_targets if any(t in v for v in coupled_targets.values())}
+
+    with TimeMachine() as base_time_machine:
+        for target in non_testable_targets:
+            target.apply(model, time_machine=base_time_machine)
+
+        # test non-coupled targets as before
+        # test coupled targets as whole and then individualy if something comes up
 
 
 def replace_strain_design_results(model, results, objective_function, simulation_method, simulation_kwargs=None,
@@ -181,6 +350,12 @@ def replace_strain_design_results(model, results, objective_function, simulation
     pandas.DataFrame
         A data frame with the possible replacements.
     """
+
+    if essential_metabolites is None:
+        essential_metabolites = utils.essential_species_ids(model)
+
+    if ignore_metabolites is None:
+        ignore_metabolites = set(utils.CURRENCY_METABOLITES)
 
     if simulation_kwargs is None:
         simulation_kwargs = {}
@@ -249,10 +424,10 @@ def replace_design(model, strain_design, fitness, objective_function, simulation
         reference = simulation_kwargs['reference']
 
     if essential_metabolites is None:
-        essential_metabolites = []
+        essential_metabolites = utils.essential_species_ids(model)
 
     if ignore_metabolites is None:
-        ignore_metabolites = []
+        ignore_metabolites = set(utils.CURRENCY_METABOLITES)
 
     assert isinstance(model, SolverBasedModel)
     assert isinstance(objective_function, ObjectiveFunction)
@@ -374,10 +549,10 @@ def convert_target(model, target, essential_metabolites, ignore_transport=True,
     """
 
     if ignore_metabolites is None:
-        ignore_metabolites = []
+        ignore_metabolites = set(utils.CURRENCY_METABOLITES)
 
     if essential_metabolites is None:
-        essential_metabolites = []
+        essential_metabolites = utils.essential_species_ids(model)
 
     reference = reference or {}
     if isinstance(target, ReactionKnockoutTarget):
@@ -385,7 +560,7 @@ def convert_target(model, target, essential_metabolites, ignore_transport=True,
         substitutions = find_anti_metabolite_knockouts(target.get_model_target(model),
                                                        ref_flux=reference.get(target.id, 0),
                                                        ignore_transport=ignore_transport,
-                                                       ignore_metabolites=ignore_metabolites + essential_metabolites,
+                                                       ignore_metabolites=ignore_metabolites | essential_metabolites,
                                                        allow_accumulation=allow_accumulation)
 
     elif isinstance(target, ReactionModulationTarget):
@@ -401,3 +576,70 @@ def convert_target(model, target, essential_metabolites, ignore_transport=True,
         raise ValueError("Don't know what to do with the target of type %s" % type(target))
 
     return substitutions
+
+
+def convert_target_group(model, target_group, essential_metabolites, ignore_transport=True,
+                         ignore_metabolites=None, allow_accumulation=True, reference=None):
+    """
+    Generates a dictionary {species_id -> MetaboliteKnockoutTarget}.
+
+    Parameters
+    ----------
+    model : cobra.Model
+        A COBRA model
+    target_group : dict
+        A dictionary of (target: relative coefficient)
+    ignore_metabolites : set
+        A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc.)
+    ignore_transport : bool
+        If False, also knockout the transport reactions.
+    allow_accumulation : bool
+        If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.
+    reference : dict
+        A dictionary containing the flux values of a reference flux distribution.
+    essential_metabolites : set
+        A list of essential metabolites
+
+    Returns
+    -------
+    tuple
+        A dictionary with the antimetabolites to test and another dictionary with the reaction where those metabolites
+        belong
+    """
+
+    if ignore_metabolites is None:
+        ignore_metabolites = set(utils.CURRENCY_METABOLITES)
+
+    if essential_metabolites is None:
+        essential_metabolites = utils.essential_species_ids(model)
+
+    reference = reference or {}
+    substitutions = {}
+    metabolites_targets = {}
+    for target in target_group:
+        if isinstance(target, ReactionKnockoutTarget):
+            ignore = ignore_metabolites | essential_metabolites
+            _substitutions = find_anti_metabolite_knockouts(target.get_model_target(model),
+                                                            ref_flux=reference.get(target.id, 0),
+                                                            ignore_transport=ignore_transport,
+                                                            ignore_metabolites=ignore,
+                                                            allow_accumulation=allow_accumulation)
+
+        elif isinstance(target, ReactionModulationTarget):
+            _substitutions = find_anti_metabolite_modulation(target.get_model_target(model),
+                                                             target.fold_change,
+                                                             essential_metabolites,
+                                                             ref_flux=reference.get(target.id, 0),
+                                                             ignore_transport=ignore_transport,
+                                                             ignore_metabolites=ignore_metabolites,
+                                                             allow_accumulation=allow_accumulation)
+        else:
+            _substitutions = {}
+
+        substitutions.update(_substitutions)
+        for substitution in _substitutions:
+            if substitution not in metabolites_targets:
+                metabolites_targets[substitution] = set()
+            metabolites_targets[substitution].append(target)
+
+    return substitutions, metabolites_targets

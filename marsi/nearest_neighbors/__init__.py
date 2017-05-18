@@ -256,13 +256,17 @@ def load_nearest_neighbors_model_from_file(chunk_size=1e6, fpformat="fp4", solub
 
 
 class DataBuilder(multiprocessing.Process):
-    def __init__(self, inchi, similarity_cut, task_queue, results_queue, *args, **kwargs):
+    def __init__(self, inchi, similarity_cut, task_queue, results_queue, atoms_weight, bonds_weight, timeout,
+                 *args, **kwargs):
         super(DataBuilder, self).__init__(*args, **kwargs)
         self._inchi = inchi
         self._similarity_cut = similarity_cut
         self._session = None
         self._tasks = task_queue
         self._results = results_queue
+        self._atoms_weight = atoms_weight
+        self._bonds_weight = bonds_weight
+        self._timeout = timeout
 
     @property
     def session(self):
@@ -294,7 +298,11 @@ class DataBuilder(multiprocessing.Process):
         met = Metabolite.get(inchi_key=inchi_key, session=self.session)
 
         try:
-            structural_similarity = rdkit.structural_similarity(self.molecule, met.molecule('rdkit', get3d=False))
+            molecule = met.molecule('rdkit', get3d=False)
+            structural_similarity = rdkit.structural_similarity(self.molecule, molecule,
+                                                                atoms_weight=self._atoms_weight,
+                                                                bonds_weight=self._bonds_weight,
+                                                                timeout=self._timeout)
             if structural_similarity >= self._similarity_cut:
                 return [inchi_key, met.formula, met.num_atoms, met.num_bonds, 1 - distance, structural_similarity]
             else:
@@ -305,7 +313,8 @@ class DataBuilder(multiprocessing.Process):
 
 
 def search_closest_compounds(molecule, nn_model=None, fp_cut=0.5, fpformat="maccs", atoms_diff=3,
-                             bonds_diff=3, rings_diff=2, similarity_cut=0.6, session=default_session):
+                             bonds_diff=3, rings_diff=2, similarity_cut=0.6, session=default_session,
+                             atoms_weight=0.5, bonds_weight=0.5, timeout=120):
     """
     Finds the closest compounds given a Molecule.
 
@@ -330,6 +339,10 @@ def search_closest_compounds(molecule, nn_model=None, fp_cut=0.5, fpformat="macc
         A cutoff value for fingerprint similarity.
     session : Session
         SQLAlchemy session.
+    atoms_weight : float
+        The weight of having matching atoms in the structural similarity
+    bonds_weight : float
+        The weight of having matching bonds in the structural similarity
 
     Returns
     -------
@@ -363,7 +376,8 @@ def search_closest_compounds(molecule, nn_model=None, fp_cut=0.5, fpformat="macc
 
     jobs = []
     for i in range(multiprocessing.cpu_count()):
-        job = DataBuilder(molecule.inchi, similarity_cut, tasks_queue, results_queue)
+        job = DataBuilder(molecule.inchi, similarity_cut, tasks_queue, results_queue,
+                          atoms_weight, bonds_weight, timeout)
         jobs.append(job)
         job.start()
 
@@ -371,7 +385,7 @@ def search_closest_compounds(molecule, nn_model=None, fp_cut=0.5, fpformat="macc
         tasks_queue.put((inchi_key, distance))
 
     progress.start()
-
+    print(len(neighbors))
     while len(results) < len(neighbors):
         try:
             res = results_queue.get(timeout=500)

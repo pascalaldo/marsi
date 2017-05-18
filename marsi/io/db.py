@@ -307,9 +307,10 @@ class Metabolite(Base):
     def _repr_html_(self):
         mol = self.molecule(library='openbabel')
         mol.make3D(forcefield='mmff94')
+        mol.removeh()
         structure = mol._repr_html_() or openbabel.mol_to_svg(mol)
         references = "; ".join(str(r) for r in self.references)
-        synonyms = ", ".join(self.synonyms)
+        synonyms = ", ".join([s.synonym for s in self.synonyms])
         return """
 <table>
     <tbody>
