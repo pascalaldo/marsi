@@ -23,7 +23,7 @@ from IProgress import ProgressBar, Bar, ETA
 from mongoengine import connect
 
 from cameo.parallel import SequentialView
-from pandas import DataFrame, Series
+from pandas import DataFrame
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
