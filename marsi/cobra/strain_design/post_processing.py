@@ -27,7 +27,6 @@ from cameo.exceptions import SolveError
 from cameo.core.solver_based_model import SolverBasedModel
 from cameo.core.reaction import Reaction
 from cameo.strain_design.heuristic.evolutionary.objective_functions import ObjectiveFunction
-from sympy.physics.quantum.spin import _couple
 
 from marsi.cobra.strain_design.target import AntiMetaboliteManipulationTarget, MetaboliteKnockoutTarget
 from marsi.cobra import utils
