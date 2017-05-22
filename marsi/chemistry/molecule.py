@@ -91,6 +91,10 @@ class Molecule(object):
         self._rd_mol = rd_mol
 
     @property
+    def inchi(self):
+        return openbabel.mol_to_inchi(self._ob_mol)
+
+    @property
     def num_atoms(self):
         return self._ob_mol.OBMol.NumAtoms()
 
@@ -118,4 +122,7 @@ class Molecule(object):
             return rdkit.fingerprint_to_bits(fp, bits=bits)
 
     def _repr_html_(self):
-        return self._ob_mol._repr_html_() or openbabel.mol_to_svg(self._ob_mol)
+        self._ob_mol.removeh()
+        representation =  self._ob_mol._repr_html_() or openbabel.mol_to_svg(self._ob_mol)
+        self._ob_mol.addh()
+        return representation
