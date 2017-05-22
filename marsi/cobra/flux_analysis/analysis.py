@@ -19,6 +19,8 @@ from bokeh.layouts import column
 from bokeh.models import FactorRange, Range1d, LinearAxis
 from bokeh.plotting import figure, show
 from bokeh.charts import Line
+from cobra.core import Reaction
+from numpy import array
 
 from pandas import DataFrame
 
@@ -209,7 +211,7 @@ def metabolite_knockout_phenotype(model, compartments=None, objective=None, ndec
 
 class SensitivityAnalysisResult(Result):
     def __init__(self, species_id, exchange_fluxes, steps, is_essential, biomass_fluxes=None,
-                 biomass=None, *args, **kwargs):
+                 biomass=None, variables=None, variables_fluxes=None, *args, **kwargs):
         super(SensitivityAnalysisResult, self).__init__(*args, **kwargs)
         self._is_essential = is_essential
         self._species_id = species_id
@@ -217,14 +219,27 @@ class SensitivityAnalysisResult(Result):
         self._steps = steps
         self._biomass_fluxes = biomass_fluxes
         self._biomass = biomass
+        self._variables = variables
+        self._variables_fluxes = variables_fluxes
 
     @property
     def data_frame(self):
-        if self._biomass is None:
-            return DataFrame([self._steps, self._exchange_fluxes], index=["fraction", self._species_id]).T
-        else:
-            return DataFrame([self._steps, self._exchange_fluxes, self._biomass_fluxes],
-                             index=["fraction", self._species_id, self._biomass.id]).T
+
+        data = [self._steps, self._exchange_fluxes]
+        index = ["fraction", self._species_id]
+
+        if self._biomass is not None:
+            data.append(self._biomass_fluxes)
+            index.append(self._biomass.id)
+
+        if self._variables is not None and len(self._variables) > 0:
+            for i, variable in enumerate(self._variables):
+                data.append(self._variables_fluxes[:, i].tolist())
+                if isinstance(variable, Reaction):
+                    variable = variable.id
+                index.append(variable)
+
+        return DataFrame(data, index=index).T
 
     def plot(self, grid=None, width=None, height=None, *args, **kwargs):
         x_label = "Competition Level" if self._is_essential else 'Inhibition level'
@@ -233,38 +248,52 @@ class SensitivityAnalysisResult(Result):
                      toolbar_sticky=False)
 
         data = self.data_frame
-
+        fig.extra_y_ranges = {}
+        if self._biomass is not None:
+            fig.extra_y_ranges["growth_rate"] = Range1d(start=0, end=data[self._biomass.id].max())
+            fig.add_layout(LinearAxis(y_range_name="growth_rate", axis_label="Growth Rate [h^-1])"), 'right')
+        if self._variables is not None and len(self._variables) > 0:
+            fig.extra_y_ranges["flux"] = Range1d(start=min(data[data.columns[3:]].min()),
+                                                 end=max(data[data.columns[3:]].max()))
+            fig.add_layout(LinearAxis(y_range_name="flux", axis_label="Flux [mmol h^-1 gDW^-1])"), 'right')
         if self._biomass is None:
-            fig.line(data['fraction'].apply(lambda v: 1 - v) * 100, data[self._species_id],
-                     line_color='orange')
+            fig.line(data['fraction'].apply(lambda v: v if self._is_essential else 1 - v) * 100,
+                    data[self._species_id], line_color='orange')
 
         else:
-
-            fig.extra_y_ranges = {"growth_rate": Range1d(start=0, end=data[self._biomass.id].max())}
-            fig.add_layout(LinearAxis(y_range_name="growth_rate", axis_label="Growth rate (h-1)"), 'right')
             fig.line(data['fraction'].apply(lambda v: v if self._is_essential else 1 - v) * 100,
-                                            data[self._species_id] / data[self._biomass.id],
-                     line_color='orange')
+                     data[self._species_id], line_color='orange')
             fig.line(data['fraction'].apply(lambda v: v if self._is_essential else 1 - v) * 100,
                      data[self._biomass.id], line_color='green',
                      y_range_name="growth_rate")
 
+        for var in self._variables:
+            if isinstance(var, Reaction):
+                var = var.id
+            fig.line(data['fraction'].apply(lambda v: v if self._is_essential else 1 - v) * 100,
+                     data[var], y_range_name="flux", legend=var)
+
         show(fig)
 
 
-def sensitivity_analysis(model, metabolite, biomass=None, is_essential=False, steps=10, reference_dist=None,
-                         simulation_method=fba, **simulation_kwargs):
+def sensitivity_analysis(model, metabolite, biomass=None, variables=None, is_essential=False, steps=10,
+                         reference_dist=None, simulation_method=fba, **simulation_kwargs):
 
     if reference_dist is None:
         simulation_kwargs['reference'] = simulation_kwargs.get('reference', None) or pfba(model, objective=biomass)
+
+    if variables is None:
+        variables = []
 
     species_id = metabolite.id[:-2]
 
     exchange_fluxes = []
     biomass_fluxes = []
+    variables_fluxes = []
     fractions = []
 
-    for fraction in frange(0, 1.1, steps):
+    for i, fraction in enumerate(frange(0, 1.1, steps)):
+        variables_fluxes.append([])
         with TimeMachine() as tm:
             if is_essential:
                 exchange = compete_metabolite(model, metabolite, simulation_kwargs['reference'], fraction,
@@ -277,6 +306,10 @@ def sensitivity_analysis(model, metabolite, biomass=None, is_essential=False, st
 
                 if biomass is not None:
                     biomass_fluxes.append(flux_dist[biomass])
+
+                for variable in variables:
+                    variables_fluxes[i].append(flux_dist[variable])
+
                 flux = flux_dist[exchange]
 
                 exchange_fluxes.append(flux)
@@ -288,7 +321,11 @@ def sensitivity_analysis(model, metabolite, biomass=None, is_essential=False, st
                 if biomass is not None:
                     biomass_fluxes.append(0)
 
+                for _ in variables:
+                    variables_fluxes[i].append(0)
+
                 exchange_fluxes.append(0)
                 fractions.append(fraction)
 
-    return SensitivityAnalysisResult(species_id, exchange_fluxes, fractions, is_essential, biomass_fluxes, biomass)
+    return SensitivityAnalysisResult(species_id, exchange_fluxes, fractions, is_essential, biomass_fluxes, biomass,
+                                     variables, array(variables_fluxes))
