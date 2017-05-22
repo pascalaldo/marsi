@@ -59,7 +59,6 @@ class ChemistryController(CementBaseController):
         print("Welcome to MARSI chemistry package")
         print("Here you can find the tools to find and sort analogs for metabolites")
 
-
     @expose(help="Find analogs for a metabolite")
     def find_analogs(self):
         """
