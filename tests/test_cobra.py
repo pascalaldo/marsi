@@ -58,6 +58,8 @@ def test_inhibit_metabolite(model, allow_accumulation, benchmark):
     reference_consumption_turnover = 0
     result_consumption_turnover = 0
     for reaction in succ_c.reactions:
+        if len(set(m.compartment for m in reaction.metabolites)) != 1:
+            continue
         coefficient = reaction.metabolites[succ_c]
         ref_t = coefficient * reference[reaction]
         res_t = coefficient * result[reaction]
