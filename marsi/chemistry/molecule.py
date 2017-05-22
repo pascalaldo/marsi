@@ -123,6 +123,6 @@ class Molecule(object):
 
     def _repr_html_(self):
         self._ob_mol.removeh()
-        representation =  self._ob_mol._repr_html_() or openbabel.mol_to_svg(self._ob_mol)
+        representation = self._ob_mol._repr_html_() or openbabel.mol_to_svg(self._ob_mol)
         self._ob_mol.addh()
         return representation
