@@ -258,7 +258,7 @@ class SensitivityAnalysisResult(Result):
             fig.add_layout(LinearAxis(y_range_name="flux", axis_label="Flux [mmol h^-1 gDW^-1])"), 'right')
         if self._biomass is None:
             fig.line(data['fraction'].apply(lambda v: v if self._is_essential else 1 - v) * 100,
-                    data[self._species_id], line_color='orange')
+                     data[self._species_id], line_color='orange')
 
         else:
             fig.line(data['fraction'].apply(lambda v: v if self._is_essential else 1 - v) * 100,
