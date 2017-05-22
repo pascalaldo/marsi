@@ -24,6 +24,8 @@ import psycopg2
 
 __all__ = ['Level', 'log', 'prj_dir']
 
+TRAVIS = os.environ.get("TRAVIS", False)
+
 
 logger = logging.getLogger(__name__)
 
@@ -93,14 +95,15 @@ db_config = {}
 
 try:
     db_engine = db_config.get('db_engine', "postgresql")
-    username = db_config.get('db_user', getpass.getuser())
-    password = db_config.get('db_pass', None)
+
+    if TRAVIS:
+        username = db_config.get('db_user', 'postgres')
+        password = db_config.get('db_pass', None)
+    else:
+        username = db_config.get('db_user', getpass.getuser())
+        password = db_config.get('db_pass', None)
     host = db_config.get("db_host", "localhost")
     port = db_config.get("db_port", 5432)
-    if password is None:
-        useraccess = username
-    else:
-        useraccess = "%s:%s" % (username, password)
 
     def getconn():
         c = psycopg2.connect(user=username, password=password, host=host, port=port, dbname=db_name)
