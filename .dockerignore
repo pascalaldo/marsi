@@ -1,0 +1,13 @@
+data
+notebooks*
+scripts
+models
+marsi-ui
+.benchmarks
+.cache
+.ipynb_checkpoints
+build
+data
+htmlcov
+installation_test
+log

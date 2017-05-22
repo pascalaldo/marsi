@@ -1,0 +1,45 @@
+# Sample dump manifest for test dump
+
+---
+vars:
+  # Condition to dump only certain metabolites
+  matching_metabolite_id: "BETWEEN 1 AND 2000"
+
+tables:
+  # Dump only matching metabolites
+  - table: metabolites
+    query: "SELECT * FROM metabolites WHERE metabolites.id {{matching_metabolite_id}}"
+    post_actions:
+      - "SELECT pg_catalog.setval('metabolites_id_seq', MAX(id) + 1, true) FROM metabolites"
+
+  # Dump references table for matching metabolites
+  - table: references
+    query: >
+      SELECT "references".*
+      FROM "references" INNER JOIN "metabolite_references" ON "references".id = "metabolite_references".reference_id
+      WHERE "metabolite_references".metabolite_id {{matching_metabolite_id}}
+
+  # Dump synonyms table for matching metabolites
+  - table: synonyms
+    query: >
+      SELECT "synonyms".*
+      FROM "synonyms" INNER JOIN metabolite_synonyms ON "synonyms".id = metabolite_synonyms.synonym_id
+      WHERE metabolite_synonyms.metabolite_id {{matching_metabolite_id}}
+
+  # Dump references association for matching metabolites
+  - table: metabolite_references
+    query: >
+      SELECT * FROM metabolite_references
+      WHERE metabolite_references.metabolite_id {{matching_metabolite_id}}
+
+  # Dump synonyms association for matching metabolites
+  - table: metabolite_synonyms
+    query: >
+      SELECT * FROM metabolite_synonyms
+      WHERE metabolite_synonyms.metabolite_id {{matching_metabolite_id}}
+
+  # Dump fingerprint for matching metabolites
+  - table: metabolite_fingerprints
+    query: >
+      SELECT * FROM metabolite_fingerprints
+      WHERE metabolite_fingerprints.metabolite_id {{matching_metabolite_id}}
