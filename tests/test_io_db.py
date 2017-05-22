@@ -86,6 +86,8 @@ def test_add_reference():
         default_session.add(ref4)
         default_session.commit()
 
+    default_session.rollback()
+
     default_session.delete(ref1)
     default_session.delete(ref2)
     default_session.delete(ref3)
