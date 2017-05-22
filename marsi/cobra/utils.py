@@ -80,4 +80,4 @@ def annotate_model(model):
 
 
 def essential_species_ids(model):
-    return {m.id[:-2] for m in model.essentail_metabolites()}
+    return {m.id[:-2] for m in model.essential_metabolites()}
