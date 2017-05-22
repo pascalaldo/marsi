@@ -5,9 +5,7 @@ Revises: ef39a4ae2c8c
 Create Date: 2017-04-27 10:36:47.337419
 
 """
-from IProgress import ProgressBar
-
-from alembic import op
+from alembic import op, util
 import sqlalchemy as sa
 
 from marsi.io.db import Metabolite
@@ -23,16 +21,21 @@ Session = sessionmaker()
 
 
 def upgrade():
-    op.add_column("metabolites", sa.Column("num_rings", sa.Integer, nullable=False))
-    session = Session(op.get_bind())
+    op.add_column("metabolites", sa.Column("num_rings", sa.Integer))
+    util.messaging.log.info("adding rings to existing table")
 
-    progress = ProgressBar()
-
-    for metabolite in progress(session.query(Metabolite).yield_per(10000)):
+    session = Session(bind=op.get_bind())
+    for i, metabolite in enumerate(session.query(Metabolite).yield_per(10000)):
         molecule = metabolite.molecule('openbabel', get3d=False)
         metabolite.num_rings = len(molecule.OBMol.GetLSSR())
 
+        if i % 1000 == 0:
+            util.messaging.log.info("updated %i entries" % i)
+            session.flush()
+
     session.commit()
+
+    op.alter_column("metabolites", "num_rings", nullable=False)
 
 
 def downgrade():

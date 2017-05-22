@@ -305,15 +305,101 @@ def convert_design(model, strain_design, fitness, objective_function, simulation
                 coupled_targets[group] = []
             coupled_targets[group].append(t)
 
-    coupled_targets = {k: t for k, t in six.iteritems(coupled_targets) if len(t) > 1}
-    non_coupled_targets = {t for t in testable_targets if any(t in v for v in coupled_targets.values())}
+    coupled_targets = [frozenset(t) for k, t in six.iteritems(coupled_targets) if len(t) > 1]
+    non_coupled_targets = {t for t in testable_targets if not any(t in group for group in coupled_targets)}
+
+    anti_metabolites = DataFrame(columns=['base_design', 'replaced_target', 'metabolite_targets',
+                                          'old_fitness', 'fitness', 'delta'])
+
+    logger.debug("Coupled groups: %i; non-coupled targets %i" % (len(coupled_targets), len(non_coupled_targets)))
 
     with TimeMachine() as base_time_machine:
         for target in non_testable_targets:
             target.apply(model, time_machine=base_time_machine)
 
         # test non-coupled targets as before
-        # test coupled targets as whole and then individualy if something comes up
+        for target in non_coupled_targets:
+            with TimeMachine() as outer_time_machine:
+                for other_target in non_coupled_targets:
+                    if other_target != target:
+                        other_target.apply(model, time_machine=outer_time_machine)
+
+                anti_metabolite_targets = convert_target(model, target, essential_metabolites,
+                                                         ignore_metabolites=ignore_metabolites,
+                                                         ignore_transport=ignore_transport,
+                                                         allow_accumulation=allow_accumulation,
+                                                         reference=reference)
+
+                base_solution = simulation_method(model, **simulation_kwargs)
+                base_fitness = objective_function(model, base_solution, strain_design.targets)
+
+                test_target_substitutions(model, strain_design.targets, target, anti_metabolite_targets,
+                                          objective_function, fitness, base_fitness, simulation_method,
+                                          simulation_kwargs, reference, valid_loss, anti_metabolites)
+
+        # test coupled targets as whole
+        for target_group in coupled_targets:
+            with TimeMachine() as outer_time_machine:
+
+                for other_target_group in non_coupled_targets:
+                    if other_target_group != target_group:
+                        for other_target in other_target_group:
+                            other_target.apply(model, time_machine=outer_time_machine)
+
+                anti_metabolite_targets = convert_target_group(model, target_group, essential_metabolites,
+                                                               ignore_transport=ignore_transport,
+                                                               allow_accumulation=allow_accumulation,
+                                                               reference=reference)
+
+                base_solution = simulation_method(model, **simulation_kwargs)
+                base_fitness = objective_function(model, base_solution, strain_design.targets)
+
+                test_target_substitutions(model, strain_design.targets, target_group, anti_metabolite_targets,
+                                          objective_function, fitness, base_fitness, simulation_method,
+                                          simulation_kwargs, reference, valid_loss, anti_metabolites)
+
+        return anti_metabolites
+
+
+def test_target_substitutions(model, all_targets, target, replacement_targets, objective_function, fitness,
+                              base_fitness, simulation_method, simulation_kwargs, reference, loss_validation, results):
+    fitness2targets = {}
+    index = len(results) - 1
+    for species_id, replacement_target in replacement_targets.items():
+        assert isinstance(replacement_target, AntiMetaboliteManipulationTarget)
+        with TimeMachine() as another_tm:
+            try:
+                replacement_target.apply(model, time_machine=another_tm, reference=reference)
+                new_solution = simulation_method(model, **simulation_kwargs)
+                new_fitness = objective_function(model, new_solution, all_targets)
+                logger.debug("New fitness %s" % new_fitness)
+                logger.debug("Solver objective value %s" % new_solution.objective_value)
+                for r in objective_function.reactions:
+                    logger.debug("%s: %f" % (r, new_solution[r]))
+            except SolveError:
+                logger.debug("Cannot solve %s" % species_id)
+                new_fitness = 0
+            finally:
+                if new_fitness not in fitness2targets:
+                    fitness2targets[new_fitness] = []
+                fitness2targets[new_fitness].append(replacement_target)
+                try:
+                    logger.debug("Applying %s yields %f (loss: %f)" %
+                                 (species_id, new_fitness, (new_fitness - fitness) / new_fitness))
+                except ZeroDivisionError:
+                    logger.debug("Applying %s yields %f (loss: %f)" % (species_id, new_fitness, 1))
+
+        # keep only targets that keep the fitness above the valid loss regarding the original fitness.
+        fitness2targets = {fit: anti_mets for fit, anti_mets in fitness2targets.items()
+                           if loss_validation(fit, base_fitness)}
+
+        if len(fitness2targets) == 0:
+            logger.debug("Return target %s, no replacement found" % target)
+        else:
+            for fit, anti_mets in fitness2targets.items():
+                delta = fitness - fit
+                results.loc[index] = [StrainDesign(all_targets), target, anti_mets, fitness, fit, delta]
+                index += 1
 
 
 def replace_strain_design_results(model, results, objective_function, simulation_method, simulation_kwargs=None,
@@ -443,7 +529,6 @@ def replace_design(model, strain_design, fitness, objective_function, simulation
     keep_targets = [t for t in strain_design.targets if not isinstance(t, ReactionModulationTarget)]
     anti_metabolites = DataFrame(columns=['base_design', 'replaced_target', 'metabolite_targets',
                                           'old_fitness', 'fitness', 'delta'])
-    index = 0
 
     def termination_criteria():
         logger.debug("Targets: %i/%i" % (sum(target_test_count.values()), len(test_targets)))
@@ -473,45 +558,9 @@ def replace_design(model, strain_design, fitness, objective_function, simulation
                                                          ignore_metabolites=ignore_metabolites,
                                                          allow_accumulation=allow_accumulation,
                                                          reference=reference)
-                fitness2targets = {}
-
-                for species_id, target in anti_metabolite_targets.items():
-                    assert isinstance(target, AntiMetaboliteManipulationTarget)
-                    with TimeMachine() as another_tm:
-                        try:
-                            target.apply(model, time_machine=another_tm, reference=reference)
-                            new_solution = simulation_method(model, **simulation_kwargs)
-                            new_fitness = objective_function(model, new_solution, all_targets)
-                            logger.debug("New fitness %s" % new_fitness)
-                            logger.debug("Solver objective value %s" % new_solution.objective_value)
-                            for r in objective_function.reactions:
-                                logger.debug("%s: %f" % (r, new_solution[r]))
-                        except SolveError:
-                            logger.debug("Cannot solve %s" % species_id)
-                            new_fitness = 0
-                        finally:
-                            if new_fitness not in fitness2targets:
-                                fitness2targets[new_fitness] = []
-                            fitness2targets[new_fitness].append(target)
-                            try:
-                                logger.debug("Applying %s yields %f (loss: %f)" %
-                                             (species_id, new_fitness, (new_fitness - fitness) / new_fitness))
-                            except ZeroDivisionError:
-                                logger.debug("Applying %s yields %f (loss: %f)" %
-                                             (species_id, new_fitness, 1))
-
-                # keep only targets that keep the fitness above the valid loss regarding the original fitness.
-                fitness2targets = {fit: anti_mets for fit, anti_mets in fitness2targets.items()
-                                   if valid_loss(fit, base_fitness)}
-
-                if len(fitness2targets) == 0:
-                    logger.debug("Return target %s, no replacement found" % test_target)
-                else:
-                    for fit, anti_mets in fitness2targets.items():
-                        delta = fitness - fit
-                        anti_metabolites.loc[index] = [StrainDesign(all_targets), test_target,
-                                                       anti_mets, fitness, fit, delta]
-                        index += 1
+                test_target_substitutions(model, all_targets, test_target, anti_metabolite_targets,
+                                          objective_function, fitness, base_fitness, simulation_method,
+                                          simulation_kwargs, reference, valid_loss, anti_metabolites)
             except (ValueError, KeyError) as e:
                 logger.error(str(e))
                 continue

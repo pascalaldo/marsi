@@ -18,7 +18,7 @@ from pandas import DataFrame
 
 from marsi.utils import BIOMASS_RE
 from marsi.cobra.strain_design import RandomMutagenesisDesign, ALEDesign
-from marsi.cobra.strain_design.design_methods import CURRENCY_METABOLITES
+from marsi.cobra.utils import CURRENCY_METABOLITES
 from marsi.cobra.strain_design.post_processing import replace_design
 from marsi.utils import default_carbon_sources, unique
 

@@ -14,21 +14,16 @@
 from numbers import Number
 
 import os
-import pybel
-import six
 from cement.core.controller import CementBaseController, expose
-from pandas import DataFrame
 from pymongo.errors import ServerSelectionTimeoutError
 
 from marsi import config, utils
-from marsi.nearest_neighbors import load_nearest_neighbors_model, build_feature_table
-from marsi.chemistry import openbabel as ob, rdkit as rd
+from marsi.nearest_neighbors import build_feature_table, search_closest_compounds
+from marsi.chemistry.molecule import Molecule
 from mongoengine import connect
 
 from marsi.io import write_excel_file
-from marsi.io.mongodb import Metabolite, Database
 
-from IProgress import ProgressBar, Percentage, ETA, Bar
 
 from marsi.utils import pickle_large
 
@@ -126,14 +121,7 @@ class ChemistryController(CementBaseController):
 
         output_file += ".%s" % self.app.pargs.output_format
 
-        ob_molecule = None
-        rd_molecule = None
-
-        fingerprint = None
-        fingerprint_db = None
-
-        use_volume = False
-        max_volume_percentage = 0.5
+        molecule = None
 
         bonds_weight = 0.5
         atoms_weight = 0.5
@@ -145,80 +133,20 @@ class ChemistryController(CementBaseController):
             atoms_weight = float(self.app.pargs.atoms_weight)
 
         if self.app.pargs.inchi is not None:
-            ob_molecule = ob.inchi_to_molecule(self.app.pargs.inchi)
-            rd_molecule = rd.inchi_to_molecule(self.app.pargs.inchi)
+            molecule = Molecule.from_inchi(self.app.pargs.inchi)
         elif self.app.pargs.sdf is not None:
             use_volume = True
-            ob_molecule = ob.sdf_to_molecule(self.app.pargs.sdf)
-            rd_molecule = rd.sdf_to_molecule(self.app.pargs.sdf)
+            molecule = Molecule.from_sdf(self.app.pargs.sdf)
         elif self.app.pargs.mol is not None:
             use_volume = True
-            ob_molecule = ob.mol_to_molecule(self.app.pargs.mol)
-            rd_molecule = rd.mol_to_molecule(self.app.pargs.mol)
+            molecule = Molecule.from_mol(self.app.pargs.mol)
         else:
             print("Please provide one of the following inputs --inchi, --sdf or --mol")
             exit(1)
 
-        try:
-            fpformat = self.app.pargs.fingerprint_format
-            fingerprint = ob_molecule.calcfp(fpformat).fp
-            fingerprint_db = load_nearest_neighbors_model(fpformat=fpformat)
-        except ValueError as e:
-            print(e)
-            exit(1)
+        fpformat = self.app.pargs.fingerprint_format
 
-        if self.app.pargs.neighbors:
-            neighbors = fingerprint_db.k_nearest_neighbors(fingerprint, int(self.app.pargs.neighbors))
-        else:
-            neighbors = fingerprint_db.radius_nearest_neighbors(fingerprint, float(self.app.pargs.radius or 0.75))
+        results = search_closest_compounds(molecule=molecule, fpformat=fpformat, bonds_weight=bonds_weight,
+                                           bonds_diff=bonds_diff, atoms_weight=atoms_weight, atoms_diff=atoms_diff)
 
-        print("Found %i neighbors" % len(neighbors))
-
-        ob_descriptors = ob_molecule.calcdesc()
-        descriptors = [key for key, value in six.iteritems(ob_descriptors) if isinstance(value, Number)]
-        desc_keys = ["d_%s" % key for key in descriptors]
-
-        ob_molecules = {}
-        extra_descriptors = []
-
-        ob_volume = None
-        if use_volume:
-            ob_volume = ob.monte_carlo_volume(ob_molecule)
-            extra_descriptors.append('d_volume')
-
-        results = DataFrame(columns=["tanimoto_similarity", "structural_similarity"] + desc_keys + extra_descriptors)
-
-        progress = ProgressBar(maxval=len(neighbors), widgets=["Processing neighbors: ",
-                                                               Bar(), Percentage(), "|", ETA()])
-        progress.start()
-
-        for inchi_key, tanimoto_distance in six.iteritems(neighbors):
-
-            metabolite = Metabolite.get(inchi_key)
-
-            ob_molecules[inchi_key] = _ob_molecule = metabolite.molecule('openbabel')
-            _rd_molecule = metabolite.molecule('rdkit')
-            extra_descriptors_values = []
-
-            if use_volume:
-                volume_diff = abs(ob_volume - ob.monte_carlo_volume(ob_molecules[inchi_key]))
-                if volume_diff > max_volume_percentage * ob_volume:
-                    progress.update(progress.currval + 1)
-                    continue
-                extra_descriptors_values.append(volume_diff)
-
-            _ob_descriptors = _ob_molecule.calcdesc(descriptors)
-
-            descriptors_changes = [abs(ob_descriptors[k] - _ob_descriptors[k]) for k in descriptors]
-            structural_similarity = rd.structural_similarity(rd_molecule,
-                                                             _rd_molecule,
-                                                             bonds_weight=bonds_weight,
-                                                             atoms_weight=atoms_weight)
-
-            distances = [1 - tanimoto_distance, structural_similarity]
-
-            results.loc[inchi_key] = distances + descriptors_changes + extra_descriptors_values
-            progress.update(progress.currval + 1)
-        progress.finish()
-
-        OUTPUT_WRITERS[self.app.pargs.output_format](results, output_file, ob_molecules)
+        OUTPUT_WRITERS[self.app.pargs.output_format](results, output_file, None)
