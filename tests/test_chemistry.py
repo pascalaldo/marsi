@@ -23,6 +23,8 @@ from marsi.chemistry.molecule import Molecule
 
 TEST_DIR = os.path.dirname(__file__)
 
+TRAVIS = os.getenv("TRAVIS", False)
+
 MOL_VOLUMES = {
     "Diphenylketene": 173.769,
     "Acetate": None,
@@ -168,6 +170,7 @@ def test_tanimoto_distance_vs_coefficient():
     assert tanimoto_distance(fp1, fp3) == pytest.approx(1 - tanimoto_coefficient(fp1, fp3), 1e-6)
 
 
+@pytest.mark.skipif(TRAVIS, "openbabel version is buggy")
 def test_molecule_from_inchi_test(chemlib, benchmark):
     mol = benchmark(chemlib[0].inchi_to_molecule, INCHI)
     assert chemlib[1].num_atoms(mol) == 27
