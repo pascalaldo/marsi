@@ -57,4 +57,4 @@ def amino_acid(request):
 @pytest.fixture(scope='function')
 def essential_metabolites(model):
     metabolites = ESSENTIAL_METABOLITES[model.id]
-    return [model.metabolites.get_by_id(m.id) for m in metabolites]
+    return {model.metabolites.get_by_id(m.id) for m in metabolites}
