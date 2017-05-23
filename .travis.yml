@@ -30,6 +30,7 @@ addons:
     - glpk-utils
     - libopenbabel-dev
     - pandoc
+    - postgresql-contrib-9.6
 
 before_install:
 # download and install miniconda
