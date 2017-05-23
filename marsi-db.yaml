@@ -15,14 +15,14 @@ tables:
   # Dump references table for matching metabolites
   - table: references
     query: >
-      SELECT "references".*
+      SELECT DISTINCT("references".id), "references".database, "references".accession
       FROM "references" INNER JOIN "metabolite_references" ON "references".id = "metabolite_references".reference_id
       WHERE "metabolite_references".metabolite_id {{matching_metabolite_id}}
 
   # Dump synonyms table for matching metabolites
   - table: synonyms
     query: >
-      SELECT "synonyms".*
+      SELECT DISTINCT("synonyms".id), "synonyms".synonym
       FROM "synonyms" INNER JOIN metabolite_synonyms ON "synonyms".id = metabolite_synonyms.synonym_id
       WHERE metabolite_synonyms.metabolite_id {{matching_metabolite_id}}
 
