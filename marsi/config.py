@@ -98,12 +98,14 @@ try:
 
     if TRAVIS:
         username = db_config.get('db_user', 'postgres')
-        password = db_config.get('db_pass', None)
+        password = None
+        host = None
+        port = None
     else:
         username = db_config.get('db_user', getpass.getuser())
         password = db_config.get('db_pass', None)
-    host = db_config.get("db_host", "localhost")
-    port = db_config.get("db_port", 5432)
+        host = db_config.get("db_host", "localhost")
+        port = db_config.get("db_port", 5432)
 
     def getconn():
         c = psycopg2.connect(user=username, password=password, host=host, port=port, dbname=db_name)
