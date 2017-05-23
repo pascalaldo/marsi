@@ -60,6 +60,7 @@ before_script:
 - gunzip tests/fixtures/marsi-db-sample.sql.gz
 - psql -c 'create database "marsi-db";' -U postgres
 - cat tests/fixtures/marsi-db-sample.sql | psql -U postgres marsi-db
+- psql -d marsi-db -c 'SELECT COUNT(*) FROM metabolites;' -U postgres
 script:
 - python -c 'from rdkit import Chem'
 - python -c 'import pybel'
