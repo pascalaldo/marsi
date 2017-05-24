@@ -24,6 +24,8 @@ from marsi.chemistry.molecule import Molecule
 TEST_DIR = os.path.dirname(__file__)
 
 TRAVIS = os.getenv("TRAVIS", False)
+if TRAVIS:  # TRAVIS value is 'true'
+    TRAVIS = True
 
 MOL_VOLUMES = {
     "Diphenylketene": 173.769,
