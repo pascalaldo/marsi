@@ -3,7 +3,7 @@
 ---
 vars:
   # Condition to dump only certain metabolites
-  matching_metabolite_id: "BETWEEN 1 AND 500"
+  matching_metabolite_id: "BETWEEN 1 AND 5"
 
 tables:
   # Dump only matching metabolites
@@ -13,7 +13,7 @@ tables:
       - "SELECT pg_catalog.setval('metabolites_id_seq', MAX(id) + 1, true) FROM metabolites"
 
   # Dump references table for matching metabolites
-  - table: references
+  - table: "references"
     query: >
       SELECT DISTINCT("references".id), "references".database, "references".accession
       FROM "references" INNER JOIN "metabolite_references" ON "references".id = "metabolite_references".reference_id
