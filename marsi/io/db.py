@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import six
 from bitarray import bitarray
 from sqlalchemy import func
 from sqlalchemy import inspect
@@ -55,6 +56,13 @@ class CollectionWrapper(object):
         self.collection = collection
         self.session = session
         self.mapper = inspect(self.collection)
+
+    def dump(self, i):
+        return [self.__getitem__(item).dump() for item in range(i)]
+
+    def restore(self, dump, session=default_session):
+        for _dump in dump:
+            self.collection.restore(_dump, session=session)
 
     def __len__(self):
         return self.session.query(func.count(self.collection.id))
@@ -117,6 +125,9 @@ class Synonym(Base):
 
         return synonym
 
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 
 class Reference(Base):
     __tablename__ = "references"
@@ -143,6 +154,9 @@ class Reference(Base):
     def __str__(self):
         return "%s: %s" % (self.database, self.accession)
 
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 
 class MetaboliteFingerprint(Base):
     __tablename__ = 'metabolite_fingerprints'
@@ -160,6 +174,9 @@ class MetaboliteFingerprint(Base):
     __table_args__ = (
         UniqueConstraint('metabolite_id', 'fingerprint_type', name='_fp_type_uc'),
     )
+
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
 class Metabolite(Base):
@@ -201,8 +218,10 @@ class Metabolite(Base):
 
         Parameters
         ----------
-        inchi_key: str
+        inchi_key : str
             A valid InChi Key.
+        session : sqlalchemy.orm.session.Session
+            A database session.
 
         Returns
         -------
@@ -332,6 +351,30 @@ class Metabolite(Base):
 
         """
         return self.inchi
+
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+    def dump(self):
+        references = [ref.to_dict() for ref in self.references]
+        synonyms = [syn.to_dict() for syn in self.synonyms]
+        fingerprints = {key: fp.to01() for key, fp in six.iteritems(self.fingerprints)}
+        metabolite = self.to_dict()
+
+        return dict(metabolite=metabolite, references=references,
+                    synonyms=synonyms, fingerprints=fingerprints)
+
+    @classmethod
+    def restore(cls, dump, session=default_session):
+        metabolite = cls(**dump['metabolite'])
+        references = [Reference.add_reference(ref['database'], ref['accession'], session) for ref in dump['references']]
+        synonyms = [Synonym.add_synonym(syn['synonym'], session) for syn in dump['synonyms']]
+        metabolite.references = references
+        metabolite.synonyms = synonyms
+        for key, fingerprint in dump['fingerprints']:
+            metabolite.fingerprints[key] = bitarray.fromstring(fingerprint)
+        session.add(metabolite)
+        session.commit()
 
 
 class Database:
