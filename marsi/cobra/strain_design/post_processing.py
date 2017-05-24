@@ -125,7 +125,7 @@ def find_anti_metabolite_modulation(reaction, fold_change, essential_metabolites
     assert isinstance(essential_metabolites, (list, set, tuple))
 
     if fold_change > 0:
-        ignore_metabolites = list(ignore_metabolites) + essential_metabolites
+        ignore_metabolites = set(ignore_metabolites) | set(essential_metabolites)
 
     if ref_flux != 0:
         substrates = [m for m, coefficient in reaction.metabolites.items()
