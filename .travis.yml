@@ -1,19 +1,15 @@
 language: python
 sudo: required
 dist: trusty
-
 python:
-  - '3.5'
-
+- '3.5'
 matrix:
   fast_finish: true
-
 branches:
- only:
- - master
- - devel
- - /^[0-9]+\.[0-9]+\.[0-9]+[.0-9ab]*$/
-
+  only:
+  - master
+  - devel
+  - /^[0-9]+\.[0-9]+\.[0-9]+[.0-9ab]*$/
 cache:
 - pip: true
 services:
@@ -31,29 +27,20 @@ addons:
     - libopenbabel-dev
     - pandoc
     - postgresql-contrib-9.6
-
 before_install:
-# download and install miniconda
 - wget http://repo.continuum.io/miniconda/Miniconda-3.5.5-Linux-x86_64.sh -O miniconda.sh;
 - bash miniconda.sh -b -p $HOME/conda
 - export PATH="$HOME/conda/bin:$PATH"
 - hash -r
 - conda config --set always_yes yes --set changeps1 no
 - conda update -q conda
-# Useful for debugging any issues with conda
 - conda info -a
-
-# create and activate the build/test environment
 - conda create -q -n tenv python=$TRAVIS_PYTHON_VERSION pip cmake
 - source activate tenv
-
 - pip install pip --upgrade
 - pip install codecov
-
 install:
-# install rdkit from rdkit
 - conda install -q -c rdkit boost rdkit=2016.09.4
-
 - pip install flake8 cython numpy scipy pyzmq pandas pytest pytest-cov pytest-benchmark
 - pip install .[test]
 before_script:
@@ -66,23 +53,33 @@ script:
 - python -c 'from rdkit import Chem'
 - python -c 'import pybel'
 - pytest -v -rsx --cov=marsi tests
-
 after_success:
 - codecov
-
 before_deploy:
-  - cd docs
-  - make apidoc
-  - make html
-  - touch _build/html/.nojekyll
-
+- cd docs
+- make apidoc
+- make html
+- touch _build/html/.nojekyll
 deploy:
-  provider: pages
+- provider: pages
   skip_cleanup: true
   local_dir: docs/_build/html
-  skip_cleanup: true
-  github_token: $GITHUB_TOKEN # Set in travis-ci.org dashboard
+  github_token: $GITHUB_TOKEN
   target-branch: gh-pages
   on:
     branch: master
     repo: biosustain/marsi
+- provider: pypi
+  user: Joo.Cardoso
+  password:
+    secure: BCMU/jPT2iQNmCI/hn7G2YymCB9r3q+sqbEI9cIoJXjfQcJmMX4h7eQmYvzDaDol+spD+v/j1ZrQ34eQR+4U8FakPUI2pY7wCYUidrl6020Cl7AMSktWEPnOBElXynlr6T5NUkyyE4gCjaPgvzy1GIAX3m7znlVmtQDx5+h2RqBOHVEBdZnF5AtW02eW+hZY9fgtS1nRvXZt1JUhs7w18ThIJbyW5CTb42zqxuBCwZvGu/l7pjxhuTMYQ3ecmahn4L6UNP6TJzdeKeMa02/T7sSmBrApPEzWGvulhz/hhljVrL+C4lQkV2MiYz1Km7fbJr+W56LY6v/rFeKGm9tJ359vsspve6ApY44ndkL/K5i17gJ1l/2e9LY/VnEQDtCdvEz3N1IoybXTnrhJpVeq7IgRecQINvamO2zPoe94/Tv76OUpmxlklnH66qA+vVRC9+cxIFSUtB3e8sOOALli13oQtZuJGFmriK6kgBFWfGBS1132zUr6Wu3aR0QBgzFK4ZoiI1Swkvb5JhLg7a08An6xl6cU2/APvJkQyWPxIaTqbJmHajhsCqvyebf4Oq2pbtOO9xWI6OvO01EirpAkMIco8WBjx8vZlWXGwm4KTrEnw8QtwXCRGkpcGabI+PaoOD/BIixsI05s8NT7BmpTuw4s74EjTMnVnSWX+MFVjeQ=
+  distributions: sdist
+  skip_cleanup: true
+  on:
+    branch: master
+    tags: true
+    repo: biosustain/marsi
+  docs_dir: docs/_build/html
+env:
+  global:
+    secure: mncUZPqT3TyNE5JMGsvR+PTQhZbO2edZP3lONn4dHGh+3nsoge5XrLwTn+wakkXhutYsokgtT7KboU0dFJXCza8bR/H/jxZfCqbDxO9z5zexK/18xxQ8tZ41ogVdViiJu5kH4LkyzyUlf07bGAaP7DlDXXWAr5Dta7+v8ecnJCqdAfKLrQJ+6jqpQSM7Gr2x49cHVqSfL5CPWvIHYGEbg7MnDcwZpE9TSt/vgXyFZ9VSQXN6U+o+2YpPtWK7WSoru5vdHev3QKylvEAeqZImvflwbxJBE2RTiglgcKrOIYPYXZeb8EjHG8FoNCibKlkrt9O2mTbb5mfMjdu1JcNmZBUTLH+6MT4LCEJxM7BLXms7SfXVnI8PcVH5W2faaJkM+pE/1mwzqOTrVkXwwU/FpV+F8QoZYt1WvmNDqZx3jrshcAk1ExgvqB2DGuHZchJziHfIfPSZvwAXCKNFiC8Xd8KOX/a4p4wQPomL0C9Cxclna6k9J+nFFdwvsuAPDw5b+29uTiPVDtPQgHHdB61HlcbCJo/vfE8+JAk0T2jC3ghIwKrnNra9kM0JTw9E6rV1qJvpyOB9HDa01rd6dvv/NRLhcn+/sgI6SAHAGq1an69uG0FvTzD1cpbkIPw5s97rxkh1jqkTbsSpx61HJDRUybGkYvbp+FdIhjlAAoQkkgo=
