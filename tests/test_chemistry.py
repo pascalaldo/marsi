@@ -172,7 +172,7 @@ def test_tanimoto_distance_vs_coefficient():
     assert tanimoto_distance(fp1, fp3) == pytest.approx(1 - tanimoto_coefficient(fp1, fp3), 1e-6)
 
 
-@pytest.mark.skipif(TRAVIS, "openbabel version is buggy")
+@pytest.mark.skipif(TRAVIS, reason="openbabel version is buggy")
 def test_molecule_from_inchi_test(chemlib, benchmark):
     mol = benchmark(chemlib[0].inchi_to_molecule, INCHI)
     assert chemlib[1].num_atoms(mol) == 27
