@@ -58,12 +58,10 @@ install:
 - pip install .[test]
 before_script:
 - if [[ $TRAVIS_PYTHON_VERSION == "3.5" ]]; then flake8 marsi; fi
-- gunzip tests/fixtures/marsi-db-sample.sql.gz
 - psql -c 'create database "marsi-db";' -U postgres
 - psql -U postgres marsi-db -f tests/fixtures/marsi-db-schema.sql
 - python bin/restore_db.py
 - psql -d marsi-db -c 'SELECT COUNT(*) FROM metabolites;' -U postgres
-- gzip tests/fixtures/marsi-db-sample.sql
 script:
 - python -c 'from rdkit import Chem'
 - python -c 'import pybel'
