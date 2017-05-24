@@ -64,6 +64,7 @@ def test_convert_design(model, essential_metabolites):
     strain_design = StrainDesign(targets)
     objective_function = biomass_product_coupled_yield(model.biomass, "EX_lac__D_e", "EX_glc__D_e")
     model.reactions.EX_o2_e.lower_bound = 0
+
     with TimeMachine() as tm:
         strain_design.apply(model, time_machine=tm)
         solution = fba(model, objective=model.biomass)
@@ -72,6 +73,7 @@ def test_convert_design(model, essential_metabolites):
     replacement = replace_design(model, strain_design, fitness, objective_function,
                                  fba, essential_metabolites=essential_metabolites)
 
+    print(replacement)
     model.reactions.EX_o2_e.lower_bound = 1000
 
     assert "actp" in [target.id for target in flatten(replacement.metabolite_targets.values)]
