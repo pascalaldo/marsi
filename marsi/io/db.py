@@ -371,7 +371,7 @@ class Metabolite(Base):
         synonyms = [Synonym.add_synonym(syn['synonym'], session) for syn in dump['synonyms']]
         metabolite.references = references
         metabolite.synonyms = synonyms
-        for key, fingerprint in dump['fingerprints']:
+        for key, fingerprint in six.iteritems(dump['fingerprints']):
             metabolite.fingerprints[key] = bitarray.fromstring(fingerprint)
         session.add(metabolite)
         session.commit()
