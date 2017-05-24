@@ -372,7 +372,7 @@ class Metabolite(Base):
         metabolite.references = references
         metabolite.synonyms = synonyms
         for key, fingerprint in six.iteritems(dump['fingerprints']):
-            metabolite.fingerprints[key] = bitarray.fromstring(fingerprint)
+            metabolite.fingerprints[key] = bitarray(fingerprint)
         session.add(metabolite)
         session.commit()
 
