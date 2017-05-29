@@ -23,7 +23,6 @@ import time
 import numpy as np
 from bitarray import bitarray
 
-
 from marsi.chemistry.common import monte_carlo_volume as mc_vol, inchi_key_lru_cache
 
 
