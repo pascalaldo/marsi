@@ -11,9 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
+import tempfile
+
+import pubchempy
+from bioservices import ChEBI
 from cement.core.controller import CementBaseController, expose
+from marsi.chemistry import openbabel
+
+from pandas import read_excel
 
 from marsi import config
+from marsi.io.db import Reference, Synonym, Metabolite
+from marsi.io.enrichment import find_best_chebi_structure
 from marsi.nearest_neighbors import search_closest_compounds
 from marsi.chemistry.molecule import Molecule
 from mongoengine import connect
@@ -25,6 +35,9 @@ OUTPUT_WRITERS = {
     'excel': lambda df, path, *args: write_excel_file(df, path)
 
 }
+
+PUBCHEM_COMPOUND = "PubChem Compound"
+CHEBI = "CHEBI"
 
 
 class ChemistryController(CementBaseController):
@@ -58,6 +71,31 @@ class ChemistryController(CementBaseController):
     def default(self):
         print("Welcome to MARSI chemistry package")
         print("Here you can find the tools to find and sort analogs for metabolites")
+
+    @expose(help="Add known analogs")
+    def add_known(self):
+        chebi_client = ChEBI()
+        print("Updating data from 'antimetabolites.xlsx'")
+
+        anti_metabolites = read_excel(os.path.join(config.prj_dir, "antimetabolites.xlsx"), sheetname="Sheet1")
+        anti_metabolites = anti_metabolites[anti_metabolites.Identifier != "?"]
+
+        for _, row in anti_metabolites.iterrows():
+            if row.Database == PUBCHEM_COMPOUND:
+                temp_file = tempfile.mktemp(suffix="sdf", prefix=str(row.Identifier))
+                pubchempy.download("SDF", temp_file, row.Identifier, overwrite=True)
+                molecule = openbabel.sdf_to_molecule(temp_file)
+                reference = Reference.add_reference("pubchem", str(row.Identifier))
+
+            elif row.Database == CHEBI:
+                entity = chebi_client.getCompleteEntity(row.Identifier)
+                molecule = openbabel.mol_to_molecule(find_best_chebi_structure(entity), False)
+                reference = Reference.add_reference("chebi", str(row.Identifier))
+            else:
+                continue
+
+            synonym = Synonym.add_synonym(row.Name)
+            Metabolite.from_molecule(molecule, [reference], [synonym], analog=True, first_time=False)
 
     @expose(help="Find analogs for a metabolite")
     def find_analogs(self):
