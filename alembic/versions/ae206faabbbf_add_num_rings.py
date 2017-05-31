@@ -27,7 +27,7 @@ def upgrade():
     session = Session(bind=op.get_bind())
     for i, metabolite in enumerate(session.query(Metabolite).yield_per(10000)):
         molecule = metabolite.molecule('openbabel', get3d=False)
-        metabolite.num_rings = len(molecule.OBMol.GetLSSR())
+        metabolite.num_rings = len(molecule.OBMol.GetSSSR())
 
         if i % 1000 == 0:
             util.messaging.log.info("updated %i entries" % i)
