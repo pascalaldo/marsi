@@ -55,24 +55,47 @@ def compete_metabolite(model, metabolite, reference_dist, fraction=0.5, time_mac
         raise ValueError("'reference_dist' must be a dict or FluxDistributionResult")
 
     species_id = metabolite.id[:-2]
-    if "EX_%s_e" % species_id not in exchanges:
-        exchange = model.add_exchange(metabolite, prefix="COMPETE_", time_machine=time_machine)
-    else:
-        exchange = model.reactions.get_by_id("EX_%s_e" % species_id)
 
-    with TimeMachine() as tm:
-        model.fix_objective_as_constraint(time_machine=tm, fraction=1)
+    production_variables = set()
+    production = 0
+
+    with TimeMachine() as exchange_tm:
+        if "EX_%s_e" % species_id not in exchanges:
+            exchange = model.add_exchange(metabolite, prefix="COMPETE_", time_machine=exchange_tm)
+        else:
+            exchange = model.reactions.get_by_id("EX_%s_e" % species_id)
+        with TimeMachine() as tm:
+            model.fix_objective_as_constraint(time_machine=tm, fraction=1)
+            flux_dist = fba(model, objective=exchange)
+            min_value = flux_dist[exchange]
+
         flux_dist = fba(model, objective=exchange)
-        min_value = flux_dist[exchange]
+        max_value = flux_dist[exchange]
 
-    flux_dist = fba(model, objective=exchange)
-    max_value = flux_dist[exchange]
+        if max_value == 0:
+            raise ValueError(metabolite.id + " cannot be overproduced")
 
-    if max_value == 0:
-        raise ValueError(metabolite.id + " cannot be overproduced")
+        with TimeMachine() as tm:
+            exchange_flux = float_floor(fraction * (max_value - min_value) + min_value, ndecimals)
+            exchange.change_bounds(lb=exchange_flux, ub=exchange_flux, time_machine=tm)
 
-    exchange_flux = float_floor(fraction * (max_value - min_value) + min_value, ndecimals)
-    exchange.change_bounds(lb=exchange_flux, time_machine=time_machine)
+            new_dist = fba(model)
+
+            for reaction in metabolite.reactions:
+                if len({m.compartment for m in reaction.metabolites}) > 1:  # if is transport
+                    continue
+
+                coefficient = reaction.metabolites[metabolite]
+                if new_dist[reaction] * coefficient > 0:  # producing reaction
+                    production += abs(new_dist[reaction])
+
+                production_variables.add(reaction.flux_expression if coefficient > 0 else -reaction.flux_expression)
+
+    constraint = model.solver.interface.Constraint(sum(production_variables),
+                                                   lb=production,
+                                                   name="%s_over-production" % metabolite.id)
+
+    time_machine(do=partial(model.solver.add, constraint), undo=partial(model.solver.remove, constraint))
 
     return exchange
 

@@ -147,6 +147,16 @@ def test_compete_metabolite_test(model, amino_acid, benchmark):
     aa = model.metabolites.get_by_id(amino_acid)
     reference = pfba(model, objective=model.biomass)
 
+    production = 0
+    for reaction in aa.reactions:
+        if len({m.compartment for m in reaction.metabolites}) > 1:  # if is transport
+            continue
+
+        coefficient = reaction.metabolites[aa]
+        turnover = reference[reaction] * coefficient
+        if turnover > 0:
+            production += abs(reference[reaction])
+
     time_machine = TimeMachine()
 
     def _compete_metabolite(time_machine):
@@ -164,11 +174,19 @@ def test_compete_metabolite_test(model, amino_acid, benchmark):
                 target = model.add_demand(aa, time_machine=tm)
 
         assert fba(model, objective=target).objective_value <= 1e-6
-        return
+    else:
+        with time_machine as tm:
+            compete_metabolite(model, aa, fraction=0.1, reference_dist=reference, time_machine=tm)
+            solution = pfba(model, objective=model.biomass, reference=reference)
 
-    with time_machine as tm:
-        exchange = compete_metabolite(model, aa, fraction=0.1, reference_dist=reference, time_machine=tm)
+        new_production = 0
+        for reaction in aa.reactions:
+            if len({m.compartment for m in reaction.metabolites}) > 1:  # if is transport
+                continue
 
-        solution = pfba(model, objective=model.biomass)
+            coefficient = reaction.metabolites[aa]
+            turnover = solution[reaction] * coefficient
+            if turnover > 0:
+                new_production += abs(solution[reaction])
 
-    assert solution[exchange] > 0
+        assert new_production > production
