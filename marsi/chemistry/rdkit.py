@@ -22,6 +22,7 @@ from rdkit.Chem import MCS, AllChem, MACCSkeys
 import time
 import numpy as np
 from bitarray import bitarray
+from rdkit.Chem.SaltRemover import SaltRemover
 
 from marsi.chemistry.common import monte_carlo_volume as mc_vol, inchi_key_lru_cache
 
@@ -29,7 +30,7 @@ from marsi.chemistry.common import monte_carlo_volume as mc_vol, inchi_key_lru_c
 lru_cache = LRUCache(maxsize=256)
 
 periodic_table = Chem.GetPeriodicTable()
-
+salt_remove = SaltRemover(defnData="[Li,K,Rb,Cs,Fr,Be,Mg,Ca,Sr,Ba,Ra,F,Cl,Br]")
 
 fps = ["maccs", "morgan2", "morgan3", "morgan4", "morgan5"]
 
@@ -50,6 +51,8 @@ def inchi_to_molecule(inchi):
         A molecule.
     """
     mol = Chem.MolFromInchi(inchi)
+    mol = salt_remove.StripMol(mol, dontRemoveEverything=True)
+    Chem.Kekulize(mol)
     mol = Chem.AddHs(mol)
 
     return mol
@@ -75,6 +78,8 @@ def mol_to_molecule(file_or_molecule_desc, from_file=True):
         mol = Chem.MolFromMolFile(file_or_molecule_desc)
     else:
         mol = Chem.MolFromMolBlock(file_or_molecule_desc)
+    mol = salt_remove.StripMol(mol, dontRemoveEverything=True)
+    Chem.Kekulize(mol)
     mol = Chem.AddHs(mol)
     return mol
 
@@ -102,6 +107,8 @@ def sdf_to_molecule(file_or_molecule_desc, from_file=True):
         supplier = Chem.SDMolSupplier()
         supplier.SetData(file_or_molecule_desc, strictParsing=False)
     mol = next(supplier)
+    mol = salt_remove.StripMol(mol, dontRemoveEverything=True)
+    Chem.Kekulize(mol)
     mol = Chem.AddHs(mol)
     return mol
 

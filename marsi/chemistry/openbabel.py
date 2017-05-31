@@ -214,7 +214,10 @@ def inchi_to_molecule(inchi):
         A molecule.
     """
     mol = pybel.readstring('inchi', inchi, opt=dict(errorlevel=0))
+    mol.OBMol.StripSalts()
+    mol.OBMol.Kekulize()
     mol.addh()
+
     return mol
 
 
@@ -239,6 +242,8 @@ def sdf_to_molecule(from_file_or_molecule_desc, from_file=True):
         mol = next(pybel.readfile('sdf', from_file_or_molecule_desc, opt=dict(errorlevel=0)))
     else:
         mol = pybel.readstring('sdf', from_file_or_molecule_desc, opt=dict(errorlevel=0))
+    mol.OBMol.StripSalts()
+    mol.OBMol.Kekulize()
     mol.addh()
     return mol
 
@@ -280,6 +285,8 @@ def mol_to_molecule(file_or_molecule_desc, from_file=True):
         mol = next(pybel.readfile('mol', file_or_molecule_desc, opt=dict(errorlevel=0)))
     else:
         mol = pybel.readstring('mol', file_or_molecule_desc, opt=dict(errorlevel=0))
+    mol.OBMol.StripSalts()
+    mol.OBMol.Kekulize()
     mol.addh()
     return mol
 
