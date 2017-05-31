@@ -111,3 +111,18 @@ except Exception:
         raise RuntimeError(no_services_available)
 
     warn(no_services_available)
+
+
+def find_best_chebi_structure(entity):
+    structure = entity.ChemicalStructures[0]
+    for i, struct in enumerate(entity.ChemicalStructures):
+        if struct.dimension == "3D":
+            if structure.dimension == "3D" and structure.defaultStructure:
+                return structure.structure
+            else:
+                structure = struct
+        else:
+            if struct.defaultStructure and not structure.dimension == "3D":
+                structure = struct
+
+    return structure.structure
