@@ -259,7 +259,8 @@ class Metabolite(Base):
                                     formula=molecule.formula,
                                     sdf=openbabel.molecule_to_sdf(molecule),
                                     num_atoms=molecule.OBMol.NumAtoms(),
-                                    num_bonds=molecule.OBMol.NumBonds())
+                                    num_bonds=molecule.OBMol.NumBonds(),
+                                    num_rings=len(molecule.OBMol.GetSSSR()))
             for reference in references:
                 if reference not in metabolite.references:
                     metabolite.references.append(reference)
