@@ -43,7 +43,7 @@ class Molecule(object):
         """
         from_file = os.path.isfile(path_or_str)
         ob_mol = openbabel.sdf_to_molecule(path_or_str, from_file)
-        ob_mol._settitle("")
+        ob_mol.title = ""
         rd_mol = rdkit.sdf_to_molecule(path_or_str, from_file)
         return cls(ob_mol, rd_mol)
 
@@ -93,6 +93,10 @@ class Molecule(object):
     @property
     def inchi(self):
         return openbabel.mol_to_inchi(self._ob_mol)
+
+    @property
+    def inchi_key(self):
+        return openbabel.mol_to_inchi_key(self._ob_mol)
 
     @property
     def num_atoms(self):
