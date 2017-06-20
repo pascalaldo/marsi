@@ -36,6 +36,7 @@ before_install:
 - conda info -a
 - conda create -q -n tenv python=$TRAVIS_PYTHON_VERSION pip cmake
 - source activate tenv
+- export LD_LIBRARY_PATH="$HOME/miniconda3/tenv/lib:LD_LIBRARY_PATH"
 - pip install pip --upgrade
 - pip install codecov
 install:
