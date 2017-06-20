@@ -24,7 +24,6 @@ addons:
     - libgmp-dev
     - libglpk-dev
     - glpk-utils
-    - libopenbabel-dev
     - pandoc
     - postgresql-contrib-9.6
 before_install:
@@ -41,6 +40,7 @@ before_install:
 - pip install codecov
 install:
 - conda install -q -c rdkit boost rdkit=2016.09.4
+- conda install -q -c openbabel openbabel=2.4.1
 - pip install flake8 cython numpy scipy pyzmq pandas pytest pytest-cov pytest-benchmark
 - pip install .[test]
 before_script:
