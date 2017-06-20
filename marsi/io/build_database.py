@@ -89,9 +89,12 @@ def _add_molecule(mol, synonyms, database, identifier, is_analog, session=defaul
         if len(inchi_key) > 0 and inchi_key not in keys:
             reference = Reference.add_reference(database, identifier)
             synonyms = list(synonyms)
-            for i, synonym in enumerate(synonyms):
-                synonyms[i] = Synonym.add_synonym(synonym)
-            Metabolite.from_molecule(mol, [reference], synonyms, is_analog, session=session, first_time=True)
+            clean_synonyms = []
+            for synonym in synonyms:
+                if isinstance(synonym, str):
+                    clean_synonyms.append(Synonym.add_synonym(synonym))
+
+            Metabolite.from_molecule(mol, [reference], clean_synonyms, is_analog, session=session, first_time=True)
             keys.add(inchi_key)
 
 
