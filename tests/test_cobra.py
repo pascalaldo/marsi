@@ -155,7 +155,7 @@ def test_compete_metabolite_test(model, amino_acid, benchmark):
         coefficient = reaction.metabolites[aa]
         turnover = reference[reaction] * coefficient
         if turnover > 0:
-            production += abs(reference[reaction])
+            production += turnover
 
     time_machine = TimeMachine()
 
@@ -163,30 +163,20 @@ def test_compete_metabolite_test(model, amino_acid, benchmark):
         compete_metabolite(model, aa, reference, time_machine=time_machine)
         time_machine.reset()
 
-    try:
-        benchmark(_compete_metabolite, time_machine)
-    except ValueError:
-        ex = "EX_%s_e" % amino_acid[:-2]
-        if ex in model.reactions:
-            target = model.reactions.get_by_id(ex)
-        else:
-            with time_machine as tm:
-                target = model.add_demand(aa, time_machine=tm)
+    benchmark(_compete_metabolite, time_machine)
 
-        assert fba(model, objective=target).objective_value <= 1e-6
-    else:
-        with time_machine as tm:
-            compete_metabolite(model, aa, fraction=0.1, reference_dist=reference, time_machine=tm)
-            solution = pfba(model, objective=model.biomass, reference=reference)
+    with time_machine as tm:
+        compete_metabolite(model, aa, fraction=0.1, reference_dist=reference, time_machine=tm)
+        solution = pfba(model, objective=model.biomass, reference=reference)
 
-        new_production = 0
-        for reaction in aa.reactions:
-            if len({m.compartment for m in reaction.metabolites}) > 1:  # if is transport
-                continue
+    new_production = 0
+    for reaction in aa.reactions:
+        if len({m.compartment for m in reaction.metabolites}) > 1:  # if is transport
+            continue
 
-            coefficient = reaction.metabolites[aa]
-            turnover = solution[reaction] * coefficient
-            if turnover > 0:
-                new_production += abs(solution[reaction])
+        coefficient = reaction.metabolites[aa]
+        turnover = solution[reaction] * coefficient
+        if turnover > 0:
+            new_production += turnover
 
-        assert new_production > production
+    assert new_production > production
