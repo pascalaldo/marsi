@@ -357,7 +357,7 @@ def search_closest_compounds(molecule, nn_model=None, fp_cut=0.5, fpformat="macc
 
     assert isinstance(nn_model, DistributedNearestNeighbors)
 
-    neighbors = nn_model.radius_nearest_neighbors(molecule.fingerprint(fpformat), radius=1-fp_cut)
+    neighbors = nn_model.radius_nearest_neighbors(molecule.fingerprint(fpformat), radius=1 - fp_cut)
 
     if molecule.inchi_key in neighbors:
         del neighbors[molecule.inchi_key]

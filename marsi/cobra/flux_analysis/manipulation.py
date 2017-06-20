@@ -14,12 +14,11 @@
 
 import logging
 
-from cameo.util import float_floor, TimeMachine
-from cameo.config import ndecimals
+from cameo.util import TimeMachine
 from cobra import DictList
 from functools import partial
 
-from cameo.flux_analysis.simulation import FluxDistributionResult, fba
+from cameo.flux_analysis.simulation import FluxDistributionResult
 
 __all__ = ["compete_metabolite", "inhibit_metabolite", "knockout_metabolite", "apply_anti_metabolite"]
 
