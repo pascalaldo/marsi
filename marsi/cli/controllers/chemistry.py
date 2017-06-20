@@ -37,7 +37,7 @@ OUTPUT_WRITERS = {
 }
 
 PUBCHEM_COMPOUND = "PubChem Compound"
-CHEBI = "CHEBI"
+CHEBI = "ChEBI"
 
 
 class ChemistryController(CementBaseController):
@@ -92,10 +92,16 @@ class ChemistryController(CementBaseController):
                 molecule = openbabel.mol_to_molecule(find_best_chebi_structure(entity), False)
                 reference = Reference.add_reference("chebi", str(row.Identifier))
             else:
+                print('{:16s}\t{:12s}\t{:25s}\t- Skip'.format(row.Database, str(row.Identifier), row.Target))
                 continue
 
             synonym = Synonym.add_synonym(row.Name)
-            Metabolite.from_molecule(molecule, [reference], [synonym], analog=True, first_time=False)
+            try:
+                Metabolite.get(inchi_key=openbabel.mol_to_inchi_key(molecule))
+                print('{:16s}\t{:12s}\t{:25s}\t- OK'.format(row.Database, str(row.Identifier), row.Target))
+            except KeyError:
+                Metabolite.from_molecule(molecule, [reference], [synonym], analog=True, first_time=False)
+                print('{:16s}\t{:12s}\t{:25s}\t- Added'.format(row.Database, str(row.Identifier), row.Target))
 
     @expose(help="Find analogs for a metabolite")
     def find_analogs(self):
