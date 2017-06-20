@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import mongoengine
 import pytest
 
 import pybel
@@ -44,12 +43,13 @@ def metabolite(request):
 
 
 def _calc_fp(metabolite):
-    return openbabel.fingerprint_to_bits(metabolite.molecule(library='openbabel').calcfp('maccs'),
-                                         openbabel.fp_bits['maccs'])
+    mol = metabolite.molecule(get3d=False)
+    fp = openbabel.fingerprint(mol, 'maccs')
+    return openbabel.fingerprint_to_bits(fp, openbabel.fp_bits['maccs'])
 
 
 def test_fingerprint_method(metabolite, benchmark):
-    fp = metabolite.fingerprint('maccs')
+    fp = _calc_fp(metabolite)
     ob_fp = benchmark(_calc_fp, metabolite)
     assert (fp == ob_fp)
 
