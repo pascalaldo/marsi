@@ -140,6 +140,8 @@ class Reference(Base):
 
     @classmethod
     def add_reference(cls, database, accession, session=default_session):
+        database = database.strip()
+        accession = accession.strip()
         query = session.query(cls).filter(and_(cls.database == database, cls.accession == accession))
 
         try:
@@ -319,7 +321,7 @@ class Metabolite(Base):
         if fingerprint_format not in self.fingerprints:
             ob_molecule = self.molecule(get3d=False)
             fingerprint = openbabel.fingerprint(ob_molecule, fingerprint_format)
-            bits = openbabel.fp_bits.get('maccs', 2048)
+            bits = openbabel.fp_bits.get(fingerprint_format, 2048)
             self.fingerprints[fingerprint_format] = openbabel.fingerprint_to_bits(fingerprint, bits)
 
         return self.fingerprints[fingerprint_format]
