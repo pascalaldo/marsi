@@ -14,7 +14,6 @@
 
 import logging
 
-from cameo.util import TimeMachine
 from cobra import DictList
 from functools import partial
 
