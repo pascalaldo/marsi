@@ -573,13 +573,19 @@ class DBNearestNeighbors(object):
 
     @property
     def features(self):
-        features = []
+        features = [None for _ in self.index]
         query = self._session.query(Metabolite).filter(
             Metabolite.inchi_key.in_(self.index)
-        ).options(load_only('id'))
+        ).options(load_only('id', 'inchi_key'))
+
+        indices = {inchi_key: i for i, inchi_key in enumerate(self.index)}
 
         for metabolite in query.yield_per(1000):
-            features.append(metabolite.fingerprints[self.fingerprint_format])
+            fp = metabolite.fingerprints[self.fingerprint_format]
+            i = indices[metabolite.inchi_key]
+            features[i] = fp
+
+        assert all(f is not None for f in features)
 
         return features
 

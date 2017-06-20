@@ -35,7 +35,7 @@ from marsi.io.db import Metabolite
 from marsi.nearest_neighbors.model import NearestNeighbors, DistributedNearestNeighbors, DBNearestNeighbors
 
 from marsi.utils import data_dir, INCHI_KEY_TYPE, unpickle_large, pickle_large
-from marsi.io.mongodb import Database
+from marsi.io.db import Database
 from marsi.chemistry import SOLUBILITY
 
 from sqlalchemy import and_
@@ -357,14 +357,18 @@ def search_closest_compounds(molecule, nn_model=None, fp_cut=0.5, fpformat="macc
 
     assert isinstance(nn_model, DistributedNearestNeighbors)
 
-    tasks_queue = multiprocessing.Queue()
-    results_queue = multiprocessing.Queue()
+    neighbors = nn_model.radius_nearest_neighbors(molecule.fingerprint(fpformat), radius=1-fp_cut)
 
-    results = []
-
-    neighbors = nn_model.radius_nearest_neighbors(molecule.fingerprint(fpformat), radius=fp_cut)
+    if molecule.inchi_key in neighbors:
+        del neighbors[molecule.inchi_key]
 
     dataframe = DataFrame(columns=["formula", "atoms", "bonds", "tanimoto_similarity", "structural_similarity"])
+    if len(neighbors) == 0:
+        return dataframe
+
+    results = []
+    tasks_queue = multiprocessing.Queue()
+    results_queue = multiprocessing.Queue()
 
     progress = ProgressBar(maxval=len(neighbors), widgets=["Processing Neighbors: ", Bar(), ETA()])
 
@@ -379,10 +383,9 @@ def search_closest_compounds(molecule, nn_model=None, fp_cut=0.5, fpformat="macc
         tasks_queue.put((inchi_key, distance))
 
     progress.start()
-    print(len(neighbors))
     while len(results) < len(neighbors):
         try:
-            res = results_queue.get(timeout=500)
+            res = results_queue.get(block=True, timeout=10)
         except Empty:
             continue
         else:

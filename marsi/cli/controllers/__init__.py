@@ -70,16 +70,12 @@ class MarsiBaseController(CementBaseController):
 
     @expose(help="Show db status")
     def db_status(self):
-        from marsi.io.mongodb import Database
+        from marsi.io.db import Database
 
         connect(db_name)
         print("Database status (%s):" % db_name)
-        print("|----------------------------------------------|--------------|")
+        print("+----------------------------------------------+--------------+")
         print("| Collection                                   | Total        |")
-        print("|----------------------------------------------|--------------|")
+        print("+----------------------------------------------+--------------+")
         print("| Chemical compounds                           | %s |" % str(len(Database.metabolites)).ljust(12))
-        print("|----------------------------------------------|--------------|")
-        print("| Half inhibition concentrations (IC50)        | %s |" % str(len(Database.ic50s)).ljust(12))
-        print("|----------------------------------------------|--------------|")
-        print("| Half maximal effective concentrations (EC50) | %s |" % str(len(Database.ic50s)).ljust(12))
-        print("|----------------------------------------------|--------------|")
+        print("+----------------------------------------------+--------------+")
