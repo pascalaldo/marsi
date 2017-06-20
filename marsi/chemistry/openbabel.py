@@ -347,6 +347,7 @@ def fingerprint_to_bits(fp, bits=1024):
     Returns
     -------
     bitarray
+        An array of 0's and 1's.
     """
     bits_list = bitarray(bits)
     bits_list.setall(0)
