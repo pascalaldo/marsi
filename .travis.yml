@@ -36,7 +36,14 @@ before_install:
 - conda info -a
 - conda create -q -n tenv python=$TRAVIS_PYTHON_VERSION pip cmake
 - source activate tenv
-- export LD_LIBRARY_PATH="$HOME/miniconda3/tenv/lib:LD_LIBRARY_PATH"
+- wget https://sourceforge.net/projects/openbabel/files/openbabel/2.4.1/openbabel-2.4.1.tar.gz/download
+- tar xvzf openbabel-2.4.1.tar.gz
+- mv openbabel-2.4.1 ob-src
+- mkdir ob-build
+- cd ob-build
+- cmake ../ob-src 2>&1 | tee cmake.out
+- make 2>&1 | tee make.out
+- make install
 - pip install pip --upgrade
 - pip install codecov
 install:
