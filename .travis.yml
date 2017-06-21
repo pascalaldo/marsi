@@ -45,6 +45,7 @@ before_install:
 - cmake ../ob-src 2>&1 -DPYTHON_BINDINGS=ON | tee cmake.out
 - make 2>&1 | tee make.out
 - sudo make install
+- export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 - export PYTHONPATH=/usr/local/lib:$PYTHONPATH
 - cd ..
 - pip install pip --upgrade
