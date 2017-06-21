@@ -26,6 +26,7 @@ addons:
     - glpk-utils
     - pandoc
     - postgresql-contrib-9.6
+    - libeigen3-dev
 before_install:
 - wget http://repo.continuum.io/miniconda/Miniconda-3.5.5-Linux-x86_64.sh -O miniconda.sh;
 - bash miniconda.sh -b -p $HOME/conda
