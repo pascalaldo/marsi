@@ -43,9 +43,10 @@ before_install:
 - mv openbabel-2.4.1 ob-src
 - mkdir ob-build
 - cd ob-build
-- cmake ../ob-src -DPYTHON-BINDINGS=ON -DRUN_SWIG=ON
+- cmake ../ob-src -DPYTHON_BINDINGS=ON -DRUN_SWIG=ON
 - make
 - sudo make install
+- cd ..
 - pip install pip --upgrade
 - pip install codecov
 install:
