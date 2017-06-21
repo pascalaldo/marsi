@@ -36,7 +36,7 @@ before_install:
 - conda info -a
 - conda create -q -n tenv python=$TRAVIS_PYTHON_VERSION pip cmake
 - source activate tenv
-- wget https://sourceforge.net/projects/openbabel/files/openbabel/2.4.1/openbabel-2.4.1.tar.gz/download
+- wget https://sourceforge.net/projects/openbabel/files/openbabel/2.4.1/openbabel-2.4.1.tar.gz/download -O openbabel-2.4.1.tar.gz
 - tar xvzf openbabel-2.4.1.tar.gz
 - mv openbabel-2.4.1 ob-src
 - mkdir ob-build
