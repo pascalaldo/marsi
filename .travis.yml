@@ -44,6 +44,7 @@ before_install:
 - cmake ../ob-src 2>&1 | tee cmake.out
 - make 2>&1 | tee make.out
 - sudo make install
+- cd ..
 - pip install pip --upgrade
 - pip install codecov
 install:
