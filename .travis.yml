@@ -43,7 +43,7 @@ before_install:
 - cd ob-build
 - cmake ../ob-src 2>&1 | tee cmake.out
 - make 2>&1 | tee make.out
-- make install
+- sudo make install
 - pip install pip --upgrade
 - pip install codecov
 install:
