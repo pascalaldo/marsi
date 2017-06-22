@@ -46,7 +46,7 @@ before_install:
 - cmake ../ob-src -DPYTHON_BINDINGS=ON -DRUN_SWIG=ON -DPYTHON_PREFIX=`which python`
 - make
 - sudo make install
-- ln -s /usr/local/lib/libopenbabel.so.5 /usr/local/lib/libopenbabel.so.4
+- sudo ln -s /usr/local/lib/libopenbabel.so.5 /usr/local/lib/libopenbabel.so.4
 - cd ..
 - pip install pip --upgrade
 - pip install codecov
