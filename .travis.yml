@@ -37,22 +37,28 @@ before_install:
 - conda info -a
 - conda create -q -n tenv python=$TRAVIS_PYTHON_VERSION pip cmake
 - source activate tenv
+- pip install pip --upgrade
+- pip install codecov
+install:
 - wget https://sourceforge.net/projects/openbabel/files/openbabel/2.4.1/openbabel-2.4.1.tar.gz/download -O openbabel-2.4.1.tar.gz
 - tar xvzf openbabel-2.4.1.tar.gz
 - rm openbabel-2.4.1.tar.gz
 - mv openbabel-2.4.1 ob-src
 - mkdir ob-build
 - cd ob-build
-- cmake ../ob-src -DPYTHON_BINDINGS=ON -DRUN_SWIG=ON -DPYTHON_PREFIX=`which python`
+- cmake ../ob-src
 - make
 - sudo make install
-- sudo ln -s /usr/local/lib/libopenbabel.so.5 /usr/local/lib/libopenbabel.so.4
 - cd ..
-- pip install pip --upgrade
-- pip install codecov
-install:
 - conda install -q -c rdkit boost rdkit=2016.09.4
 - pip install flake8 cython numpy scipy pyzmq pandas pytest pytest-cov pytest-benchmark
+- wget https://pypi.python.org/packages/9c/30/eb9c3d3d3b86981f6c6a7b8eceb6f4a13b9a12673efbc842b7cebe0ce39a/openbabel-2.4.1.tar.gz#md5=efeb7bb9749f04062cc6592058c04e2e
+- tar xvzf openbabel-2.4.1.tar.gz
+- rm openbabel-2.4.1.tar.gz
+- cd openbabel-2.4.1
+- python setup.py build_ext -L/usr/local/lib
+- python setup.py install
+- cd ..
 - pip install .[test]
 before_script:
 - python -c 'from rdkit import Chem'
