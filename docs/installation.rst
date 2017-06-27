@@ -24,12 +24,12 @@ still need to install it using ``pip``). Do the following to create a virtual en
     $ conda create -y -n marsi python=3.4
 
 
-Non-python dependencies
-=======================
+Dependencies required before installation
+=========================================
 
 Cython
 ------
-To install Cython follow the cython-installation_ documnetation provided on their website.
+To install Cython follow the cython-installation_ documentation provided on their website.
 
 Numpy
 -----
@@ -39,6 +39,22 @@ Numpy can be installed using pip:
 .. code-block:: bash
 
     $ pip install numpy
+
+Eigen3
+------
+
+To install Eigen3 on Ubuntu/Debian run:
+
+.. code-block:: bash
+
+    $ sudo apt-get install libeigen3-dev
+
+To install Eigen3 on MacOS X use homebrew_:
+
+.. code-block:: bash
+
+    $ brew install open-babel
+
 
 
 OpenBabel
@@ -54,7 +70,7 @@ On MacOS X it can be installed using homebrew_:
 
 .. code-block:: bash
 
-    $ brew install openbabel
+    $ brew install open-babel
 
 
 RDKit
@@ -67,17 +83,6 @@ For MacOS X we recommend using homebrew_:
 .. code-block:: bash
 
     $ brew install rdkit
-
-
-MongoDB
--------
-MongoDB can be install using apt-get on Ubuntu/Debian following this instructions (mongodb-ubuntu_).
-
-To install it on MacOS X use homebrew_:
-
-.. code-block:: bash
-
-    $ brew install mongodb
 
 
 GLPK
@@ -144,8 +149,8 @@ The following categories are available::
 .. _virtualenv: https://pypi.python.org/pypi/virtualenv
 .. _virtualenvwrapper: https://pypi.python.org/pypi/virtualenvwrapper
 .. _cython-installation: http://cython.readthedocs.io/en/latest/src/quickstart/install.html
-.. _mongodb-ubuntu: https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
 .. _sphinx: https://pypi.python.org/pypi/sphinx
+.. _swig: http://www.swig.org
 .. _numpydoc: https://pypi.python.org/pypi/numpydoc
 .. _cplex-install: https://www.ibm.com/support/knowledgecenter/en/SSSA5P_12.7.0/ilog.odms.studio.help/Optimization_Studio/topics/COS_installing.html
 .. _cplex-python: https://www.ibm.com/support/knowledgecenter/SSSA5P_12.7.0/ilog.odms.cplex.help/CPLEX/GettingStarted/topics/set_up/Python_setup.html

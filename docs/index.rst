@@ -56,11 +56,11 @@ API
 
 References
 ==========
-[1]
+[1] Patil,K.R. et al. (2005) Evolutionary programming as a platform for in silico metabolic engineering. BMC Bioinformatics, 6, 308.
 
-[2]
+[2] Burgard,A.P. et al. (2003) Optknock: a bilevel programming framework for identifying gene knockout strategies for microbial strain optimization. Biotechnol. Bioeng., 84, 647–657.
 
-[3]
+[3] Cardoso,J.G.R. et al. (2017) Cameo : A Python Library for Computer Aided Metabolic Engineering and Optimization of Cell Factories. bioRxiv.
 
 
 
