@@ -28,7 +28,7 @@ lru_cache = LRUCache(maxsize=1024)
 
 
 try:
-    __all__ = ['find_chebi_id', 'find_pubchem_id', "map_uniprot_from_pdb_ids"]
+    __all__ = ['find_chebi_id', 'find_pubchem_id', "map_uniprot_from_pdb_ids", "find_best_chebi_structure"]
 
     chebi_client = ChEBI()
     kegg_client = KEGG()
@@ -92,7 +92,7 @@ try:
 
 except Exception:
     from warnings import warn
-    __all__ = ['no_services_available']
+    __all__ = ['no_services_available', 'find_best_chebi_structure']
     no_services_available = "Please check your internet connection"
 
     def map_uniprot_from_pdb_ids(pdb_ids):
