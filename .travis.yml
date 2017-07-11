@@ -50,7 +50,6 @@ before_script:
 - flake8 marsi
 - psql -c 'create database "marsi-db";' -U postgres
 - psql -U postgres marsi-db -f tests/fixtures/marsi-db-schema.sql
-- python bin/restore_db.py
 - psql -d marsi-db -c 'SELECT COUNT(*) FROM metabolites;' -U postgres
 script:
 - pytest tests
