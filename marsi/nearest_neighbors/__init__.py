@@ -20,7 +20,6 @@ from queue import Empty
 import numpy as np
 import six
 from IProgress import ProgressBar, Bar, ETA
-from mongoengine import connect
 
 from cameo.parallel import SequentialView
 from pandas import DataFrame
@@ -59,7 +58,7 @@ class FeatureReader(object):
     solubility : str
         One of 'high', 'medium', 'low', 'all'.
     connection_args : dict
-        Other arguments of mongoengine.connect
+        Other arguments of connect
 
 
     """
@@ -70,7 +69,6 @@ class FeatureReader(object):
         self.connection_args = connection_args
 
     def __call__(self, index):
-        connect(self.db, **self.connection_args)
         subset = Database.metabolites[index[0]:index[1]]
         indices = []
         fingerprints = []
