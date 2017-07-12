@@ -13,7 +13,6 @@
 # limitations under the License.
 import os
 from cement.core.controller import CementBaseController, expose
-from mongoengine import connect
 
 from marsi.config import prj_dir, db_name
 from marsi.utils import data_dir, log_dir, models_dir
@@ -72,7 +71,6 @@ class MarsiBaseController(CementBaseController):
     def db_status(self):
         from marsi.io.db import Database
 
-        connect(db_name)
         print("Database status (%s):" % db_name)
         print("+----------------------------------------------+--------------+")
         print("| Collection                                   | Total        |")
