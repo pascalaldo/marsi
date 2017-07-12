@@ -14,9 +14,7 @@
 import os
 from IProgress import ProgressBar, Bar, ETA
 from cement.core.controller import CementBaseController, expose
-from mongoengine import connect
 
-from marsi.config import db_name
 from marsi.io.build_database import build_database
 from marsi.io.parsers import parse_chebi_data, parse_pubchem, parse_kegg_brite
 from marsi.io.retriaval import retrieve_chebi_names, retrieve_chebi_relation, retrieve_chebi_vertice, \
@@ -167,5 +165,4 @@ class InitializationController(CementBaseController):
     @expose(help="Build database")
     def build_database(self):
         from marsi.io import data
-        connect(db_name)
         build_database(data, data_dir)
