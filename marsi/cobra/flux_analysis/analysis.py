@@ -198,7 +198,7 @@ def metabolite_knockout_phenotype(model, compartments=None, objective=None, ndec
 
     for met in iterator(model.metabolites):
         if met.compartment in compartments and met.elements.get("C", 0) > ncarbons:
-            with TimeMachine() as tm:
+            with model:
                 knockout_metabolite(model, met, allow_accumulation=True, ignore_transport=True)
                 fitness = fba(model, objective=objective)
                 fva = flux_variability_analysis(model, reactions=exchanges, fraction_of_optimum=1)
@@ -293,7 +293,7 @@ def sensitivity_analysis(model, metabolite, biomass=None, variables=None, is_ess
 
     for i, fraction in enumerate(frange(0, 1.1, steps)):
         variables_fluxes.append([])
-        with TimeMachine() as tm:
+        with model:
             if is_essential:
                 exchange = compete_metabolite(model, metabolite, simulation_kwargs['reference'], fraction)
             else:
