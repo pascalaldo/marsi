@@ -5,17 +5,21 @@ python:
 - '3.5'
 matrix:
   fast_finish: true
+
 branches:
   only:
   - master
   - devel
   - /^[0-9]+\.[0-9]+\.[0-9]+[.0-9ab]*$/
+
 cache:
 - pip: true
+
 services:
 - redis-server
 - mongodb
 - postgresql
+
 addons:
   apt:
     packages:
@@ -26,8 +30,8 @@ addons:
     - glpk-utils
     - pandoc
     - postgresql-contrib-9.6
-    - libopenbabel-dev
     - libeigen3-dev
+
 before_install:
 - wget http://repo.continuum.io/miniconda/Miniconda-3.5.5-Linux-x86_64.sh -O miniconda.sh;
 - bash miniconda.sh -b -p $HOME/conda
@@ -40,10 +44,13 @@ before_install:
 - source activate tenv
 - pip install pip --upgrade
 - pip install codecov
+
 install:
 - conda install -q -c rdkit boost rdkit=2016.09.4
+- conda install -q -c openbabel openbabel
 - pip install flake8 cython numpy scipy pyzmq pandas pytest pytest-cov pytest-benchmark
 - pip install .[test]
+
 before_script:
 - python -c 'from rdkit import Chem'
 - python -c 'import pybel'
@@ -51,15 +58,19 @@ before_script:
 - psql -c 'create database "marsi-db";' -U postgres
 - psql -U postgres marsi-db -f tests/fixtures/marsi-db-schema.sql
 - psql -d marsi-db -c 'SELECT COUNT(*) FROM metabolites;' -U postgres
+
 script:
 - pytest tests
+
 after_success:
 - codecov
+
 before_deploy:
 - cd docs
 - make apidoc
 - make html
 - touch _build/html/.nojekyll
+
 deploy:
 - provider: pages
   skip_cleanup: true
@@ -69,6 +80,7 @@ deploy:
   on:
     branch: master
     repo: biosustain/marsi
+
 - provider: pypi
   user: Joo.Cardoso
   password:
@@ -80,6 +92,7 @@ deploy:
     tags: true
     repo: biosustain/marsi
   docs_dir: docs/_build/html
+
 env:
   global:
     secure: mncUZPqT3TyNE5JMGsvR+PTQhZbO2edZP3lONn4dHGh+3nsoge5XrLwTn+wakkXhutYsokgtT7KboU0dFJXCza8bR/H/jxZfCqbDxO9z5zexK/18xxQ8tZ41ogVdViiJu5kH4LkyzyUlf07bGAaP7DlDXXWAr5Dta7+v8ecnJCqdAfKLrQJ+6jqpQSM7Gr2x49cHVqSfL5CPWvIHYGEbg7MnDcwZpE9TSt/vgXyFZ9VSQXN6U+o+2YpPtWK7WSoru5vdHev3QKylvEAeqZImvflwbxJBE2RTiglgcKrOIYPYXZeb8EjHG8FoNCibKlkrt9O2mTbb5mfMjdu1JcNmZBUTLH+6MT4LCEJxM7BLXms7SfXVnI8PcVH5W2faaJkM+pE/1mwzqOTrVkXwwU/FpV+F8QoZYt1WvmNDqZx3jrshcAk1ExgvqB2DGuHZchJziHfIfPSZvwAXCKNFiC8Xd8KOX/a4p4wQPomL0C9Cxclna6k9J+nFFdwvsuAPDw5b+29uTiPVDtPQgHHdB61HlcbCJo/vfE8+JAk0T2jC3ghIwKrnNra9kM0JTw9E6rV1qJvpyOB9HDa01rd6dvv/NRLhcn+/sgI6SAHAGq1an69uG0FvTzD1cpbkIPw5s97rxkh1jqkTbsSpx61HJDRUybGkYvbp+FdIhjlAAoQkkgo=
