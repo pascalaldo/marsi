@@ -16,6 +16,7 @@ import os
 import pytest
 
 from cameo import load_model
+from cameo.flux_analysis.analysis import find_essential_metabolites
 
 TEST_DIR = os.path.dirname(__file__)
 
@@ -31,10 +32,11 @@ BIOMASS_IDS = {
 
 MODELS = {model_id: load_model_fixture(model_id) for model_id in BIOMASS_IDS}
 
-ESSENTIAL_METABOLITES = {model_id: MODELS[model_id].essential_metabolites() for model_id in BIOMASS_IDS}
+ESSENTIAL_METABOLITES = {model_id: find_essential_metabolites(MODELS[model_id], force_steady_state=True)
+                         for model_id in BIOMASS_IDS}
 
 
-@pytest.fixture(params=["iJO1366", "iAF1260"], scope="function")
+@pytest.fixture(params=["iJO1366", "iAF1260"], scope="session")
 def model(request):
     """
     Genome-scale metabolic model. Loaded using cameo.load_model.
@@ -54,7 +56,7 @@ def amino_acid(request):
     return request.param
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='session')
 def essential_metabolites(model):
     metabolites = ESSENTIAL_METABOLITES[model.id]
     return {model.metabolites.get_by_id(m.id) for m in metabolites}

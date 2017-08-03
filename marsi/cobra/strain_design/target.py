@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from cameo.core.target import Target
+from cameo.flux_analysis.analysis import find_essential_metabolites
 from cameo.util import in_ipnb
 
 from marsi.cobra.flux_analysis.manipulation import knockout_metabolite, apply_anti_metabolite
@@ -53,15 +54,14 @@ class AntiMetaboliteManipulationTarget(Target):
         """
         return search_metabolites(model, self.id)
 
-    def apply(self, model, time_machine=None, reference=None):
-        essential_metabolites = model.essential_metabolites()
+    def apply(self, model, reference=None):
+        essential_metabolites = find_essential_metabolites(model)
         target_metabolites = self.metabolites(model)
 
         apply_anti_metabolite(model, target_metabolites, essential_metabolites, reference,
                               allow_accumulation=self.allow_accumulation,
                               competition_fraction=self.fraction,
-                              inhibition_fraction=self.fraction,
-                              time_machine=time_machine)
+                              inhibition_fraction=self.fraction)
 
     def _repr_html_(self):  # pragma: no cover
         return "&#x2623;(%.3f)-%s" % (self.fraction, self.id)
@@ -80,9 +80,9 @@ class MetaboliteKnockoutTarget(AntiMetaboliteManipulationTarget):
     def __init__(self, species_id, ignore_transport=True, allow_accumulation=True):
         super(MetaboliteKnockoutTarget, self).__init__(species_id, 0.0, ignore_transport, allow_accumulation)
 
-    def apply(self, model, time_machine=None, reference=None):
+    def apply(self, model, reference=None):
         for metabolite in self.metabolites(model):
-            knockout_metabolite(model, metabolite, self.ignore_transport, self.allow_accumulation, time_machine)
+            knockout_metabolite(model, metabolite, self.ignore_transport, self.allow_accumulation)
 
     def _repr_html_(self):  # pragma: no cover
         return "&#x2623;%s" % self.id

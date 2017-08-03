@@ -14,20 +14,25 @@
 
 import logging
 
+import numpy
 import inspyred
+
 from IProgress import ProgressBar, Bar, Percentage
 
-from cameo import fba, phenotypic_phase_plane, flux_variability_analysis
-from cameo.core import SolverBasedModel
+from cobra.core import Model
+from cobra.exceptions import OptimizationError
+
+from cameo.flux_analysis.simulation import fba
+from cameo.flux_analysis.analysis import phenotypic_phase_plane, flux_variability_analysis
+
 from cameo.core.strain_design import StrainDesignMethod, StrainDesign, StrainDesignMethodResult
-from cameo.exceptions import SolveError
+from cameo.core.utils import get_reaction_for
 from cameo.strain_design.heuristic.evolutionary.archives import ProductionStrainArchive
 from cameo.strain_design.heuristic.evolutionary.objective_functions import biomass_product_coupled_min_yield, \
     biomass_product_coupled_yield
-from cameo.util import TimeMachine
 from cameo.visualization.plotting import plotter
 from pandas import DataFrame
-from sympy.tensor.tests.test_tensor import numpy
+
 
 from marsi.cobra.strain_design.metaheuristic import MetaboliteKnockoutOptimization
 from marsi.cobra.flux_analysis.manipulation import knockout_metabolite
@@ -67,33 +72,33 @@ class OptMet(StrainDesignMethod):
 
     def run(self, target=None, biomass=None, substrate=None, max_knockouts=5, variable_size=True,
             simulation_method=fba, growth_coupled=False, max_evaluations=20000, population_size=200,
-            max_results=50, seed=None, time_machine=None, **kwargs):
+            max_results=50, seed=None, **kwargs):
         """
         Parameters
         ----------
-        target: str, Metabolite or Reaction
+        target : str, Metabolite or Reaction
             The design target
-        biomass: str, Metabolite or Reaction
+        biomass : str, Metabolite or Reaction
             The biomass definition in the model
-        substrate: str, Metabolite or Reaction
+        substrate : str, Metabolite or Reaction
             The main carbon source
-        max_knockouts: int
+        max_knockouts : int
             Max number of knockouts allowed
-        variable_size: bool
+        variable_size : bool
             If true, all candidates have the same size. Otherwise the candidate size can be from 1 to max_knockouts.
         simulation_method: function
             Any method from cameo.flux_analysis.simulation or equivalent
-        growth_coupled: bool
+        growth_coupled : bool
             If true will use the minimum flux rate to compute the fitness
-        max_evaluations: int
+        max_evaluations : int
             Number of evaluations before stop
-        population_size: int
+        population_size : int
             Number of individuals in each generation
-        max_results: int
+        max_results : int
             Max number of different designs to return if found.
-        kwargs: dict
+        kwargs : dict
             Arguments for the simulation method.
-        seed: int
+        seed : int
             A seed for random.
 
         Returns
@@ -101,9 +106,9 @@ class OptMet(StrainDesignMethod):
         OptMetResult
         """
 
-        target = self._model._reaction_for(target, time_machine=time_machine)
-        biomass = self._model._reaction_for(biomass, time_machine=time_machine)
-        substrate = self._model._reaction_for(substrate, time_machine=time_machine)
+        target = get_reaction_for(self._model, target)
+        biomass = get_reaction_for(self._model, biomass)
+        substrate = get_reaction_for(self._model, substrate)
 
         if growth_coupled:
             objective_function = biomass_product_coupled_min_yield(biomass, target, substrate)
@@ -141,7 +146,7 @@ class OptMetResult(StrainDesignMethodResult):
     def __init__(self, model, knockouts, objective_function, simulation_method, manipulation_type, biomass, target,
                  substrate, simulation_kwargs, *args, **kwargs):
 
-        assert isinstance(model, SolverBasedModel)
+        assert isinstance(model, Model)
 
         self._model = model
         self._knockouts = knockouts
@@ -196,24 +201,24 @@ class OptMetResult(StrainDesignMethodResult):
                     processed_solutions.loc[i] = process_metabolite_knockout_solution(
                         self._model, solution, self._simulation_method, self._simulation_kwargs,
                         self._biomass, self._target, self._substrate, self._objective_function)
-                except SolveError as e:
+                except OptimizationError as e:
                     logger.error(e)
                     processed_solutions.loc[i] = [numpy.nan for _ in processed_solutions.columns]
 
             self._processed_solutions = processed_solutions
 
     def display_on_map(self, index=0, map_name=None, palette="YlGnBu"):
-        with TimeMachine() as tm:
+        with self._model:
             for ko in self.data_frame.loc[index, "metabolites"]:
-                self._model.metabolites.get_by_id(ko).knock_out(tm)
+                knockout_metabolite(self._model, self._model.metabolites.get_by_id(ko))
             fluxes = self._simulation_method(self._model, **self._simulation_kwargs)
             fluxes.display_on_map(map_name=map_name, palette=palette)
 
     def plot(self, index=0, grid=None, width=None, height=None, title=None, palette=None, **kwargs):
         wt_production = phenotypic_phase_plane(self._model, objective=self._target, variables=[self._biomass])
-        with TimeMachine() as tm:
+        with self._model:
             for ko in self.data_frame.loc[index, "metabolites"]:
-                self._model.metabolites.get_by_id(ko).knock_out(tm)
+                knockout_metabolite(self._model, self._model.metabolites.get_by_id(ko))
             mt_production = phenotypic_phase_plane(self._model, objective=self._target, variables=[self._biomass])
 
         if title is None:
@@ -240,21 +245,21 @@ def process_metabolite_knockout_solution(model, solution, simulation_method, sim
     Parameters
     ----------
 
-    model: SolverBasedModel
+    model : SolverBasedModel
         A constraint-based model
-    solution: tuple
+    solution : tuple
         The output of a decoder (metabolite species)
-    simulation_method: function
+    simulation_method : function
         See see cameo.flux_analysis.simulation
-    simulation_kwargs: dict
+    simulation_kwargs : dict
         Keyword arguments to run the simulation method
-    biomass: Reaction
+    biomass : Reaction
         Cellular biomass reaction
-    target: Reaction
+    target : Reaction
         The strain design target
-    substrate: Reaction
+    substrate : Reaction
         The main carbon source uptake rate
-    objective_function:
+    objective_function : function
         A cameo.strain_design.heuristic.evolutionary.objective_functions.ObjectiveFunction
 
     Returns
@@ -265,14 +270,14 @@ def process_metabolite_knockout_solution(model, solution, simulation_method, sim
     """
 
     metabolite_targets = [search_metabolites(model, species_id) for species_id in solution]
-    with TimeMachine() as tm:
+    with model:
         for metabolites in metabolite_targets:
             for metabolite in metabolites:
-                knockout_metabolite(model, metabolite, time_machine=tm)
+                knockout_metabolite(model, metabolite)
 
         reactions = objective_function.reactions
         flux_dist = simulation_method(model, reactions=reactions, objective=biomass, **simulation_kwargs)
-        model.change_objective(biomass, time_machine=tm)
+        model.change_objective(biomass)
 
         fva = flux_variability_analysis(model, fraction_of_optimum=0.99, reactions=[target])
         target_yield = flux_dist[target] / abs(flux_dist[substrate])

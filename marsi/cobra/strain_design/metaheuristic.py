@@ -14,12 +14,13 @@
 
 import logging
 
-from cameo import pfba
-from cameo.exceptions import SolveError
+from cobra.exceptions import OptimizationError
+
+from cameo.flux_analysis.simulation import pfba
+from cameo.flux_analysis.analysis import find_essential_metabolites
 from cameo.strain_design.heuristic.evolutionary.optimization import TargetOptimization
 from cameo.strain_design.heuristic.evolutionary.evaluators import TargetEvaluator
 from cameo.strain_design.heuristic.evolutionary.decoders import SetDecoder
-from cameo.util import TimeMachine
 
 from marsi.cobra.flux_analysis.manipulation import knockout_metabolite
 from marsi.utils import search_metabolites
@@ -47,14 +48,15 @@ class MetaboliteDecoder(SetDecoder):
     def __init__(self, representation, model, *args, **kwargs):
         super(MetaboliteDecoder, self).__init__(representation, model, *args, **kwargs)
 
-    def __call__(self, individual, flat=False):
+    def __call__(self, individual, flat=False, **kwargs):
         """
         Parameters
         ----------
 
-        individual: list
+        **kwargs
+        individual : list
             a list of integers
-        flat: bool
+        flat : bool
             if True, returns strings. Otherwise returns Reaction.
 
         Returns
@@ -82,16 +84,16 @@ class AntiMetaboliteEvaluator(TargetEvaluator):
 
         specie_ids = self.decoder(individual)
         metabolite_targets = [search_metabolites(self.model, val) for val in specie_ids]
-        with TimeMachine() as tm:
+        with self.model:
             for metabolites in metabolite_targets:
                 apply_anti_metabolite(self.model, metabolites, self.essential_metabolites,
                                       self.simulation_kwargs['reference'], self.inhibition_fraction,
-                                      self.competition_fraction, time_machine=tm)
+                                      self.competition_fraction)
 
             try:
                 solution = self.simulation_method(self.model, **self.simulation_kwargs)
                 return self.objective_function(self.model, solution, metabolite_targets)
-            except SolveError:
+            except OptimizationError:
                 return self.objective_function.worst_fitness()
 
 
@@ -107,15 +109,14 @@ class MetaboliteKnockoutEvaluator(TargetEvaluator):
 
         specie_ids = self.decoder(individual)
         metabolite_targets = [search_metabolites(self.model, val) for val in specie_ids]
-        with TimeMachine() as tm:
+        with self.model:
             for metabolites in metabolite_targets:
                 for metabolite in metabolites:
-                    knockout_metabolite(self.model, metabolite, ignore_transport=True,
-                                        allow_accumulation=True, time_machine=tm)
+                    knockout_metabolite(self.model, metabolite, ignore_transport=True, allow_accumulation=True)
             try:
                 solution = self.simulation_method(self.model, **self.simulation_kwargs)
                 return self.objective_function(self.model, solution, metabolite_targets)
-            except SolveError:
+            except OptimizationError:
                 return self.objective_function.worst_fitness()
 
 
@@ -187,7 +188,8 @@ class MetaboliteKnockoutOptimization(TargetOptimization):
         if skip_essential_metabolites:
             self.essential_metabolites = set()
         else:
-            self.essential_metabolites = set([m.id for m in self.model.essential_metabolites()])
+            _essential_metabolites = find_essential_metabolites(self.model)
+            self.essential_metabolites = set([m.id for m in _essential_metabolites])
 
         if essential_metabolites:
             self.essential_metabolites.update(essential_metabolites)

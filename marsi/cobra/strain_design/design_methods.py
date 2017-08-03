@@ -12,13 +12,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from cobra.core import Model
+from cameo.core.utils import get_reaction_for
 
-from cameo import fba
-from cameo.core import SolverBasedModel
+from cameo.flux_analysis.simulation import fba
+from cameo.flux_analysis.analysis import find_essential_metabolites
+
 from cameo.strain_design import DifferentialFVA
 from cameo.strain_design import OptKnock, OptGene
 from cameo.strain_design.heuristic.evolutionary.objective_functions import biomass_product_coupled_yield
-from cameo.util import TimeMachine
 from pandas import DataFrame
 
 from marsi.cobra.strain_design.evolutionary import OptMet
@@ -45,7 +47,7 @@ class GenericMARSIDesignMethod(object):
     """
     def __init__(self, model=None, nearest_neighbors_model=None, min_tanimoto=0.75, currency_metabolites=None,
                  essential_metabolites=None):
-        assert isinstance(model, SolverBasedModel)
+        assert isinstance(model, Model)
         self.model = model
         self.nearest_neighbors_model = nearest_neighbors_model
         self.min_tanimoto = min_tanimoto
@@ -53,7 +55,7 @@ class GenericMARSIDesignMethod(object):
         if essential_metabolites is None:
             essential_metabolites = []
 
-        self.essential_metabolites = model.essential_metabolites() + essential_metabolites
+        self.essential_metabolites = find_essential_metabolites(model) + essential_metabolites
         for i, m in enumerate(self.essential_metabolites):
             if isinstance(m, str):
                 self.essential_metabolites[i] = model.metabolites.get_by_id(m)
@@ -69,7 +71,7 @@ class GenericMARSIDesignMethod(object):
         raise NotImplementedError
 
     def essential_metabolites_reactions(self):
-        essential_metabolites = self.model.essential_metabolites()
+        essential_metabolites = find_essential_metabolites(self.model)
         reactions = set()
         for metabolite in essential_metabolites:
             reactions.update(metabolite.reactions)
@@ -80,8 +82,8 @@ class GenericMARSIDesignMethod(object):
         evaluated_designs = DataFrame(columns=["design", "fitness"])
 
         for i, design in enumerate(strain_designs):
-            with TimeMachine() as tm:
-                design.apply(self.model, time_machine=tm)
+            with self.model:
+                design.apply(self.model)
                 solution = fba(self.model)
                 fitness = objective_function(self.model, solution, design.targets)
                 evaluated_designs.loc[i] = [design, fitness]
@@ -100,7 +102,7 @@ class RandomMutagenesisDesign(GenericMARSIDesignMethod):
                                biomass=None, design_method="optgene", max_results=100,
                                non_essential_metabolites=False, max_evaluations=20000, **designer_kwargs):
 
-        target_flux = self.model._reaction_for(target)
+        target_flux = get_reaction_for(self.model, target)
 
         exclude_reactions = []
         if non_essential_metabolites:
@@ -139,7 +141,7 @@ class RandomMutagenesisDesign(GenericMARSIDesignMethod):
     def optimize_with_metabolites(self, target, max_interventions=1, substrate=None, biomass=None,
                                   max_results=100, max_evaluations=20000, **design_kwargs):
 
-        target_flux = self.model._reaction_for(target)
+        target_flux = get_reaction_for(self.model, target)
 
         designer = OptMet(model=self.model, essential_metabolites=CURRENCY_METABOLITES, **design_kwargs)
         knockouts = designer.run(max_knockouts=max_interventions, biomass=biomass, substrate=substrate,
@@ -159,7 +161,7 @@ class ALEDesign(GenericMARSIDesignMethod):
                                biomass=None, design_method="differential_fva", max_results=100,
                                non_essential_metabolites=False, **designer_kwargs):
 
-        target_flux = self.model._reaction_for(target)
+        target_flux = get_reaction_for(self.model, target)
         bpcy = biomass_product_coupled_yield(biomass, target_flux, substrate)
 
         designer = DifferentialFVA(self.model, objective=target, variables=[biomass],
@@ -167,9 +169,9 @@ class ALEDesign(GenericMARSIDesignMethod):
 
         evaluated_designs = DataFrame(columns=["strain_designs", "fitness"])
         for i, design in enumerate(designer.run()):
-            with TimeMachine() as tm:
-                design.apply(self.model, time_machine=tm)
-                solution = self.model.solve()
+            with self.model:
+                design.apply(self.model)
+                solution = self.model.optimize()
                 fitness = bpcy(self.model, solution, design.targets)
                 evaluated_designs.loc[i] = [design, fitness]
 

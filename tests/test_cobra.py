@@ -13,8 +13,7 @@
 # limitations under the License.
 
 import pytest
-from cameo import pfba, fba
-from cameo.util import TimeMachine
+from cameo.flux_analysis.simulation import pfba
 
 from marsi.cobra.flux_analysis.analysis import sensitivity_analysis
 from marsi.utils import search_metabolites
@@ -43,15 +42,14 @@ def test_inhibit_metabolite(model, allow_accumulation, benchmark):
     succ_c = model.metabolites.succ_c
 
     reference = pfba(model, objective=model.biomass)
-    time_machine = TimeMachine()
 
-    def _inhibit_metabolite(tm):
-        inhibit_metabolite(model, succ_c, reference, allow_accumulation=allow_accumulation, time_machine=tm)
-        tm.reset()
+    def _inhibit_metabolite():
+        inhibit_metabolite(model, succ_c, reference, allow_accumulation=allow_accumulation)
+    with model:
+        benchmark(_inhibit_metabolite)
 
-    benchmark(_inhibit_metabolite, time_machine)
-    with time_machine as tm:
-        exchange = inhibit_metabolite(model, succ_c, reference, allow_accumulation=allow_accumulation, time_machine=tm)
+    with model:
+        exchange = inhibit_metabolite(model, succ_c, reference, allow_accumulation=allow_accumulation)
 
         result = pfba(model, objective=model.biomass)
 
@@ -102,12 +100,11 @@ def test_knockout_metabolite_knockout_exchangeable(model, allow_accumulation, ig
     succ_c_transport_reactions += [model.reactions.get_by_id(rid) for rid in succ_c_transport_both]
     succ_c_transport_bounds = {r.id: (r.lower_bound, r.upper_bound) for r in succ_c_transport_reactions}
 
-    with TimeMachine() as tm:
+    with model:
 
         benchmark(knockout_metabolite, model, succ_c,
                   ignore_transport=ignore_transport,
-                  allow_accumulation=allow_accumulation,
-                  time_machine=tm)
+                  allow_accumulation=allow_accumulation)
 
         for transport_r in succ_c_transport_reactions:
             if ignore_transport:
@@ -129,15 +126,13 @@ def test_knockout_metabolite_knockout_non_exchangeable(model, allow_accumulation
     xu5p__L = model.metabolites.xu5p__L_c
 
     def _knockout_metabolite():
-        with TimeMachine() as tm:
-            knockout_metabolite(model, xu5p__L, ignore_transport=ignore_transport,
-                                allow_accumulation=allow_accumulation, time_machine=tm)
+        knockout_metabolite(model, xu5p__L, ignore_transport=ignore_transport, allow_accumulation=allow_accumulation)
 
-    benchmark(_knockout_metabolite)
+    with model:
+        benchmark(_knockout_metabolite)
 
-    with TimeMachine() as tm:
-        knockout_metabolite(model, xu5p__L, ignore_transport=ignore_transport,
-                            allow_accumulation=allow_accumulation, time_machine=tm)
+    with model:
+        knockout_metabolite(model, xu5p__L, ignore_transport=ignore_transport, allow_accumulation=allow_accumulation)
 
         if allow_accumulation:
             assert "KO_xu5p__L_c" in model.reactions
@@ -157,16 +152,14 @@ def test_compete_metabolite_test(model, amino_acid, benchmark):
         if turnover > 0:
             production += turnover
 
-    time_machine = TimeMachine()
+    def _compete_metabolite():
+        compete_metabolite(model, aa, reference)
 
-    def _compete_metabolite(time_machine):
-        compete_metabolite(model, aa, reference, time_machine=time_machine)
-        time_machine.reset()
+    with model:
+        benchmark(_compete_metabolite)
 
-    benchmark(_compete_metabolite, time_machine)
-
-    with time_machine as tm:
-        compete_metabolite(model, aa, fraction=0.1, reference_dist=reference, time_machine=tm)
+    with model:
+        compete_metabolite(model, aa, fraction=0.1, reference_dist=reference)
         solution = pfba(model, objective=model.biomass, reference=reference)
 
     new_production = 0

@@ -20,6 +20,8 @@ from IProgress.widgets import Percentage, Bar, ETA
 
 from cachetools import cached, LRUCache
 
+from cameo.flux_analysis.analysis import find_essential_metabolites
+
 from marsi import bigg_api
 from marsi.io.bigg import bigg_metabolites
 from marsi.io.enrichment import inchi_from_chebi, inchi_from_kegg
@@ -80,4 +82,5 @@ def annotate_model(model):
 
 
 def essential_species_ids(model):
-    return {m.id[:-2] for m in model.essential_metabolites()}
+    essential_metabolites = find_essential_metabolites(model)
+    return {m.id[:-2] for m in essential_metabolites}

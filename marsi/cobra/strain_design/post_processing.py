@@ -16,16 +16,16 @@ import logging
 
 import numpy
 import six
+
+from pandas import DataFrame
+
+from cobra.core import Reaction, Model
+from cobra.exceptions import OptimizationError
+
 from cameo.core.strain_design import StrainDesign
 from cameo.core.target import ReactionKnockoutTarget, ReactionModulationTarget
 from cameo.flux_analysis.structural import create_stoichiometric_array, find_coupled_reactions_nullspace
 from cameo.flux_analysis.structural import nullspace
-from pandas import DataFrame
-
-from cameo.util import TimeMachine
-from cameo.exceptions import SolveError
-from cameo.core.solver_based_model import SolverBasedModel
-from cameo.core.reaction import Reaction
 from cameo.strain_design.heuristic.evolutionary.objective_functions import ObjectiveFunction
 
 from marsi.cobra.strain_design.target import AntiMetaboliteManipulationTarget, MetaboliteKnockoutTarget
@@ -205,8 +205,8 @@ def convert_strain_design_results(model, results, objective_function, simulation
 
     replacements = DataFrame()
     for index, design in enumerate(results):
-        with TimeMachine() as tm:
-            design.apply(model, tm)
+        with model:
+            design.apply(model)
             solution = simulation_method(model, **simulation_kwargs)
             fitness = objective_function(model, solution, design.targets)
         if fitness <= 0:
@@ -281,7 +281,7 @@ def convert_design(model, strain_design, fitness, objective_function, simulation
     coupled_reactions = find_coupled_reactions_nullspace(model, ns=nullspace_matrix)
     coupled_reactions = [{r.id: c for r, c in six.iteritems(g)} for g in coupled_reactions]
 
-    assert isinstance(model, SolverBasedModel)
+    assert isinstance(model, Model)
     assert isinstance(objective_function, ObjectiveFunction)
     assert isinstance(nullspace_matrix, numpy.ndarray)
 
@@ -312,40 +312,40 @@ def convert_design(model, strain_design, fitness, objective_function, simulation
 
     logger.debug("Coupled groups: %i; non-coupled targets %i" % (len(coupled_targets), len(non_coupled_targets)))
 
-    with TimeMachine() as base_time_machine:
+    with model as base_model:
         for target in non_testable_targets:
-            target.apply(model, time_machine=base_time_machine)
+            target.apply(model)
 
         # test non-coupled targets as before
         for target in non_coupled_targets:
-            with TimeMachine() as outer_time_machine:
+            with base_model:
                 for other_target in non_coupled_targets:
                     if other_target != target:
-                        other_target.apply(model, time_machine=outer_time_machine)
+                        other_target.apply(base_model)
 
-                anti_metabolite_targets = convert_target(model, target, essential_metabolites,
+                anti_metabolite_targets = convert_target(base_model, target, essential_metabolites,
                                                          ignore_metabolites=ignore_metabolites,
                                                          ignore_transport=ignore_transport,
                                                          allow_accumulation=allow_accumulation,
                                                          reference=reference)
 
-                base_solution = simulation_method(model, **simulation_kwargs)
-                base_fitness = objective_function(model, base_solution, strain_design.targets)
+                base_solution = simulation_method(base_model, **simulation_kwargs)
+                base_fitness = objective_function(base_model, base_solution, strain_design.targets)
 
-                test_target_substitutions(model, strain_design.targets, target, anti_metabolite_targets,
+                test_target_substitutions(base_model, strain_design.targets, target, anti_metabolite_targets,
                                           objective_function, fitness, base_fitness, simulation_method,
                                           simulation_kwargs, reference, valid_loss, anti_metabolites)
 
         # test coupled targets as whole
         for target_group in coupled_targets:
-            with TimeMachine() as outer_time_machine:
+            with base_model:
 
                 for other_target_group in non_coupled_targets:
                     if other_target_group != target_group:
                         for other_target in other_target_group:
-                            other_target.apply(model, time_machine=outer_time_machine)
+                            other_target.apply(model)
 
-                anti_metabolite_targets = convert_target_group(model, target_group, essential_metabolites,
+                anti_metabolite_targets = convert_target_group(base_model, target_group, essential_metabolites,
                                                                ignore_transport=ignore_transport,
                                                                allow_accumulation=allow_accumulation,
                                                                reference=reference)
@@ -353,7 +353,7 @@ def convert_design(model, strain_design, fitness, objective_function, simulation
                 base_solution = simulation_method(model, **simulation_kwargs)
                 base_fitness = objective_function(model, base_solution, strain_design.targets)
 
-                test_target_substitutions(model, strain_design.targets, target_group, anti_metabolite_targets,
+                test_target_substitutions(base_model, strain_design.targets, target_group, anti_metabolite_targets,
                                           objective_function, fitness, base_fitness, simulation_method,
                                           simulation_kwargs, reference, valid_loss, anti_metabolites)
 
@@ -366,16 +366,16 @@ def test_target_substitutions(model, all_targets, target, replacement_targets, o
     index = len(results) - 1
     for species_id, replacement_target in replacement_targets.items():
         assert isinstance(replacement_target, AntiMetaboliteManipulationTarget)
-        with TimeMachine() as another_tm:
+        with model:
             try:
-                replacement_target.apply(model, time_machine=another_tm, reference=reference)
+                replacement_target.apply(model, reference=reference)
                 new_solution = simulation_method(model, **simulation_kwargs)
                 new_fitness = objective_function(model, new_solution, all_targets)
                 logger.debug("New fitness %s" % new_fitness)
                 logger.debug("Solver objective value %s" % new_solution.objective_value)
                 for r in objective_function.reactions:
                     logger.debug("%s: %f" % (r, new_solution[r]))
-            except SolveError:
+            except OptimizationError:
                 logger.debug("Cannot solve %s" % species_id)
                 new_fitness = 0
             finally:
@@ -447,8 +447,8 @@ def replace_strain_design_results(model, results, objective_function, simulation
 
     replacements = DataFrame()
     for index, design in enumerate(results):
-        with TimeMachine() as tm:
-            design.apply(model, tm)
+        with model:
+            design.apply(model)
             solution = simulation_method(model, **simulation_kwargs)
             fitness = objective_function(model, solution, design.targets)
         if fitness <= 0:
@@ -514,7 +514,7 @@ def replace_design(model, strain_design, fitness, objective_function, simulation
     if ignore_metabolites is None:
         ignore_metabolites = set(utils.CURRENCY_METABOLITES)
 
-    assert isinstance(model, SolverBasedModel)
+    assert isinstance(model, Model)
     assert isinstance(objective_function, ObjectiveFunction)
 
     def valid_loss(val, base):
@@ -536,7 +536,7 @@ def replace_design(model, strain_design, fitness, objective_function, simulation
 
     # Stop when all targets have been replaced or tested more then once.
     while not termination_criteria():
-        with TimeMachine() as tm:
+        with model:
             test_target = test_targets.pop(0)
             target_test_count[test_target.id] += 1
 
@@ -546,7 +546,7 @@ def replace_design(model, strain_design, fitness, objective_function, simulation
             all_targets = test_targets + keep_targets
 
             for target in all_targets:
-                target.apply(model, time_machine=tm)
+                target.apply(model)
 
             base_solution = simulation_method(model, **simulation_kwargs)
             base_fitness = objective_function(model, base_solution, test_targets)

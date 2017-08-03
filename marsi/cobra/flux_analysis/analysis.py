@@ -24,13 +24,12 @@ from numpy import array
 
 from pandas import DataFrame
 
-from cobra.core import Metabolite
-from cameo.core.solver_based_model import SolverBasedModel as Model
+from cobra.core import Metabolite, Model
 from cameo.core.result import Result
 from cameo.util import TimeMachine
 from cameo.flux_analysis.analysis import flux_variability_analysis, FluxVariabilityResult
 from cameo.flux_analysis.simulation import pfba, fba
-from cameo.exceptions import SolveError, Infeasible
+from cobra.exceptions import OptimizationError, Infeasible
 
 from marsi.cobra.flux_analysis.manipulation import knockout_metabolite, compete_metabolite, inhibit_metabolite
 from marsi.utils import frange
@@ -123,13 +122,13 @@ def metabolite_knockout_fitness(model, simulation_method=pfba, compartments=None
         iterator = iter
     for met in iterator(model.metabolites):
         if met.compartment in compartments and met.elements.get("C", 0) > ncarbons:
-            with TimeMachine() as tm:
-                knockout_metabolite(model, met, allow_accumulation=True, ignore_transport=True, time_machine=tm)
+            with model:
+                knockout_metabolite(model, met, allow_accumulation=True, ignore_transport=True)
                 try:
                     solution = simulation_method(model, objective=objective, **simulation_kwargs)
                     fitness.loc[met.id] = [round(solution[objective], ndecimals)] + \
                                           [met.elements.get(el, 0) for el in elements]
-                except SolveError:
+                except OptimizationError:
                     fitness.loc[met.id] = [.0] + [met.elements.get(el, 0) for el in elements]
 
     return MetaboliteKnockoutFitness(fitness)
@@ -200,7 +199,7 @@ def metabolite_knockout_phenotype(model, compartments=None, objective=None, ndec
     for met in iterator(model.metabolites):
         if met.compartment in compartments and met.elements.get("C", 0) > ncarbons:
             with TimeMachine() as tm:
-                knockout_metabolite(model, met, allow_accumulation=True, ignore_transport=True, time_machine=tm)
+                knockout_metabolite(model, met, allow_accumulation=True, ignore_transport=True)
                 fitness = fba(model, objective=objective)
                 fva = flux_variability_analysis(model, reactions=exchanges, fraction_of_optimum=1)
                 fva = FluxVariabilityResult(fva.data_frame.apply(round, args=(ndecimals,)))
@@ -296,11 +295,9 @@ def sensitivity_analysis(model, metabolite, biomass=None, variables=None, is_ess
         variables_fluxes.append([])
         with TimeMachine() as tm:
             if is_essential:
-                exchange = compete_metabolite(model, metabolite, simulation_kwargs['reference'], fraction,
-                                              time_machine=tm)
+                exchange = compete_metabolite(model, metabolite, simulation_kwargs['reference'], fraction)
             else:
-                exchange = inhibit_metabolite(model, metabolite, simulation_kwargs['reference'], fraction,
-                                              time_machine=tm)
+                exchange = inhibit_metabolite(model, metabolite, simulation_kwargs['reference'], fraction)
             try:
                 flux_dist = simulation_method(model, objective=biomass, **simulation_kwargs)
 
