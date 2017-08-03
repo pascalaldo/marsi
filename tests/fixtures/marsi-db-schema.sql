@@ -44,7 +44,7 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- Name: alembic_version; Type: TABLE; Schema: public; Owner: joao; Tablespace: 
+-- Name: alembic_version; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
 --
 
 CREATE TABLE alembic_version (
@@ -52,10 +52,10 @@ CREATE TABLE alembic_version (
 );
 
 
-ALTER TABLE public.alembic_version OWNER TO joao;
+ALTER TABLE public.alembic_version OWNER TO postgres;
 
 --
--- Name: metabolite_fingerprints; Type: TABLE; Schema: public; Owner: joao; Tablespace: 
+-- Name: metabolite_fingerprints; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
 --
 
 CREATE TABLE metabolite_fingerprints (
@@ -66,10 +66,10 @@ CREATE TABLE metabolite_fingerprints (
 );
 
 
-ALTER TABLE public.metabolite_fingerprints OWNER TO joao;
+ALTER TABLE public.metabolite_fingerprints OWNER TO postgres;
 
 --
--- Name: metabolite_fingerprints_id_seq; Type: SEQUENCE; Schema: public; Owner: joao
+-- Name: metabolite_fingerprints_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE metabolite_fingerprints_id_seq
@@ -80,17 +80,17 @@ CREATE SEQUENCE metabolite_fingerprints_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.metabolite_fingerprints_id_seq OWNER TO joao;
+ALTER TABLE public.metabolite_fingerprints_id_seq OWNER TO postgres;
 
 --
--- Name: metabolite_fingerprints_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: joao
+-- Name: metabolite_fingerprints_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE metabolite_fingerprints_id_seq OWNED BY metabolite_fingerprints.id;
 
 
 --
--- Name: metabolite_references; Type: TABLE; Schema: public; Owner: joao; Tablespace: 
+-- Name: metabolite_references; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
 --
 
 CREATE TABLE metabolite_references (
@@ -99,10 +99,10 @@ CREATE TABLE metabolite_references (
 );
 
 
-ALTER TABLE public.metabolite_references OWNER TO joao;
+ALTER TABLE public.metabolite_references OWNER TO postgres;
 
 --
--- Name: metabolite_synonyms; Type: TABLE; Schema: public; Owner: joao; Tablespace: 
+-- Name: metabolite_synonyms; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
 --
 
 CREATE TABLE metabolite_synonyms (
@@ -111,10 +111,10 @@ CREATE TABLE metabolite_synonyms (
 );
 
 
-ALTER TABLE public.metabolite_synonyms OWNER TO joao;
+ALTER TABLE public.metabolite_synonyms OWNER TO postgres;
 
 --
--- Name: metabolites; Type: TABLE; Schema: public; Owner: joao; Tablespace: 
+-- Name: metabolites; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
 --
 
 CREATE TABLE metabolites (
@@ -131,10 +131,10 @@ CREATE TABLE metabolites (
 );
 
 
-ALTER TABLE public.metabolites OWNER TO joao;
+ALTER TABLE public.metabolites OWNER TO postgres;
 
 --
--- Name: metabolites_id_seq; Type: SEQUENCE; Schema: public; Owner: joao
+-- Name: metabolites_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE metabolites_id_seq
@@ -145,17 +145,17 @@ CREATE SEQUENCE metabolites_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.metabolites_id_seq OWNER TO joao;
+ALTER TABLE public.metabolites_id_seq OWNER TO postgres;
 
 --
--- Name: metabolites_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: joao
+-- Name: metabolites_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE metabolites_id_seq OWNED BY metabolites.id;
 
 
 --
--- Name: references; Type: TABLE; Schema: public; Owner: joao; Tablespace: 
+-- Name: references; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
 --
 
 CREATE TABLE "references" (
@@ -165,10 +165,10 @@ CREATE TABLE "references" (
 );
 
 
-ALTER TABLE public."references" OWNER TO joao;
+ALTER TABLE public."references" OWNER TO postgres;
 
 --
--- Name: references_id_seq; Type: SEQUENCE; Schema: public; Owner: joao
+-- Name: references_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE references_id_seq
@@ -179,17 +179,17 @@ CREATE SEQUENCE references_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.references_id_seq OWNER TO joao;
+ALTER TABLE public.references_id_seq OWNER TO postgres;
 
 --
--- Name: references_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: joao
+-- Name: references_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE references_id_seq OWNED BY "references".id;
 
 
 --
--- Name: synonyms; Type: TABLE; Schema: public; Owner: joao; Tablespace: 
+-- Name: synonyms; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
 --
 
 CREATE TABLE synonyms (
@@ -198,10 +198,10 @@ CREATE TABLE synonyms (
 );
 
 
-ALTER TABLE public.synonyms OWNER TO joao;
+ALTER TABLE public.synonyms OWNER TO postgres;
 
 --
--- Name: synonyms_id_seq; Type: SEQUENCE; Schema: public; Owner: joao
+-- Name: synonyms_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE synonyms_id_seq
@@ -212,45 +212,45 @@ CREATE SEQUENCE synonyms_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.synonyms_id_seq OWNER TO joao;
+ALTER TABLE public.synonyms_id_seq OWNER TO postgres;
 
 --
--- Name: synonyms_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: joao
+-- Name: synonyms_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE synonyms_id_seq OWNED BY synonyms.id;
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: joao
+-- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY metabolite_fingerprints ALTER COLUMN id SET DEFAULT nextval('metabolite_fingerprints_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: joao
+-- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY metabolites ALTER COLUMN id SET DEFAULT nextval('metabolites_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: joao
+-- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY "references" ALTER COLUMN id SET DEFAULT nextval('references_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: joao
+-- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY synonyms ALTER COLUMN id SET DEFAULT nextval('synonyms_id_seq'::regclass);
 
 
 --
--- Name: _database_accession_uc; Type: CONSTRAINT; Schema: public; Owner: joao; Tablespace: 
+-- Name: _database_accession_uc; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
 ALTER TABLE ONLY "references"
@@ -258,7 +258,7 @@ ALTER TABLE ONLY "references"
 
 
 --
--- Name: _fp_type_uc; Type: CONSTRAINT; Schema: public; Owner: joao; Tablespace: 
+-- Name: _fp_type_uc; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
 ALTER TABLE ONLY metabolite_fingerprints
@@ -266,7 +266,7 @@ ALTER TABLE ONLY metabolite_fingerprints
 
 
 --
--- Name: alembic_version_pkc; Type: CONSTRAINT; Schema: public; Owner: joao; Tablespace: 
+-- Name: alembic_version_pkc; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
 ALTER TABLE ONLY alembic_version
@@ -274,7 +274,7 @@ ALTER TABLE ONLY alembic_version
 
 
 --
--- Name: metabolite_fingerprints_pkey; Type: CONSTRAINT; Schema: public; Owner: joao; Tablespace: 
+-- Name: metabolite_fingerprints_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
 ALTER TABLE ONLY metabolite_fingerprints
@@ -282,7 +282,7 @@ ALTER TABLE ONLY metabolite_fingerprints
 
 
 --
--- Name: metabolites_pkey; Type: CONSTRAINT; Schema: public; Owner: joao; Tablespace: 
+-- Name: metabolites_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
 ALTER TABLE ONLY metabolites
@@ -290,7 +290,7 @@ ALTER TABLE ONLY metabolites
 
 
 --
--- Name: references_pkey; Type: CONSTRAINT; Schema: public; Owner: joao; Tablespace: 
+-- Name: references_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
 ALTER TABLE ONLY "references"
@@ -298,7 +298,7 @@ ALTER TABLE ONLY "references"
 
 
 --
--- Name: synonyms_pkey; Type: CONSTRAINT; Schema: public; Owner: joao; Tablespace: 
+-- Name: synonyms_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
 ALTER TABLE ONLY synonyms
@@ -306,21 +306,21 @@ ALTER TABLE ONLY synonyms
 
 
 --
--- Name: uq_inchi_key; Type: INDEX; Schema: public; Owner: joao; Tablespace: 
+-- Name: uq_inchi_key; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
 CREATE UNIQUE INDEX uq_inchi_key ON metabolites USING btree (inchi_key);
 
 
 --
--- Name: uq_synonyms; Type: INDEX; Schema: public; Owner: joao; Tablespace: 
+-- Name: uq_synonyms; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
 CREATE UNIQUE INDEX uq_synonyms ON synonyms USING btree (synonym);
 
 
 --
--- Name: metabolite_fingerprints_metabolite_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: joao
+-- Name: metabolite_fingerprints_metabolite_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY metabolite_fingerprints
@@ -328,7 +328,7 @@ ALTER TABLE ONLY metabolite_fingerprints
 
 
 --
--- Name: metabolite_references_metabolite_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: joao
+-- Name: metabolite_references_metabolite_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY metabolite_references
@@ -336,7 +336,7 @@ ALTER TABLE ONLY metabolite_references
 
 
 --
--- Name: metabolite_references_reference_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: joao
+-- Name: metabolite_references_reference_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY metabolite_references
@@ -344,7 +344,7 @@ ALTER TABLE ONLY metabolite_references
 
 
 --
--- Name: metabolite_synonyms_metabolite_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: joao
+-- Name: metabolite_synonyms_metabolite_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY metabolite_synonyms
@@ -352,7 +352,7 @@ ALTER TABLE ONLY metabolite_synonyms
 
 
 --
--- Name: metabolite_synonyms_synonym_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: joao
+-- Name: metabolite_synonyms_synonym_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY metabolite_synonyms
@@ -360,12 +360,12 @@ ALTER TABLE ONLY metabolite_synonyms
 
 
 --
--- Name: public; Type: ACL; Schema: -; Owner: joao
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
 --
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
-REVOKE ALL ON SCHEMA public FROM joao;
-GRANT ALL ON SCHEMA public TO joao;
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
