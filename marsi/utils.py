@@ -12,18 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
-import os
-import numpy as np
-import time
-import pickle
-import logging
-
 import gzip
+import logging
+import os
+import pickle
+import re
 import shutil
+import time
 
+import numpy as np
 from IProgress import ProgressBar, Percentage
 from cameo import fba
+from cameo.flux_analysis.analysis import n_carbon
+from cobra import Reaction
 
 from marsi import config
 
@@ -154,7 +155,8 @@ def default_carbon_sources(model):
     carbon_sources = []
 
     for ex in model.exchanges:
-        if ex.lower_bound < 0 and solution[ex.id] < 0 < ex.n_carbon:
+        assert isinstance(ex, Reaction)
+        if ex.lower_bound < 0 and solution[ex.id] < 0 < n_carbon(ex):
             logger.debug("Found carbon source: %s")
             carbon_sources.append(ex)
 
