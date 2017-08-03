@@ -14,28 +14,23 @@
 
 import logging
 
-import numpy
 import inspyred
-
+import numpy
 from IProgress import ProgressBar, Bar, Percentage
-
-from cobra.core import Model
-from cobra.exceptions import OptimizationError
-
-from cameo.flux_analysis.simulation import fba
-from cameo.flux_analysis.analysis import phenotypic_phase_plane, flux_variability_analysis
-
 from cameo.core.strain_design import StrainDesignMethod, StrainDesign, StrainDesignMethodResult
 from cameo.core.utils import get_reaction_for
+from cameo.flux_analysis.analysis import phenotypic_phase_plane, flux_variability_analysis
+from cameo.flux_analysis.simulation import fba
 from cameo.strain_design.heuristic.evolutionary.archives import ProductionStrainArchive
 from cameo.strain_design.heuristic.evolutionary.objective_functions import biomass_product_coupled_min_yield, \
     biomass_product_coupled_yield
 from cameo.visualization.plotting import plotter
+from cobra.core import Model
+from cobra.exceptions import OptimizationError
 from pandas import DataFrame
 
-
-from marsi.cobra.strain_design.metaheuristic import MetaboliteKnockoutOptimization
 from marsi.cobra.flux_analysis.manipulation import knockout_metabolite
+from marsi.cobra.strain_design.metaheuristic import MetaboliteKnockoutOptimization
 from marsi.cobra.strain_design.target import MetaboliteKnockoutTarget
 from marsi.utils import search_metabolites
 
@@ -277,7 +272,7 @@ def process_metabolite_knockout_solution(model, solution, simulation_method, sim
 
         reactions = objective_function.reactions
         flux_dist = simulation_method(model, reactions=reactions, objective=biomass, **simulation_kwargs)
-        model.change_objective(biomass)
+        model.objective = biomass
 
         fva = flux_variability_analysis(model, fraction_of_optimum=0.99, reactions=[target])
         target_yield = flux_dist[target] / abs(flux_dist[substrate])
