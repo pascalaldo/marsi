@@ -15,7 +15,7 @@ from cameo import fba
 from cameo.core.strain_design import StrainDesign
 from cameo.core.target import ReactionKnockoutTarget, ReactionModulationTarget
 from cameo.strain_design.heuristic.evolutionary.objective_functions import biomass_product_coupled_yield
-from cameo.util import TimeMachine, flatten
+from cameo.util import flatten
 
 from marsi.cobra.strain_design.post_processing import find_anti_metabolite_knockouts, find_anti_metabolite_modulation, \
     convert_target, replace_design
@@ -65,8 +65,8 @@ def test_convert_design(model, essential_metabolites):
     objective_function = biomass_product_coupled_yield(model.biomass, "EX_lac__D_e", "EX_glc__D_e")
     model.reactions.EX_o2_e.lower_bound = 0
 
-    with TimeMachine() as tm:
-        strain_design.apply(model, time_machine=tm)
+    with model:
+        strain_design.apply(model)
         solution = fba(model, objective=model.biomass)
         fitness = objective_function(model, solution, targets)
 

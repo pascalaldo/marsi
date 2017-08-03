@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import pytest
+from cameo.flux_analysis.analysis import n_carbon
+
 from marsi.utils import frange, default_carbon_sources, unique
 
 
@@ -49,7 +51,7 @@ def test_frange():
 def test_default_carbon_sources(model):
     carbon_sources = default_carbon_sources(model)
     assert len(carbon_sources) == 1
-    assert carbon_sources[0].n_carbon > 0
+    assert n_carbon(carbon_sources[0]) > 0
     assert carbon_sources[0] == model.reactions.EX_glc__D_e
 
 
