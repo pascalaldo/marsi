@@ -14,7 +14,6 @@
 
 import pytest
 from cameo import pfba
-from cameo.util import TimeMachine
 
 from marsi.cobra.strain_design.target import AntiMetaboliteManipulationTarget, MetaboliteKnockoutTarget
 
@@ -35,8 +34,8 @@ def test_anti_metabolite_manipulation_target(model, species):
     assert repr(target) == "<AntiMetaboliteManipulation %s (%.3f)>" % (target.id, target.fraction)
     assert str(target) == b'\xe2\x98\xa3'.decode('utf-8') + "(%.3f)-%s" % (target.fraction, target.id)
 
-    with TimeMachine() as tm:
-        target.apply(model, tm, reference)
+    with model:
+        target.apply(model, reference)
 
 
 def test_metabolite_knockout_target(model, species):
@@ -50,5 +49,5 @@ def test_metabolite_knockout_target(model, species):
     assert repr(target) == "<MetaboliteKnockout %s>" % target.id
     assert str(target) == b'\xe2\x98\xa3'.decode('utf-8') + "-%s" % target.id
 
-    with TimeMachine() as tm:
-        target.apply(model, tm)
+    with model:
+        target.apply(model)
