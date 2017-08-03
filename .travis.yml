@@ -54,9 +54,11 @@ install:
 before_script:
 - python -c 'from rdkit import Chem'
 - python -c 'import pybel'
+- python -c 'from optlang import glpk_interface'
 - flake8 marsi
 - psql -c 'create database "marsi-db";' -U postgres
 - psql -U postgres marsi-db -f tests/fixtures/marsi-db-schema.sql
+- psql -U postgres marsi-db < tests/fixtures/metabolites.sample
 - psql -d marsi-db -c 'SELECT COUNT(*) FROM metabolites;' -U postgres
 
 script:
