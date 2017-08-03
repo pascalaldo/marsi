@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import os
-import pytest
 
+import pytest
 from cameo import load_model
 from cameo.flux_analysis.analysis import find_essential_metabolites
 
@@ -52,20 +52,24 @@ def model(request, solver):
     return m
 
 
-@pytest.fixture(params=['cplex', 'glpk'], scope="function")
-def solver(request):
-    if request.param == "cplex":
-        try:
-            from optlang import cplex_interface
-        except Exception:
-            pytest.skip("CPLEX not available")
-    elif request.param == "glpk":
-        try:
-            from optlang import cplex_interface
-        except Exception:
-            pytest.skip("GLPK not available")
-    return request.param
+solvers = []
 
+try:
+    from optlang import glpk_interface
+    solvers.append("glpk")
+except Exception as e:
+    print("GLPK not available because of %s" % e)
+
+try:
+    from optlang import cplex_interface
+    solvers.append("cplex")
+except Exception as e:
+    print("CPLEX not available because of %s" % e)
+
+
+@pytest.fixture(params=solvers, scope="function")
+def solver(request):
+    return request.param
 
 @pytest.fixture(params=["ala__L_c", "ser__L_c", "trp__L_c", "glu__L_c"], scope='session')
 def amino_acid(request):
