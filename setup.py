@@ -45,7 +45,7 @@ extra_requirements['all'] = sum([list(values) for values in extra_requirements.v
 
 
 ext_modules = cythonize(["marsi/chemistry/common_ext.pyx", "marsi/nearest_neighbors/model_ext.pyx"],
-                        include_dirs=[numpy.get_include()])
+                        include_path=[numpy.get_include()])
 
 include_dirs = [numpy.get_include()]
 
