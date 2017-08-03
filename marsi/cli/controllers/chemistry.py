@@ -17,18 +17,15 @@ import tempfile
 import pubchempy
 from bioservices import ChEBI
 from cement.core.controller import CementBaseController, expose
-from marsi.chemistry import openbabel
-
 from pandas import read_excel
 
 from marsi import config
+from marsi.chemistry import openbabel
+from marsi.chemistry.molecule import Molecule
+from marsi.io import write_excel_file
 from marsi.io.db import Reference, Synonym, Metabolite
 from marsi.io.enrichment import find_best_chebi_structure
 from marsi.nearest_neighbors import search_closest_compounds
-from marsi.chemistry.molecule import Molecule
-from mongoengine import connect
-
-from marsi.io import write_excel_file
 
 OUTPUT_WRITERS = {
     'csv': lambda df, path, *args: df.to_csv(path),
@@ -113,7 +110,6 @@ class ChemistryController(CementBaseController):
         -------
 
         """
-        connect(config.db_name)
         output_file = None
 
         if self.app.pargs.output_file is not None:
