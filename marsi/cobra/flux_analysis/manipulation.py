@@ -69,7 +69,7 @@ def compete_metabolite(model, metabolite, reference_dist, fraction=0.5, allow_ac
         else:
             reaction_id = "COMPETE_%s" % metabolite.id
             if reaction_id in model.reactions:
-                exchange = model.reactions[reaction_id]
+                exchange = model.reactions.get_by_id(reaction_id)
             else:
                 exchange = model.add_boundary(metabolite, type="compete sink", reaction_id=reaction_id, lb=0)
 
@@ -238,7 +238,7 @@ def inhibit_metabolite(model, metabolite, reference_dist, fraction=0.5, allow_ac
         else:
             reaction_id = "INHIBIT_%s" % metabolite.id
             if reaction_id in model.reactions:
-                exchange = model.reactions[reaction_id]
+                exchange = model.reactions.get_by_id(reaction_id)
             else:
                 exchange = model.add_boundary(metabolite, type="inhibit sink", reaction_id=reaction_id, lb=0)
 
@@ -410,7 +410,7 @@ def knockout_metabolite(model, metabolite, ignore_transport=True, allow_accumula
         else:
             reaction_id = "KO_%s" % metabolite.id
             if reaction_id in model.reactions:
-                exchange = model.reactions[reaction_id]
+                exchange = model.reactions.get_by_id(reaction_id)
             else:
                 exchange = model.add_boundary(metabolite, type="ko sink", reaction_id=reaction_id, lb=0)
 
