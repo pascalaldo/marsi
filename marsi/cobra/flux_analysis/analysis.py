@@ -26,7 +26,6 @@ from pandas import DataFrame
 
 from cobra.core import Metabolite, Model
 from cameo.core.result import Result
-from cameo.util import TimeMachine
 from cameo.flux_analysis.analysis import flux_variability_analysis, FluxVariabilityResult
 from cameo.flux_analysis.simulation import pfba, fba
 from cobra.exceptions import OptimizationError, Infeasible
