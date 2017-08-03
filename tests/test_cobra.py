@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import pytest
-from cameo.flux_analysis.simulation import pfba
+from cameo.flux_analysis.simulation import fba
 
 from marsi.cobra.flux_analysis.analysis import sensitivity_analysis
 from marsi.utils import search_metabolites
@@ -41,7 +41,7 @@ def test_search_metabolites(model):
 def test_inhibit_metabolite(model, allow_accumulation, benchmark):
     succ_c = model.metabolites.succ_c
 
-    reference = pfba(model, objective=model.biomass)
+    reference = fba(model, objective=model.biomass)
 
     def _inhibit_metabolite():
         inhibit_metabolite(model, succ_c, reference, allow_accumulation=allow_accumulation)
@@ -51,7 +51,7 @@ def test_inhibit_metabolite(model, allow_accumulation, benchmark):
     with model:
         exchange = inhibit_metabolite(model, succ_c, reference, allow_accumulation=allow_accumulation)
 
-        result = pfba(model, objective=model.biomass)
+        result = fba(model, objective=model.biomass)
 
     reference_consumption_turnover = 0
     result_consumption_turnover = 0
@@ -77,7 +77,7 @@ def test_inhibit_metabolite(model, allow_accumulation, benchmark):
 def test_sensitivity_analysis(model, benchmark):
     succ_c = model.metabolites.succ_c
 
-    reference = pfba(model, objective=model.biomass)
+    reference = fba(model, objective=model.biomass)
 
     result = benchmark.pedantic(sensitivity_analysis,
                                 args=(model, succ_c, model.biomass),
@@ -140,7 +140,7 @@ def test_knockout_metabolite_knockout_non_exchangeable(model, allow_accumulation
 
 def test_compete_metabolite_test(model, amino_acid, benchmark):
     aa = model.metabolites.get_by_id(amino_acid)
-    reference = pfba(model, objective=model.biomass)
+    reference = fba(model, objective=model.biomass)
 
     production = 0
     for reaction in aa.reactions:
@@ -160,7 +160,7 @@ def test_compete_metabolite_test(model, amino_acid, benchmark):
 
     with model:
         compete_metabolite(model, aa, fraction=0.1, reference_dist=reference)
-        solution = pfba(model, objective=model.biomass, reference=reference)
+        solution = fba(model, objective=model.biomass, reference=reference)
 
     new_production = 0
     for reaction in aa.reactions:

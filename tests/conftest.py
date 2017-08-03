@@ -36,8 +36,8 @@ ESSENTIAL_METABOLITES = {model_id: find_essential_metabolites(MODELS[model_id], 
                          for model_id in BIOMASS_IDS}
 
 
-@pytest.fixture(params=["iJO1366", "iAF1260"], scope="session")
-def model(request):
+@pytest.fixture(params=["iJO1366", "iAF1260"], scope="function")
+def model(request, solver):
     """
     Genome-scale metabolic model. Loaded using cameo.load_model.
 
@@ -46,9 +46,25 @@ def model(request):
     cameo.SolverBasedModel
     """
     m = MODELS[request.param].copy()
+    m.solver = solver
     setattr(m, 'biomass', BIOMASS_IDS[request.param])
 
     return m
+
+
+@pytest.fixture(params=['cplex', 'glpk'], scope="function")
+def solver(request):
+    if request.param == "cplex":
+        try:
+            from optlang import cplex_interface
+        except Exception:
+            pytest.skip("CPLEX not available")
+    elif request.param == "glpk":
+        try:
+            from optlang import cplex_interface
+        except Exception:
+            pytest.skip("GLPK not available")
+    return request.param
 
 
 @pytest.fixture(params=["ala__L_c", "ser__L_c", "trp__L_c", "glu__L_c"], scope='session')
@@ -56,7 +72,7 @@ def amino_acid(request):
     return request.param
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def essential_metabolites(model):
     metabolites = ESSENTIAL_METABOLITES[model.id]
     return {model.metabolites.get_by_id(m.id) for m in metabolites}
