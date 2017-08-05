@@ -41,9 +41,11 @@ def test_convert_target(model, essential_metabolites):
     mod_target = ReactionModulationTarget("ACALD", 0.1, 0.4)
 
     converted_ko_targets = convert_target(model, ko_target, essential_metabolites)
+    assert len(converted_ko_targets) > 0
     assert all(isinstance(anti_met, MetaboliteKnockoutTarget) for anti_met in converted_ko_targets.values())
 
     converted_mod_targets = convert_target(model, mod_target, essential_metabolites)
+    assert len(converted_ko_targets) > 0
     assert all(isinstance(anti_met, AntiMetaboliteManipulationTarget) for anti_met in converted_mod_targets.values())
 
 

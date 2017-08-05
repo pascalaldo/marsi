@@ -16,20 +16,17 @@ import logging
 
 import numpy
 import six
-
-from pandas import DataFrame
-
-from cobra.core import Reaction, Model
-from cobra.exceptions import OptimizationError
-
 from cameo.core.strain_design import StrainDesign
 from cameo.core.target import ReactionKnockoutTarget, ReactionModulationTarget
 from cameo.flux_analysis.structural import create_stoichiometric_array, find_coupled_reactions_nullspace
 from cameo.flux_analysis.structural import nullspace
 from cameo.strain_design.heuristic.evolutionary.objective_functions import ObjectiveFunction
+from cobra.core import Reaction, Model
+from cobra.exceptions import OptimizationError
+from pandas import DataFrame
 
-from marsi.cobra.strain_design.target import AntiMetaboliteManipulationTarget, MetaboliteKnockoutTarget
 from marsi.cobra import utils
+from marsi.cobra.strain_design.target import AntiMetaboliteManipulationTarget, MetaboliteKnockoutTarget
 
 logger = logging.getLogger(__name__)
 
@@ -536,7 +533,7 @@ def replace_design(model, strain_design, fitness, objective_function, simulation
 
     # Stop when all targets have been replaced or tested more then once.
     while not termination_criteria():
-        with model:
+        with model as base_model:
             test_target = test_targets.pop(0)
             target_test_count[test_target.id] += 1
 
@@ -548,16 +545,16 @@ def replace_design(model, strain_design, fitness, objective_function, simulation
             for target in all_targets:
                 target.apply(model)
 
-            base_solution = simulation_method(model, **simulation_kwargs)
-            base_fitness = objective_function(model, base_solution, test_targets)
+            base_solution = simulation_method(base_model, **simulation_kwargs)
+            base_fitness = objective_function(base_model, base_solution, test_targets)
 
             try:
-                anti_metabolite_targets = convert_target(model, test_target, essential_metabolites,
+                anti_metabolite_targets = convert_target(base_model, test_target, essential_metabolites,
                                                          ignore_transport=ignore_transport,
                                                          ignore_metabolites=ignore_metabolites,
                                                          allow_accumulation=allow_accumulation,
                                                          reference=reference)
-                test_target_substitutions(model, all_targets, test_target, anti_metabolite_targets,
+                test_target_substitutions(base_model, all_targets, test_target, anti_metabolite_targets,
                                           objective_function, fitness, base_fitness, simulation_method,
                                           simulation_kwargs, reference, valid_loss, anti_metabolites)
             except (ValueError, KeyError) as e:
