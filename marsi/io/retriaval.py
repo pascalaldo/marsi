@@ -11,19 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from IProgress import ProgressBar, Bar, ETA
+
+from __future__ import absolute_import
+
+import os
+import zipfile
+from ftplib import FTP
 from io import BytesIO
+from urllib.request import urlretrieve
 
 import bioservices
-import os
-from urllib.request import urlretrieve
 import pubchempy as pbc
+import requests
+from IProgress import ProgressBar, Bar, ETA
 
 from marsi.utils import data_dir, gunzip
-from ftplib import FTP
-import requests
-
-import zipfile
 
 BIGG_BASE_URL = "http://bigg.ucsd.edu/static/namespace/"
 DRUGBANK_BASE_URL = "https://www.drugbank.ca/"
