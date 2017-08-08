@@ -12,23 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
 import logging
 
 from IProgress import ProgressBar, Bar, Percentage
+from bokeh.charts import Line
 from bokeh.layouts import column
 from bokeh.models import FactorRange, Range1d, LinearAxis
 from bokeh.plotting import figure, show
-from bokeh.charts import Line
-from cobra.core import Reaction
-from numpy import array
-
-from pandas import DataFrame
-
-from cobra.core import Metabolite, Model
 from cameo.core.result import Result
 from cameo.flux_analysis.analysis import flux_variability_analysis, FluxVariabilityResult
 from cameo.flux_analysis.simulation import pfba, fba
+from cobra.core.metabolite import Metabolite
+from cobra.core.model import Model
+from cobra.core.reaction import Reaction
 from cobra.exceptions import OptimizationError, Infeasible
+from numpy import array
+from pandas import DataFrame
 
 from marsi.cobra.flux_analysis.manipulation import knockout_metabolite, compete_metabolite, inhibit_metabolite
 from marsi.utils import frange

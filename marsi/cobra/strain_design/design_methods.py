@@ -12,15 +12,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from cobra.core import Model
+from __future__ import absolute_import
+
 from cameo.core.utils import get_reaction_for
-
-from cameo.flux_analysis.simulation import fba
 from cameo.flux_analysis.analysis import find_essential_metabolites
-
+from cameo.flux_analysis.simulation import fba
 from cameo.strain_design import DifferentialFVA
 from cameo.strain_design import OptKnock, OptGene
 from cameo.strain_design.heuristic.evolutionary.objective_functions import biomass_product_coupled_yield
+from cobra.core.model import Model
 from pandas import DataFrame
 
 from marsi.cobra.strain_design.evolutionary import OptMet

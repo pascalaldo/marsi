@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
 import logging
 
 import numpy
@@ -21,7 +23,8 @@ from cameo.core.target import ReactionKnockoutTarget, ReactionModulationTarget
 from cameo.flux_analysis.structural import create_stoichiometric_array, find_coupled_reactions_nullspace
 from cameo.flux_analysis.structural import nullspace
 from cameo.strain_design.heuristic.evolutionary.objective_functions import ObjectiveFunction
-from cobra.core import Reaction, Model
+from cobra.core.model import Model
+from cobra.core.reaction import Reaction
 from cobra.exceptions import OptimizationError
 from pandas import DataFrame
 

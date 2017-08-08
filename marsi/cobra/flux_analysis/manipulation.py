@@ -12,11 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
 import logging
 
-from cobra.core import DictList, Model, Reaction
-
 from cameo.flux_analysis.simulation import FluxDistributionResult
+from cobra.core.dictlist import DictList
+from cobra.core.model import Model
+from cobra.core.reaction import  Reaction
 
 __all__ = ["compete_metabolite", "inhibit_metabolite", "knockout_metabolite", "apply_anti_metabolite"]
 

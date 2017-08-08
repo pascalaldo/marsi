@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
 import logging
 
 import inspyred
@@ -25,7 +27,7 @@ from cameo.strain_design.heuristic.evolutionary.archives import ProductionStrain
 from cameo.strain_design.heuristic.evolutionary.objective_functions import biomass_product_coupled_min_yield, \
     biomass_product_coupled_yield
 from cameo.visualization.plotting import plotter
-from cobra.core import Model
+from cobra.core.model import Model
 from cobra.exceptions import OptimizationError
 from pandas import DataFrame
 

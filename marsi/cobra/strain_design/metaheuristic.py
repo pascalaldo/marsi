@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
 import logging
 
-from cobra.exceptions import OptimizationError
-
-from cameo.flux_analysis.simulation import pfba
 from cameo.flux_analysis.analysis import find_essential_metabolites
-from cameo.strain_design.heuristic.evolutionary.optimization import TargetOptimization
-from cameo.strain_design.heuristic.evolutionary.evaluators import TargetEvaluator
+from cameo.flux_analysis.simulation import pfba
 from cameo.strain_design.heuristic.evolutionary.decoders import SetDecoder
+from cameo.strain_design.heuristic.evolutionary.evaluators import TargetEvaluator
+from cameo.strain_design.heuristic.evolutionary.optimization import TargetOptimization
+from cobra.exceptions import OptimizationError
 
 from marsi.cobra.flux_analysis.manipulation import knockout_metabolite
 from marsi.utils import search_metabolites
