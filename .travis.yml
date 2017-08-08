@@ -56,6 +56,7 @@ before_script:
 - python -c 'from rdkit import Chem'
 - python -c 'import pybel'
 - python -c 'from optlang import glpk_interface'
+- python -c 'import cobra; print(cobra.__version__)'
 - flake8 marsi
 - psql -c 'create database "marsi-db";' -U postgres
 - psql -U postgres marsi-db -f tests/fixtures/marsi-db-schema.sql
