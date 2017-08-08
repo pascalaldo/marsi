@@ -18,12 +18,12 @@ import os
 import zipfile
 from ftplib import FTP
 from io import BytesIO
-from urllib.request import urlretrieve
 
 import bioservices
 import pubchempy as pbc
 import requests
 from IProgress import ProgressBar, Bar, ETA
+from six.moves.urllib.request import urlretrieve
 
 from marsi.utils import data_dir, gunzip
 
