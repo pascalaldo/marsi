@@ -11,17 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from __future__ import absolute_import
+
 import math
+import time
 
+import numpy as np
 import rdkit
+from bitarray import bitarray
 from cachetools import cached, LRUCache
-
 from rdkit import Chem
 from rdkit.Chem import MCS, AllChem, MACCSkeys
-
-import time
-import numpy as np
-from bitarray import bitarray
 from rdkit.Chem.SaltRemover import SaltRemover
 
 from marsi.chemistry.common import monte_carlo_volume as mc_vol, inchi_key_lru_cache
