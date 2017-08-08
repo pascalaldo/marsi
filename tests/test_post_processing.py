@@ -54,7 +54,7 @@ def test_convert_design(model, essential_metabolites):
     # Medium: glucose
     # Aerobicity: anaerobic
     # fva_min: 16.8641
-    # Design: ΔACALD ΔALCD2x ΔPTA2 ΔPTAr
+    # Design KOs: ACALD ALCD2x PTA2 PTAr
 
     targets = [
         ReactionKnockoutTarget("ACALD"),
