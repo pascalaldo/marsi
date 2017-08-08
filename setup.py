@@ -12,10 +12,11 @@
 # limitations under the License.
 from __future__ import absolute_import, print_function
 
-import versioneer
 import numpy
-from setuptools import setup, find_packages
 from Cython.Build import cythonize
+from setuptools import setup, find_packages
+
+import versioneer
 
 requirements = ['pandas>=0.18.1',
                 'numpy>=1.11.1',
@@ -30,7 +31,8 @@ requirements = ['pandas>=0.18.1',
                 'Cython>=0.24',
                 'cement>2.10',
                 'pubchempy>=1.0.3 ',
-                'cachetools>=2.0.0']
+                'cachetools>=2.0.0',
+                'alembic>=0.9']
 
 extra_requirements = {
     'docs': ['Sphinx>=1.3.5', 'numpydoc>=0.5'],
