@@ -12,32 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import math
-
-import os
 import multiprocessing
+import os
 from queue import Empty
 
 import numpy as np
 import six
 from IProgress import ProgressBar, Bar, ETA
-
 from cameo.parallel import SequentialView
 from pandas import DataFrame
-from sqlalchemy import create_engine
+from sqlalchemy import and_
 from sqlalchemy.orm import sessionmaker
 
 from marsi import config
+from marsi.chemistry import SOLUBILITY
 from marsi.chemistry import rdkit
 from marsi.chemistry.molecule import Molecule
-from marsi.config import default_session, connection_pool
+from marsi.config import default_session, engine
+from marsi.io.db import Database
 from marsi.io.db import Metabolite
 from marsi.nearest_neighbors.model import NearestNeighbors, DistributedNearestNeighbors, DBNearestNeighbors
-
 from marsi.utils import data_dir, INCHI_KEY_TYPE, unpickle_large, pickle_large
-from marsi.io.db import Database
-from marsi.chemistry import SOLUBILITY
-
-from sqlalchemy import and_
 
 
 __all__ = ['build_nearest_neighbors_model', 'load_nearest_neighbors_model']
@@ -268,7 +263,6 @@ class DataBuilder(multiprocessing.Process):
     @property
     def session(self):
         if self._session is None:
-            engine = create_engine('postgresql://', pool=connection_pool)
             session_maker = sessionmaker(engine)
             self._session = session_maker()
         return self._session

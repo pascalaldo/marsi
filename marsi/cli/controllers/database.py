@@ -11,23 +11,30 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from __future__ import with_statement
+
 import os
+
 from IProgress import ProgressBar, Bar, ETA
+from alembic.config import Config
 from cement.core.controller import CementBaseController, expose
 
+from alembic import command
+from marsi.config import db_url
 from marsi.io.build_database import build_database
 from marsi.io.parsers import parse_chebi_data, parse_pubchem, parse_kegg_brite
 from marsi.io.retriaval import retrieve_chebi_names, retrieve_chebi_relation, retrieve_chebi_vertice, \
     retrieve_chebi_structures, retrieve_drugbank_open_structures, retrieve_drugbank_open_vocabulary, \
     retrieve_bigg_reactions, retrieve_bigg_metabolites, retrieve_kegg_brite, retrieve_pubchem_mol_files, \
     retrieve_kegg_mol_files, retrieve_zinc_structures
-from marsi.utils import data_dir
+from marsi.utils import data_dir, src_dir
 
 
-class InitializationController(CementBaseController):
-
+class DatabaseController(CementBaseController):
+    # TODO: migrate database
     class Meta:
-        label = 'init'
+        label = 'db'
         stacked_on = 'base'
         stacked_type = 'nested'
         description = "Initialise MARSI (download data and build initial database)"
@@ -38,9 +45,35 @@ class InitializationController(CementBaseController):
 
     @expose(hide=True)
     def default(self):
-        print("MARSI initialization commands. For details run marsi init --help")
+        print("MARSI database commands. If it is the first time run 'marsi db init' For details run marsi init --help")
 
-    @expose(help="Download all files")
+    @expose(hide=False, help="Build and populate database")
+    def init(self):
+        self.migrate()
+        self.download()
+        self._hold_for_pubchem()
+        self.build_data()
+        self.build_database()
+
+    @expose(hide=True)
+    def _hold_for_pubchem(self):
+        yes_or_no = input("Did you place PubChem query file in %s? [y/n]" % data_dir)
+        if yes_or_no in ['y', '']:
+            print("Proceeding...")
+        else:
+            print("Cancelled, you can run 'marsi db build-database' when you have the PubChem query results")
+
+    @expose(hide=True)
+    def migrate(self):
+        """
+        Run database migration.
+        """
+        alembic_cfg = Config(os.path.join(src_dir, "alembic.ini"))
+        print(db_url)
+        alembic_cfg.set_section_option("alembic", "sqlalchemy.url", db_url)
+        command.upgrade(alembic_cfg, "head")
+
+    @expose(hide=False, help="Download all files")
     def download(self):
         self.download_chebi()
         self.download_drug_bank()
@@ -111,7 +144,7 @@ class InitializationController(CementBaseController):
     def status(self):
         necessary_files = ["chebi_names_3star.txt", "chebi_vertice_3star.tsv", "chebi_relation_3star.tsv",
                            "chebi_lite_3star.sdf", "pubchem_compound_analogs_antimetabolites.txt",
-                           "kegg_brite_08310.keg", "zinc_16.sdf", "drugbank_open_vocabulary.csv",
+                           "kegg_brite_08310.keg", "zinc_16.sdf.gz", "drugbank_open_vocabulary.csv",
                            "drugbank_open_structures.sdf"]
 
         missing = []

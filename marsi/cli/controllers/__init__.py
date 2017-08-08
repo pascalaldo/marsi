@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+
 from cement.core.controller import CementBaseController, expose
 
 from marsi.config import prj_dir, db_name
@@ -66,6 +67,8 @@ class MarsiBaseController(CementBaseController):
         print("# Name of the database                     ")
         print("db_name='marsi-db'                         ")
         print("######### End of MARSI configuration ######\n")
+        print("")
+        print("For more information about database configuration try: https://biosustain.github.io/marsi")
 
     @expose(help="Show db status")
     def db_status(self):

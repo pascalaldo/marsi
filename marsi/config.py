@@ -11,23 +11,44 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
 import getpass
-
+import logging
 import os
+
 import six
-
 from openbabel import obErrorLog, obError, obWarning, obInfo, obDebug
-import sqlalchemy.pool as pool
-import psycopg2
+from sqlalchemy.event import listens_for
+from sqlalchemy.exc import DisconnectionError
 
-
-__all__ = ['Level', 'log', 'prj_dir']
+__all__ = ['Level', 'log', 'prj_dir', 'db_url']
 
 TRAVIS = os.environ.get("TRAVIS", False)
 
 
 logger = logging.getLogger(__name__)
+
+
+def _add_process_guards(engine):
+    """Add multiprocessing guards.
+
+    Forces a connection to be reconnected if it is detected
+    as having been shared to a sub-process.
+
+    """
+
+    @listens_for(engine, "connect")
+    def connect(connection, connection_record):
+        connection_record.info['pid'] = os.getpid()
+
+    @listens_for(engine, "checkout")
+    def checkout(connection, connection_record, connection_proxy):
+        pid = os.getpid()
+        if connection_record.info['pid'] != pid:
+            connection_record.connection = connection_proxy.connection = None
+            raise DisconnectionError(
+                "Connection record belongs to pid %s, "
+                "attempting to check out in pid %s" %
+                (connection_record.info['pid'], pid))
 
 
 class Level:
@@ -67,6 +88,8 @@ log.level = Level.INFO
 config = six.moves.configparser.ConfigParser()
 default = {'marsi': {'prj_dir': "%s/.marsi" % os.getenv('HOME'), 'db_name': 'marsi-db'}}
 
+# TODO: specify database connection configuration
+
 try:
     logger.debug("Looking for setup.cfg")
     with open('setup.cfg') as file:
@@ -101,25 +124,40 @@ try:
         password = None
         host = None
         port = None
-    else:
+    else:  # TODO: needs documentation
         username = db_config.get('db_user', getpass.getuser())
         password = db_config.get('db_pass', None)
         host = db_config.get("db_host", "localhost")
-        port = db_config.get("db_port", 5432)
+        port = int(db_config.get("db_port", 5432))
 
-    def getconn():
-        c = psycopg2.connect(user=username, password=password, host=host, port=port, dbname=db_name)
-        return c
+    if password is None:
+        user_access = username
+    else:
+        user_access = "%s:%s" % (username, password)
+
+    if port is None:
+        host_port = host
+    else:
+        host_port = "%s:%i" % (host, port)
+
+    db_url = "%s://%s@%s/%s" % (db_engine, user_access, host_port, db_name)
+
 except Exception as e:
     logger.error(e)
     default_session = None
+    engine = None
+    db_url = None
+    logger.warning("You are running MARSI without a database connection. \n"
+                   "You will not be able to use many functionalities including: \n"
+                   "1. Query the metabolite database\n"
+                   "2. Search for metabolite analogs")
 else:
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
 
-    connection_pool = pool.QueuePool(getconn, max_overflow=10, pool_size=5)
+    engine = create_engine(db_url, client_encoding='utf8', pool_size=10)
 
-    engine = create_engine('postgresql://', client_encoding='utf8', pool=connection_pool)
+    _add_process_guards(engine)
 
     Session = sessionmaker(engine)
     default_session = Session()

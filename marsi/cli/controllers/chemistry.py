@@ -158,5 +158,5 @@ class ChemistryController(CementBaseController):
         results = search_closest_compounds(molecule=molecule, fpformat=fpformat, bonds_weight=bonds_weight,
                                            bonds_diff=bonds_diff, atoms_weight=atoms_weight, atoms_diff=atoms_diff,
                                            rings_diff=rings_diff)
-
+        results.sort_values('structural_similarity', ascending=False, inplace=True)
         OUTPUT_WRITERS[self.app.pargs.output_format](results, output_file, None)
