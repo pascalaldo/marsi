@@ -122,8 +122,8 @@ try:
     if TRAVIS:
         username = db_config.get('db_user', 'postgres')
         password = None
-        host = None
-        port = None
+        host = 'localhost'
+        port = 5432
     else:  # TODO: needs documentation
         username = db_config.get('db_user', getpass.getuser())
         password = db_config.get('db_pass', None)
