@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import, division
+from __future__ import absolute_import
 
 import gzip
 import logging
@@ -100,6 +100,11 @@ def frange(start, stop=None, steps=10):
     if stop is None:
         stop = start
         start = 0
+
+    # Python 2 division of int returns int
+    start = float(start)
+    stop = float(stop)
+    steps = float(steps)
 
     step_size = (stop - start) / steps
     logger.debug("Step size %f" % step_size)
