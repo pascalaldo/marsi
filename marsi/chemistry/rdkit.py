@@ -14,6 +14,7 @@
 
 from __future__ import absolute_import
 
+import builtins
 import math
 import time
 
@@ -106,7 +107,7 @@ def sdf_to_molecule(file_or_molecule_desc, from_file=True):
         supplier = Chem.SDMolSupplier(file_or_molecule_desc)
     else:
         supplier = Chem.SDMolSupplier()
-        supplier.SetData(file_or_molecule_desc, strictParsing=False)
+        supplier.SetData(builtins.str(file_or_molecule_desc), strictParsing=False)
     mol = next(supplier)
     mol = salt_remove.StripMol(mol, dontRemoveEverything=True)
     Chem.Kekulize(mol)
@@ -284,16 +285,12 @@ def mcs_similarity(mcs_result, molecule, atoms_weight=0.5, bonds_weight=0.5):
     assert isinstance(mcs_result, MCS.MCSResult)
     assert isinstance(molecule, Chem.rdchem.Mol)
 
-    if mcs_result.completed:
-        atoms_score = atoms_weight * (mcs_result.numAtoms / molecule.GetNumAtoms())
-        try:
-            bonds_score = bonds_weight * (mcs_result.numBonds / molecule.GetNumBonds())
-        except ZeroDivisionError:
-            bonds_score = 0
-        return atoms_score + bonds_score
-
-    else:
-        return .0
+    atoms_score = atoms_weight * (float(mcs_result.numAtoms) / float(molecule.GetNumAtoms()))
+    try:
+        bonds_score = bonds_weight * (float(mcs_result.numBonds) / float(molecule.GetNumBonds()))
+    except ZeroDivisionError:
+        bonds_score = .0
+    return atoms_score + bonds_score
 
 
 def structural_similarity(reference, molecule, atoms_weight=0.5, bonds_weight=0.5,

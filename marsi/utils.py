@@ -104,9 +104,8 @@ def frange(start, stop=None, steps=10):
     # Python 2 division of int returns int
     start = float(start)
     stop = float(stop)
-    steps = float(steps)
 
-    step_size = (stop - start) / steps
+    step_size = (stop - start) / float(steps)
     logger.debug("Step size %f" % step_size)
     for i in range(steps):
         logger.debug("Iteration %i: %f" % (i + 1, i * step_size))
