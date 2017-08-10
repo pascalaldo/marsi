@@ -73,7 +73,7 @@ setup(
     license='Apache License Version 2.0',
     keywords='biology metabolism bioinformatics chemoinformatics',
     url='https://github.com/biosustain/marsi',
-    long_description="",
+    long_description=open("README.md").read(),
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Programming Language :: Python :: 3.4',
