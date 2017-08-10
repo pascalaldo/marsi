@@ -31,9 +31,9 @@ Initialization
 --------------
 
 *marsi* comes with a initialization command that will download all the necessary files
-and build the database. You can start by running `marsi init --help`.
+and build the database. You can start by running `marsi db --help`.
 
-*marsi* will download the required files for you. Just run `marsi init download`. **Make sure you have an stable internet 
+*marsi* will download the required files for you, setup the database and process the molecular structures. Just run `marsi db init`. **Make sure you have an stable internet 
 connection.** 
 
 
