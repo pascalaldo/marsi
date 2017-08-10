@@ -54,6 +54,8 @@ before_install:
 
 # OS X Postgres
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PG_DATA=$(brew --prefix)/var/postgres; fi
+# strange os x error https://dba.stackexchange.com/questions/75214/psql-could-not-connect-to-server-no-such-file-or-directory
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rm /usr/local/var/postgres/postmaster.pid; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then pg_ctl -w start -l postgres.log --pgdata ${PG_DATA}; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then createuser -s postgres; fi
 
