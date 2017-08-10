@@ -6,12 +6,15 @@ matrix:
     - os: linux
       dist: trusty
       python: 3.5
+      env: PY=3.5
       sudo: required
     - os: osx
-      python: 3.5
+      python: 2.7
+      env: PY=3.5
     - os: linux
       dist: trusty
       python: 2.7
+      env: PY=2.7
       sudo: required
     - os: os
       python: 2.7
@@ -56,7 +59,7 @@ before_install:
 - conda config --set always_yes yes --set changeps1 no
 - conda update -q conda
 - conda info -a
-- conda create -q -n tenv python=$TRAVIS_PYTHON_VERSION pip cmake
+- conda create -q -n tenv python=$PY pip cmake
 - source activate tenv
 - pip install pip --upgrade
 - pip install codecov
