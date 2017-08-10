@@ -32,7 +32,6 @@ def test_anti_metabolite_manipulation_target(model, species):
 
     assert all(m.id in expected_ids for m in metabolites)
     assert repr(target) == "<AntiMetaboliteManipulation %s (%.3f)>" % (target.id, target.fraction)
-    assert str(target) == b'\xe2\x98\xa3'.decode('utf-8') + "(%.3f)-%s" % (target.fraction, target.id)
 
     with model:
         target.apply(model, reference)
@@ -47,7 +46,6 @@ def test_metabolite_knockout_target(model, species):
     assert target.fraction == 0
     assert all(m.id in expected_ids for m in metabolites)
     assert repr(target) == "<MetaboliteKnockout %s>" % target.id
-    assert str(target) == b'\xe2\x98\xa3'.decode('utf-8') + "-%s" % target.id
 
     with model:
         target.apply(model)
