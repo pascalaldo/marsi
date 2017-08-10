@@ -72,7 +72,7 @@ setup(
     description='marsi - Metabolite Analogues for Rational Strain Improvement',
     license='Apache License Version 2.0',
     keywords='biology metabolism bioinformatics chemoinformatics',
-    url='http:/github.com/biosustain/marsi',
+    url='https://github.com/biosustain/marsi',
     long_description="",
     classifiers=[
         'Development Status :: 3 - Alpha',
