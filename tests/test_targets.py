@@ -28,7 +28,7 @@ def test_anti_metabolite_manipulation_target(model, species):
     target = AntiMetaboliteManipulationTarget(species)
     compartments = model.compartments
     expected_ids = [species + "_" + compartment for compartment in compartments]
-    metabolites = target.metabolites(model)
+    metabolites = target.get_model_target(model)
 
     assert all(m.id in expected_ids for m in metabolites)
     assert repr(target) == "<AntiMetaboliteManipulation %s (%.3f)>" % (target.id, target.fraction)
@@ -41,7 +41,7 @@ def test_metabolite_knockout_target(model, species):
     target = MetaboliteKnockoutTarget(species)
     compartments = model.compartments
     expected_ids = [species + "_" + compartment for compartment in compartments]
-    metabolites = target.metabolites(model)
+    metabolites = target.get_model_target(model)
 
     assert target.fraction == 0
     assert all(m.id in expected_ids for m in metabolites)
