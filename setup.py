@@ -15,6 +15,7 @@ from __future__ import absolute_import, print_function
 import numpy
 from Cython.Build import cythonize
 from setuptools import setup, find_packages
+from distutils.extension import Extension
 
 import versioneer
 
@@ -45,8 +46,13 @@ extra_requirements = {
 extra_requirements['all'] = sum([list(values) for values in extra_requirements.values()], [])
 
 
-ext_modules = cythonize(["marsi/chemistry/common_ext.pyx", "marsi/nearest_neighbors/model_ext.pyx"],
-                        include_path=[numpy.get_include()])
+ext_modules = cythonize([Extension("marsi.chemistry.common_ext", 
+                                   sources=["marsi/chemistry/common_ext.pyx"],
+                                   include_dirs=[numpy.get_include()]), 
+                         Extension("marsi.nearest_neighbors.model_ext",
+                                   sources=["marsi/nearest_neighbors/model_ext.pyx"],
+                                   include_dirs=[numpy.get_include()])
+                        ])
 
 include_dirs = [numpy.get_include()]
 
@@ -66,7 +72,7 @@ setup(
     description='marsi - Metabolite Analogues for Rational Strain Improvement',
     license='Apache License Version 2.0',
     keywords='biology metabolism bioinformatics chemoinformatics',
-    url='http:/nourl.com',
+    url='http:/github.com/biosustain/marsi',
     long_description="",
     classifiers=[
         'Development Status :: 3 - Alpha',
