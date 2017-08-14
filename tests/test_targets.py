@@ -43,7 +43,7 @@ def test_metabolite_knockout_target(model, species):
     expected_ids = [species + "_" + compartment for compartment in compartments]
     metabolites = target.get_model_target(model)
 
-    assert target.fraction == 0
+    assert target.fraction == 1.0
     assert all(m.id in expected_ids for m in metabolites)
     assert repr(target) == "<MetaboliteKnockout %s>" % target.id
 
