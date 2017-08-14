@@ -17,10 +17,10 @@ from __future__ import with_statement
 import os
 
 from IProgress import ProgressBar, Bar, ETA
+from alembic import command
 from alembic.config import Config
 from cement.core.controller import CementBaseController, expose
 
-from alembic import command
 from marsi.config import db_url
 from marsi.io.build_database import build_database
 from marsi.io.parsers import parse_chebi_data, parse_pubchem, parse_kegg_brite
@@ -69,8 +69,9 @@ class DatabaseController(CementBaseController):
         Run database migration.
         """
         alembic_cfg = Config(os.path.join(src_dir, "alembic.ini"))
-        print(db_url)
         alembic_cfg.set_section_option("alembic", "sqlalchemy.url", db_url)
+        script_location = alembic_cfg.get_section_option("alembic", "script_location")
+        alembic_cfg.set_section_option("alembic", "script_location", os.path.join(src_dir, script_location))
         command.upgrade(alembic_cfg, "head")
 
     @expose(hide=False, help="Download all files")
