@@ -12,10 +12,11 @@
 # limitations under the License.
 from __future__ import absolute_import, print_function
 
+from distutils.extension import Extension
+
 import numpy
 from Cython.Build import cythonize
 from setuptools import setup, find_packages
-from distutils.extension import Extension
 
 import versioneer
 
@@ -62,6 +63,7 @@ setup(
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     packages=find_packages(exclude=("*.pyx",)),
+    package_data={'marsi': ['marsi/alembic.ini', 'marsi/README', 'marsi/script.py.mako']},
     install_requires=requirements,
     extras_require=extra_requirements,
     ext_modules=ext_modules,
