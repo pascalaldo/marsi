@@ -1,7 +1,7 @@
 """baseline
 
 Revision ID: c1b678211e9d
-Revises: 
+Revises:
 Create Date: 2017-04-12 10:21:55.050636
 
 """
@@ -73,4 +73,3 @@ def downgrade():
     op.drop_table("synonyms")
     op.drop_table("references")
     op.drop_table("metabolites")
-
