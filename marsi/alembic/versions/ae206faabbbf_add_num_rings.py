@@ -5,11 +5,11 @@ Revises: ef39a4ae2c8c
 Create Date: 2017-04-27 10:36:47.337419
 
 """
-from alembic import op, util
 import sqlalchemy as sa
+from alembic import op, util
+from sqlalchemy.orm import sessionmaker
 
 from marsi.io.db import Metabolite
-from sqlalchemy.orm import sessionmaker
 
 # revision identifiers, used by Alembic.
 revision = 'ae206faabbbf'
