@@ -35,7 +35,7 @@ __all__ = ['data_dir', 'log_dir', 'pickle_large', 'unpickle_large', 'frange', 's
 data_dir = os.path.join(config.prj_dir, "data")
 models_dir = os.path.join(config.prj_dir, "models")
 log_dir = os.path.join(config.prj_dir, "log")
-src_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..")
+src_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)))
 
 INCHI_KEY_TYPE = np.dtype("a27")
 
