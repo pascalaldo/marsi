@@ -99,12 +99,12 @@ except IOError as e:
     config = default
 
 if isinstance(config, dict) or six.PY3:
-    prj_dir = os.path.abspath(config['marsi']['prj_dir'])
-    db_name = config['marsi']['db_name']
+    prj_dir = os.path.abspath(config['marsi'].get('prj_dir', default['marsi']['prj_dir']))
+    db_name = config['marsi'].get(['db_name'], default['marsi']['db_name'])
 
 else:
-    prj_dir = os.path.abspath(config.get('marsi', 'prj_dir'))
-    db_name = config.get('marsi', 'db_name')
+    prj_dir = os.path.abspath(config.get('marsi', 'prj_dir', default['marsi']['prj_dir']))
+    db_name = config.get('marsi', 'db_name', default['marsi']['db_name'])
 
 logger.info("Working dir %s" % prj_dir)
 
@@ -128,7 +128,10 @@ try:
         username = db_config.get('db_user', getpass.getuser())
         password = db_config.get('db_pass', None)
         host = db_config.get("db_host", "localhost")
-        port = int(db_config.get("db_port", 5432))
+        try:
+            port = int(db_config.get("db_port", 5432))
+        except ValueError:
+            port = None
 
     if password is None:
         user_access = username
