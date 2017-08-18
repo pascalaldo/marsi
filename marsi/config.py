@@ -118,24 +118,34 @@ if not os.path.exists(prj_dir):
 
 log.level = Level.ERROR
 
-db_config = {}
-
 try:
-    db_engine = db_config.get('db_engine', "postgresql")
+    if isinstance(config, dict) or six.PY3:
+        db_engine = config['marsi'].get('db_engine', "postgresql")
+    else:
+        db_engine = config.get('marsi', 'db_engine', "postgresql")
 
     if TRAVIS:
-        username = db_config.get('db_user', 'postgres')
+        username = 'postgres'
         password = None
         host = 'localhost'
         port = 5432
     else:  # TODO: needs documentation
-        username = db_config.get('db_user', getpass.getuser())
-        password = db_config.get('db_pass', None)
-        host = db_config.get("db_host", "localhost")
-        try:
-            port = int(db_config.get("db_port", 5432))
-        except ValueError:
-            port = None
+        if isinstance(config, dict) or six.PY3:
+            username = config['marsi'].get('db_user', getpass.getuser())
+            password = config['marsi'].get('db_pass', None)
+            host = config['marsi'].get("db_host", "localhost")
+            try:
+                port = int(config['marsi'].get("db_port", 5432))
+            except ValueError:
+                port = None
+        else:
+            username = config.get('marsi','db_user', getpass.getuser())
+            password = config.get('marsi', 'db_pass', None)
+            host = config.get('marsi', "db_host", "localhost")
+            try:
+                port = int(config.get('marsi', "db_port", 5432))
+            except ValueError:
+                port = None
 
     if password is None:
         user_access = username
