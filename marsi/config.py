@@ -139,7 +139,7 @@ try:
             except ValueError:
                 port = None
         else:
-            username = config.get('marsi','db_user', getpass.getuser())
+            username = config.get('marsi', 'db_user', getpass.getuser())
             password = config.get('marsi', 'db_pass', None)
             host = config.get('marsi', "db_host", "localhost")
             try:
@@ -152,12 +152,17 @@ try:
     else:
         user_access = "%s:%s" % (username, password)
 
-    if port is None:
+    if host is None:
+        host_port = None
+    elif port is None:
         host_port = host
     else:
         host_port = "%s:%i" % (host, port)
 
-    db_url = "%s://%s@%s/%s" % (db_engine, user_access, host_port, db_name)
+    if host_port is None:
+        db_url = "%s://%s/%s" % (db_engine, user_access, db_name)
+    else:
+        db_url = "%s://%s@%s/%s" % (db_engine, user_access, host_port, db_name)
 
 except Exception as e:
     logger.error(e)
