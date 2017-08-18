@@ -17,15 +17,11 @@ import os
 import numpy as np
 import pytest
 
-from marsi.chemistry.common import SOLUBILITY, tanimoto_coefficient, tanimoto_distance
 from marsi.chemistry import openbabel, rdkit
+from marsi.chemistry.common import SOLUBILITY, tanimoto_coefficient, tanimoto_distance
 from marsi.chemistry.molecule import Molecule
 
 TEST_DIR = os.path.dirname(__file__)
-
-TRAVIS = os.getenv("TRAVIS", False)
-if TRAVIS:  # TRAVIS value is 'true'
-    TRAVIS = True
 
 MOL_VOLUMES = {
     "Diphenylketene": 173.769,
@@ -172,7 +168,6 @@ def test_tanimoto_distance_vs_coefficient():
     assert tanimoto_distance(fp1, fp3) == pytest.approx(1 - tanimoto_coefficient(fp1, fp3), 1e-6)
 
 
-@pytest.mark.skipif(TRAVIS, reason="openbabel version is buggy")
 def test_molecule_from_inchi_test(chemlib, benchmark):
     mol = benchmark(chemlib[0].inchi_to_molecule, INCHI)
     assert chemlib[1].num_atoms(mol) == 27

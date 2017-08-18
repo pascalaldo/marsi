@@ -12,13 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import pytest
 
+import pytest
 from pandas import DataFrame
 
 from marsi.io import retriaval, parsers
 
+TRAVIS = os.getenv("TRAVIS", False)
+if TRAVIS:  # TRAVIS value is 'true'
+    TRAVIS = True
 
+
+@pytest.mark.skipif(TRAVIS, reason="Do not download on travis")
 def test_retrieve_bigg(tmpdir):
     bigg_dir = tmpdir.mkdir("bigg")
     dest = bigg_dir.join("bigg_models_reactions.txt")
@@ -32,6 +37,7 @@ def test_retrieve_bigg(tmpdir):
     assert statinfo.st_size > 0
 
 
+@pytest.mark.skipif(TRAVIS, reason="Do not download on travis")
 def test_retrieve_drugbank(tmpdir):
     drugbank_dir = tmpdir.mkdir("drugbank")
     dest = drugbank_dir.join("drugbank_open_structures.sdf")
@@ -45,6 +51,7 @@ def test_retrieve_drugbank(tmpdir):
     assert statinfo.st_size > 0
 
 
+@pytest.mark.skipif(TRAVIS, reason="Do not download on travis")
 def test_retrieve_chebi(tmpdir):
     chebi_dir = tmpdir.mkdir("chebi")
     sdf_dest = chebi_dir.join("chebi_lite_3star.sdf")
@@ -73,6 +80,7 @@ def test_retrieve_chebi(tmpdir):
     assert 'compound_id' in chebi_data.columns
 
 
+@pytest.mark.skipif(TRAVIS, reason="Do not download on travis")
 def test_retrieve_brite(tmpdir):
     kegg_dir = tmpdir.mkdir("kegg")
     dest = kegg_dir.join("kegg_brite_08310.keg")
