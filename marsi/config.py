@@ -85,8 +85,17 @@ log = LogConf()
 
 log.level = Level.INFO
 
-config = six.moves.configparser.ConfigParser()
-default = {'marsi': {'prj_dir': "%s/.marsi" % os.getenv('HOME'), 'db_name': 'marsi-db'}}
+default = {'marsi': {
+    'prj_dir': "%s/.marsi" % os.getenv('HOME'),
+    'db_name': 'marsi-db',
+    'db_engine': "postgresql",
+    'db_user': getpass.getuser(),
+    'db_host': "localhost",
+    'db_port': 5432,
+    'db_pass': None}
+}
+
+config = six.moves.configparser.ConfigParser(default)
 
 # TODO: specify database connection configuration
 
@@ -100,12 +109,12 @@ except IOError as e:
 
 try:
     if isinstance(config, dict) or six.PY3:
-        prj_dir = os.path.abspath(config['marsi'].get('prj_dir', default['marsi']['prj_dir']))
-        db_name = config['marsi'].get(['db_name'], default['marsi']['db_name'])
+        prj_dir = os.path.abspath(config['marsi'].get('prj_dir'))
+        db_name = config['marsi'].get(['db_name'])
 
     else:
-        prj_dir = os.path.abspath(config.get('marsi', 'prj_dir', default['marsi']['prj_dir']))
-        db_name = config.get('marsi', 'db_name', default['marsi']['db_name'])
+        prj_dir = os.path.abspath(config.get('marsi', 'prj_dir'))
+        db_name = config.get('marsi', 'db_name')
 except Exception:
     prj_dir = default['marsi']['prj_dir']
     db_name = default['marsi']['db_name']
@@ -122,7 +131,7 @@ try:
     if isinstance(config, dict) or six.PY3:
         db_engine = config['marsi'].get('db_engine', "postgresql")
     else:
-        db_engine = config.get('marsi', 'db_engine', "postgresql")
+        db_engine = config.get('marsi', 'db_engine')
 
     if TRAVIS:
         username = 'postgres'
@@ -139,11 +148,11 @@ try:
             except ValueError:
                 port = None
         else:
-            username = config.get('marsi', 'db_user', getpass.getuser())
-            password = config.get('marsi', 'db_pass', None)
-            host = config.get('marsi', "db_host", "localhost")
+            username = config.get('marsi', 'db_user')
+            password = config.get('marsi', 'db_pass')
+            host = config.get('marsi', "db_host")
             try:
-                port = int(config.get('marsi', "db_port", 5432))
+                port = int(config.get('marsi', "db_port"))
             except ValueError:
                 port = None
 
