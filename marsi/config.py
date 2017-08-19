@@ -152,7 +152,7 @@ try:
             password = config.get('marsi', 'db_pass')
             host = config.get('marsi', "db_host")
             try:
-                port = int(config.get('marsi', "db_port"))
+                port = config.getint('marsi', "db_port")
             except ValueError:
                 port = None
 
@@ -174,7 +174,7 @@ try:
         db_url = "%s://%s@%s/%s" % (db_engine, user_access, host_port, db_name)
 
 except Exception as e:
-    logger.error(e)
+    print(e)
     default_session = None
     engine = None
     db_url = None
