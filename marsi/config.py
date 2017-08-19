@@ -103,6 +103,14 @@ try:
     logger.debug("Looking for setup.cfg")
     with open('setup.cfg') as file:
         config.readfp(file)
+
+    print("Configuration:")
+    for section_name in config.sections():
+        print('Section:', section_name)
+        print('  Options:', config.options(section_name))
+        for name, value in config.items(section_name):
+            print('  %s = %s' % (name, value))
+        print("")
 except IOError as e:
     logger.debug("Not available %s" % str(e))
     config = default
