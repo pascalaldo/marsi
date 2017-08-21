@@ -164,22 +164,25 @@ try:
             except ValueError:
                 port = None
 
-    if password is None:
-        user_access = username
+    if db_engine == 'sqlite':
+        db_url = "sqlite:///%s" % db_name
     else:
-        user_access = "%s:%s" % (username, password)
+        if password is None:
+            user_access = username
+        else:
+            user_access = "%s:%s" % (username, password)
 
-    if host is None:
-        host_port = None
-    elif port is None:
-        host_port = host
-    else:
-        host_port = "%s:%i" % (host, port)
+        if host is None:
+            host_port = None
+        elif port is None:
+            host_port = host
+        else:
+            host_port = "%s:%i" % (host, port)
 
-    if host_port is None:
-        db_url = "%s://%s/%s" % (db_engine, user_access, db_name)
-    else:
-        db_url = "%s://%s@%s/%s" % (db_engine, user_access, host_port, db_name)
+        if host_port is None:
+            db_url = "%s://%s/%s" % (db_engine, user_access, db_name)
+        else:
+            db_url = "%s://%s@%s/%s" % (db_engine, user_access, host_port, db_name)
 
 except Exception as e:
     print(e)
