@@ -78,7 +78,7 @@ def mol_to_molecule(file_or_molecule_desc, from_file=True):
     if from_file:
         mol = Chem.MolFromMolFile(file_or_molecule_desc)
     else:
-        mol = Chem.MolFromMolBlock(file_or_molecule_desc)
+        mol = Chem.MolFromMolBlock(str(file_or_molecule_desc))
     mol = salt_remove.StripMol(mol, dontRemoveEverything=True)
     Chem.Kekulize(mol)
     mol = Chem.AddHs(mol)
@@ -106,7 +106,7 @@ def sdf_to_molecule(file_or_molecule_desc, from_file=True):
         supplier = Chem.SDMolSupplier(file_or_molecule_desc)
     else:
         supplier = Chem.SDMolSupplier()
-        supplier.SetData(file_or_molecule_desc, strictParsing=False)
+        supplier.SetData(str(file_or_molecule_desc), strictParsing=False)
     mol = next(supplier)
     mol = salt_remove.StripMol(mol, dontRemoveEverything=True)
     Chem.Kekulize(mol)
