@@ -60,7 +60,7 @@ setup(
     name='marsi',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    packages=find_packages(exclude=("*.pyx",)),
+    packages=find_packages(),
     package_data={'marsi': ['alembic.ini', 'alembic/*']},
     install_requires=requirements,
     extras_require=extra_requirements,
