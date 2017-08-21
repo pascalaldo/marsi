@@ -95,7 +95,15 @@ default = {'marsi': {
     'db_pass': None}
 }
 
-config = six.moves.configparser.ConfigParser(default)
+
+def get_default(config, section, key, default):
+    try:
+        return config.get(section, key)
+    except Exception:
+        return default[section].get(key, None)
+
+
+config = six.moves.configparser.ConfigParser()
 
 # TODO: specify database connection configuration
 
@@ -103,14 +111,6 @@ try:
     logger.debug("Looking for setup.cfg")
     with open('setup.cfg') as file:
         config.readfp(file)
-
-    print("Configuration:")
-    for section_name in config.sections():
-        print('Section:', section_name)
-        print('  Options:', config.options(section_name))
-        for name, value in config.items(section_name):
-            print('  %s = %s' % (name, value))
-        print("")
 except IOError as e:
     logger.debug("Not available %s" % str(e))
     config = default
@@ -139,7 +139,7 @@ try:
     if isinstance(config, dict) or six.PY3:
         db_engine = config['marsi'].get('db_engine', "postgresql")
     else:
-        db_engine = config.get('marsi', 'db_engine')
+        db_engine = get_default(config, 'marsi', 'db_engine', default)
 
     if TRAVIS:
         username = 'postgres'
@@ -156,11 +156,11 @@ try:
             except ValueError:
                 port = None
         else:
-            username = config.get('marsi', 'db_user')
-            password = config.get('marsi', 'db_pass')
-            host = config.get('marsi', "db_host")
+            username = get_default(config, 'marsi', 'db_user', default)
+            password = get_default(config, 'marsi', 'db_pass', default)
+            host = get_default(config, 'marsi', "db_host", default)
             try:
-                port = config.getint('marsi', "db_port")
+                port = int(get_default(config, 'marsi', "db_port", default))
             except ValueError:
                 port = None
 
