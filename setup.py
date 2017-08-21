@@ -12,11 +12,9 @@
 # limitations under the License.
 from __future__ import absolute_import, print_function
 
-from distutils.extension import Extension
-
 import numpy
 from Cython.Build import cythonize
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
 
 import versioneer
 
