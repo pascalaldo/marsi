@@ -14,7 +14,6 @@
 
 from __future__ import absolute_import
 
-import builtins
 import math
 import time
 
@@ -107,7 +106,7 @@ def sdf_to_molecule(file_or_molecule_desc, from_file=True):
         supplier = Chem.SDMolSupplier(file_or_molecule_desc)
     else:
         supplier = Chem.SDMolSupplier()
-        supplier.SetData(builtins.str(file_or_molecule_desc), strictParsing=False)
+        supplier.SetData(file_or_molecule_desc, strictParsing=False)
     mol = next(supplier)
     mol = salt_remove.StripMol(mol, dontRemoveEverything=True)
     Chem.Kekulize(mol)
