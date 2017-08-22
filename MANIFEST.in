@@ -1,3 +1,7 @@
+include README.md
+include QUICK_START.md
+include CITATIONS.md
+include setup.cfg
 include versioneer.py
 include marsi/_version.py
 include marsi/alembic.ini
