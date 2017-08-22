@@ -121,8 +121,8 @@ try:
         db_name = config['marsi'].get(['db_name'])
 
     else:
-        prj_dir = os.path.abspath(config.get('marsi', 'prj_dir'))
-        db_name = config.get('marsi', 'db_name')
+        prj_dir = os.path.abspath(get_default(config, 'marsi', 'prj_dir', default))
+        db_name = get_default(config, 'marsi', 'db_name', default)
 except Exception:
     prj_dir = default['marsi']['prj_dir']
     db_name = default['marsi']['db_name']
