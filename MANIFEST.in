@@ -1,2 +1,8 @@
 include versioneer.py
 include marsi/_version.py
+include marsi/alembic.ini
+include marsi/alembic/README
+include marsi/alembic/script.py.mako
+include marsi/chemistry/common_ext.pxd
+include marsi/chemistry/common_ext.pyx
+include marsi/nearest_neighbors/model_ext.pyx
