@@ -63,7 +63,7 @@ setup(
     packages=find_packages(),
     package_data={'marsi': ['alembic.ini', 'alembic/*',
                             'chemistry/common_ext.pxd',
-                            'chemistry.common_ext.pyx',
+                            'chemistry/common_ext.pyx',
                             'nearest_neighbors/model_ext.pyx']},
     install_requires=requirements,
     extras_require=extra_requirements,
