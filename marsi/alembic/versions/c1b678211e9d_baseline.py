@@ -40,6 +40,7 @@ def upgrade():
         sa.Column('formula', sa.String(500), nullable=False),
         sa.Column('num_atoms', sa.Integer, nullable=False),
         sa.Column('num_bonds', sa.Integer, nullable=False),
+        sa.Column("num_rings", sa.Integer, nullable=False),
         sa.Column('sdf', sa.Text, nullable=True),
         sa.Index('uq_inchi_key', 'inchi_key', unique=True),
     )
