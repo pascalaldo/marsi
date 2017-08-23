@@ -197,7 +197,11 @@ else:
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
 
-    engine = create_engine(db_url, client_encoding='utf8', pool_size=10)
+    try:
+        engine = create_engine(db_url, client_encoding='utf8', pool_size=10)
+    except TypeError:
+        # The pool_size argument won't work for the default SQLite setup in SQLAlchemy 0.7, try without
+        engine = create_engine(db_url, client_encoding='utf8')
 
     _add_process_guards(engine)
 
