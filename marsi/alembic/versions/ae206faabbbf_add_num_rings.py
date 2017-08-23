@@ -21,7 +21,7 @@ Session = sessionmaker()
 
 
 def upgrade():
-    op.add_column("metabolites", sa.Column("num_rings", sa.Integer))
+    op.add_column("metabolites", sa.Column("num_rings", sa.Integer, nullable=False))
     util.messaging.log.info("adding rings to existing table")
 
     session = Session(bind=op.get_bind())
@@ -34,8 +34,6 @@ def upgrade():
             session.flush()
 
     session.commit()
-
-    op.alter_column("metabolites", "num_rings", nullable=False)
 
 
 def downgrade():
