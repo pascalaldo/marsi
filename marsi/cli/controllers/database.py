@@ -145,8 +145,11 @@ class DatabaseController(CementBaseController):
     def status(self):
         necessary_files = ["chebi_names_3star.txt", "chebi_vertice_3star.tsv", "chebi_relation_3star.tsv",
                            "chebi_lite_3star.sdf", "pubchem_compound_analogs_antimetabolites.txt",
-                           "kegg_brite_08310.keg", "zinc_16.sdf.gz", "drugbank_open_vocabulary.csv",
+                           "kegg_brite_08310.keg", "drugbank_open_vocabulary.csv",
                            "drugbank_open_structures.sdf"]
+
+        if self.app.pargs.with_zinc:
+            necessary_files.append("zinc_16.sdf.gz",)
 
         missing = []
 
@@ -155,7 +158,7 @@ class DatabaseController(CementBaseController):
 
             if not os.path.isfile(file_path):
                 missing.append(file_name)
-                print(file_name.ljust(45) + "| FAIL: fail does not exist")
+                print(file_name.ljust(45) + "| FAIL: File does not exist")
             else:
                 file_size = os.path.getsize(file_path)
 
