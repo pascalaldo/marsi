@@ -26,7 +26,8 @@ from cameo.strain_design.heuristic.evolutionary.objective_functions import Objec
 from cobra.core.model import Model
 from cobra.core.reaction import Reaction
 from cobra.exceptions import OptimizationError
-from pandas import DataFrame
+from optlang.exceptions import SolverError
+from pandas import DataFrame, Series
 
 from marsi.cobra import utils
 from marsi.cobra.strain_design.target import AntiMetaboliteManipulationTarget, MetaboliteKnockoutTarget
@@ -560,7 +561,7 @@ def replace_design(model, strain_design, fitness, objective_function, simulation
                 test_target_substitutions(base_model, all_targets, test_target, anti_metabolite_targets,
                                           objective_function, fitness, base_fitness, simulation_method,
                                           simulation_kwargs, reference, valid_loss, anti_metabolites)
-            except (ValueError, KeyError) as e:
+            except (ValueError, KeyError, SolverError) as e:
                 logger.error(str(e))
                 continue
             finally:  # put the target back on the list.
@@ -602,7 +603,11 @@ def convert_target(model, target, essential_metabolites, ignore_transport=True,
     if essential_metabolites is None:
         essential_metabolites = utils.essential_species_ids(model)
 
-    reference = reference or {}
+    if reference is None:
+        reference = {}
+    elif isinstance(reference, Series):
+        reference = reference.to_dict()
+
     if isinstance(target, ReactionKnockoutTarget):
 
         substitutions = find_anti_metabolite_knockouts(target.get_model_target(model),
@@ -661,7 +666,11 @@ def convert_target_group(model, target_group, essential_metabolites, ignore_tran
     if essential_metabolites is None:
         essential_metabolites = utils.essential_species_ids(model)
 
-    reference = reference or {}
+    if reference is None:
+        reference = {}
+    elif isinstance(reference, Series):
+        reference = reference.to_dict()
+
     substitutions = {}
     metabolites_targets = {}
     for target in target_group:
