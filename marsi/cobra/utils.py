@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-
 from collections import Counter
 
 from IProgress.progressbar import ProgressBar
 from IProgress.widgets import Percentage, Bar, ETA
-
 from cachetools import cached, LRUCache
-
 from cameo.flux_analysis.analysis import find_essential_metabolites
 
 from marsi import bigg_api
@@ -34,8 +31,8 @@ lru_cache = LRUCache(maxsize=1024)
 
 logger = logging.getLogger(__name__)
 
-CURRENCY_METABOLITES = ["atp", "adp", "nad", "nadh", "nadp", "nadph", "amp",
-                        "h2o", "h", "coa", "acp", "pi", 'pppi', 'ppi']
+CURRENCY_METABOLITES = {"atp", "adp", "nad", "nadh", "nadp", "nadph", "amp",
+                        "h2o", "h", "coa", "acp", "pi", 'pppi', 'ppi'}
 
 DATABASE_LINKS = 'database_links'
 
