@@ -20,6 +20,8 @@ from cameo.flux_analysis.simulation import FluxDistributionResult
 from cobra.core.dictlist import DictList
 from cobra.core.model import Model
 from cobra.core.reaction import Reaction
+from pandas import Series
+
 
 __all__ = ["compete_metabolite", "inhibit_metabolite", "knockout_metabolite", "apply_anti_metabolite"]
 
@@ -56,6 +58,8 @@ def compete_metabolite(model, metabolite, reference_dist, fraction=0.5, allow_ac
 
     if isinstance(reference_dist, FluxDistributionResult):
         reference_dist = reference_dist.fluxes.to_dict()
+    elif isinstance(reference_dist, Series):
+        reference_dist = reference_dist.to_dict()
 
     if not isinstance(reference_dist, dict):
         raise ValueError("'reference_dist' must be a dict or FluxDistributionResult")
@@ -224,6 +228,8 @@ def inhibit_metabolite(model, metabolite, reference_dist, fraction=0.5, allow_ac
 
     if isinstance(reference_dist, FluxDistributionResult):
         reference_dist = reference_dist.fluxes.to_dict()
+    elif isinstance(reference_dist, Series):
+        reference_dist = reference_dist.to_dict()
 
     if not isinstance(reference_dist, dict):
         raise ValueError("'reference_dist' must be a dict or FluxDistributionResult")
