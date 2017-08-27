@@ -77,7 +77,7 @@ install:
 - conda install -q -c rdkit boost rdkit=2016.09.4
 - conda install -q -c openbabel openbabel
 - pip install flake8 cython numpy scipy pyzmq pandas pytest pytest-cov pytest-benchmark swiglpk optlang
-- pip install .[test]
+- pip install .[test,docs]
 
 before_script:
 - python -c 'from rdkit import Chem'
