@@ -98,7 +98,7 @@ after_success:
 
 before_deploy:
 - pip install twine
-- python setpu.py sdist
+- python setup.py sdist
 - cd docs && make apidoc && make html && touch _build/html/.nojekyll
 - cd $TRAVIS_BUILD_DIR
 
