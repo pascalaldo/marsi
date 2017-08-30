@@ -127,10 +127,12 @@ class DatabaseController(CementBaseController):
 
     @expose(help="Retrieve KEGG files (part of download)")
     def download_kegg(self):
-        pbar = ProgressBar(maxval=1, widgets=["Downloading KEGG files", Bar(), ETA()])
-        pbar.start()
         retrieve_kegg_brite()
-        pbar.update(1)
+        kegg = parse_kegg_brite(os.path.join(data_dir, "kegg_brite_08310.keg"))
+        pbar = ProgressBar(maxval=len(kegg.kegg_drug_id.unique()), widgets=["Downloading KEGG files", Bar(), ETA()])
+        pbar.start()
+        for i in retrieve_kegg_mol_files(kegg, dest=data_dir):
+            pbar.update(i)
         pbar.finish()
 
     @expose(help="Status of init")
@@ -186,7 +188,6 @@ class DatabaseController(CementBaseController):
         print("Building KEGG:")
         kegg = parse_kegg_brite(os.path.join(data_dir, "kegg_brite_08310.keg"))
         kegg.to_csv(os.path.join(data_dir, "kegg_data.csv"))
-        retrieve_kegg_mol_files(kegg, dest=data_dir)
         print("Complete!")
 
     @expose(help="Build database")

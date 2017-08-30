@@ -192,12 +192,13 @@ def retrieve_pubchem_mol_files(pubchem_ids, dest=data_dir):
     if not os.path.isdir(pubchem_files_path):
         os.mkdir(pubchem_files_path)
 
-    for pubchem_id in pubchem_ids:
+    for i, pubchem_id in enumerate(pubchem_ids):
         try:
             pbc.download('sdf', os.path.join(pubchem_files_path, '%i.sdf' % pubchem_id), int(pubchem_id))
         except IOError:
             # File already exists
             continue
+        yield i
 
 
 def retrieve_kegg_mol_files(kegg, dest=data_dir):
@@ -213,7 +214,7 @@ def retrieve_kegg_mol_files(kegg, dest=data_dir):
     if not os.path.isdir(kegg_mol_files_dir):
         os.mkdir(kegg_mol_files_dir)
 
-    for drug_id in drug_ids:
+    for i, drug_id in enumerate(drug_ids):
         file_name = os.path.join(kegg_mol_files_dir, "%s.mol" % drug_id)
         if not os.path.exists(file_name):
             with open(file_name, "w") as mol_file_handler:
@@ -224,6 +225,7 @@ def retrieve_kegg_mol_files(kegg, dest=data_dir):
                     not_found.append(drug_id)
                 else:
                     mol_file_handler.write(kegg_mol_data)
+        yield i
 
     print("Not Found: %s" % (", ".join(not_found)))
 
