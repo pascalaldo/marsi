@@ -138,7 +138,7 @@ class DatabaseController(CementBaseController):
     @expose(help="Status of init")
     def status(self):
         necessary_files = ["chebi_names_3star.txt", "chebi_vertice_3star.tsv", "chebi_relation_3star.tsv",
-                           "chebi_lite_3star.sdf",  "kegg_brite_08310.keg", "drugbank_open_vocabulary.csv",
+                           "chebi_lite_3star.sdf", "kegg_brite_08310.keg", "drugbank_open_vocabulary.csv",
                            "drugbank_open_structures.sdf"]
 
         if self.app.pargs.with_zinc:
