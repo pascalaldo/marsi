@@ -208,7 +208,7 @@ class DatabaseController(CementBaseController):
     @expose(help="Build database")
     def build_database(self):
         from marsi.io import data
-        build_database(data, data_dir)
+        build_database(data, self.app.pargs.with_zinc, data_dir)
 
     @expose(help="Add known analogs")
     def add_known_analogs(self):
