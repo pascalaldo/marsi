@@ -97,10 +97,10 @@ after_success:
 - codecov
 
 before_deploy:
-- cd docs
-- make apidoc
-- make html
-- touch _build/html/.nojekyll
+- pip install twine
+- python setpu.py sdist
+- cd docs && make apidoc && make html && touch _build/html/.nojekyll
+- cd $TRAVIS_BUILD_DIR
 
 deploy:
 - provider: pages
@@ -111,6 +111,9 @@ deploy:
   on:
     branch: master
     repo: biosustain/marsi
+    condition:
+      - $PY == 3.5
+      - $TRAVIS_OS_NAME == "linux"
 
 - provider: pypi
   user: Joo.Cardoso
