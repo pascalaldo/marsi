@@ -24,6 +24,7 @@ OUTPUT_WRITERS = {
 
 }
 
+
 class ChemistryController(CementBaseController):
     """
     This is the Optimization Controller. It allows to run optimizations from the command line.

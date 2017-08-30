@@ -193,4 +193,4 @@ def upload_zinc_entries(zinc_data_file, i=0, session=default_session, keys=None)
             if j % 20000 == 0:
                 session.commit()
 
-        return i
+    return i
