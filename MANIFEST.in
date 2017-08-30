@@ -10,3 +10,6 @@ include marsi/alembic/script.py.mako
 include marsi/chemistry/common_ext.pxd
 include marsi/chemistry/common_ext.pyx
 include marsi/nearest_neighbors/model_ext.pyx
+include marsi/io/files/pubchem_compound_analogs_antimetabolites.txt
+include marsi/io/files/bigg_models_metabolites.txt
+include marsi/io/files/bigg_models_reactions.txt
