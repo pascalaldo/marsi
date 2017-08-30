@@ -15,6 +15,12 @@
 from __future__ import with_statement
 
 import os
+import tempfile
+
+from pandas import read_excel
+
+import pubchempy
+from bioservices import ChEBI
 
 from IProgress import ProgressBar, Bar, ETA
 from alembic import command
@@ -29,6 +35,15 @@ from marsi.io.retriaval import retrieve_chebi_names, retrieve_chebi_relation, re
     retrieve_bigg_reactions, retrieve_bigg_metabolites, retrieve_kegg_brite, retrieve_pubchem_mol_files, \
     retrieve_kegg_mol_files, retrieve_zinc_structures
 from marsi.utils import data_dir, src_dir, internal_data_dir
+
+from marsi.io.db import Reference, Synonym, Metabolite
+from marsi.io.enrichment import find_best_chebi_structure
+
+from marsi.chemistry import openbabel
+
+
+PUBCHEM_COMPOUND = "PubChem Compound"
+CHEBI = "ChEBI"
 
 
 class DatabaseController(CementBaseController):
@@ -194,3 +209,34 @@ class DatabaseController(CementBaseController):
     def build_database(self):
         from marsi.io import data
         build_database(data, data_dir)
+
+    @expose(help="Add known analogs")
+    def add_known_analogs(self):
+        chebi_client = ChEBI()
+        print("Updating data from 'antimetabolites.xlsx'")
+
+        anti_metabolites = read_excel(os.path.join(internal_data_dir, "antimetabolites.xlsx"), sheetname="Sheet1")
+        anti_metabolites = anti_metabolites[anti_metabolites.Identifier != "?"]
+
+        for _, row in anti_metabolites.iterrows():
+            if row.Database == PUBCHEM_COMPOUND:
+                temp_file = tempfile.mktemp(suffix="sdf", prefix=str(row.Identifier))
+                pubchempy.download("SDF", temp_file, row.Identifier, overwrite=True)
+                molecule = openbabel.sdf_to_molecule(temp_file)
+                reference = Reference.add_reference("pubchem", str(row.Identifier))
+
+            elif row.Database == CHEBI:
+                entity = chebi_client.getCompleteEntity(row.Identifier)
+                molecule = openbabel.mol_to_molecule(find_best_chebi_structure(entity), False)
+                reference = Reference.add_reference("chebi", str(row.Identifier))
+            else:
+                print('{:16s}\t{:12s}\t{:25s}\t- Skip'.format(row.Database, str(row.Identifier), row.Target))
+                continue
+
+            synonym = Synonym.add_synonym(row.Name)
+            try:
+                Metabolite.get(inchi_key=openbabel.mol_to_inchi_key(molecule))
+                print('{:16s}\t{:12s}\t{:25s}\t- OK'.format(row.Database, str(row.Identifier), row.Target))
+            except KeyError:
+                Metabolite.from_molecule(molecule, [reference], [synonym], analog=True, first_time=False)
+                print('{:16s}\t{:12s}\t{:25s}\t- Added'.format(row.Database, str(row.Identifier), row.Target))
