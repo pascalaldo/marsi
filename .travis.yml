@@ -99,7 +99,7 @@ after_success:
 before_deploy:
 - pip install twine
 - python setup.py sdist
-- cd docs && make apidoc && make html && touch _build/html/.nojekyll
+- cd docs && make apidoc && make examples && make html && touch _build/html/.nojekyll
 - cd $TRAVIS_BUILD_DIR
 
 deploy:
