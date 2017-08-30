@@ -98,8 +98,10 @@ default = {'marsi': {
 
 def get_default(config, section, key, default):
     try:
-        return config.get(section, key)
-    except Exception:
+        value = config.get(section, key)
+        return value
+    except Exception as e:
+        logger.error(e)
         return default[section].get(key, None)
 
 
@@ -108,18 +110,18 @@ config = six.moves.configparser.ConfigParser()
 # TODO: specify database connection configuration
 
 try:
-    logger.debug("Looking for setup.cfg")
+    print("Looking for local setup.cfg")
     with open('setup.cfg') as file:
         config.readfp(file)
+    print("Found!")
 except IOError as e:
-    logger.debug("Not available %s" % str(e))
+    print("Not available %s" % str(e))
     config = default
 
 try:
-    if isinstance(config, dict) or six.PY3:
+    if isinstance(config, dict):
         prj_dir = os.path.abspath(config['marsi'].get('prj_dir'))
         db_name = config['marsi'].get(['db_name'])
-
     else:
         prj_dir = os.path.abspath(get_default(config, 'marsi', 'prj_dir', default))
         db_name = get_default(config, 'marsi', 'db_name', default)
@@ -136,7 +138,7 @@ if not os.path.exists(prj_dir):
 log.level = Level.ERROR
 
 try:
-    if isinstance(config, dict) or six.PY3:
+    if isinstance(config, dict):
         db_engine = config['marsi'].get('db_engine', "postgresql")
     else:
         db_engine = get_default(config, 'marsi', 'db_engine', default)
@@ -147,7 +149,7 @@ try:
         host = 'localhost'
         port = 5432
     else:  # TODO: needs documentation
-        if isinstance(config, dict) or six.PY3:
+        if isinstance(config, dict):
             username = config['marsi'].get('db_user', getpass.getuser())
             password = config['marsi'].get('db_pass', None)
             host = config['marsi'].get("db_host", "localhost")
