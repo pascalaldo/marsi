@@ -78,5 +78,5 @@ Indices and tables
    :target: http://img.shields.io/badge/license-APACHE2-blue.svg
 .. |Build Status| image:: https://travis-ci.org/biosustain/marsi.svg?branch=master
    :target: https://travis-ci.org/biosustain/marsi
-.. |Coverage Status| image:: https://coveralls.io/repos/biosustain/marsi/badge.svg?branch=master
-   :target: https://coveralls.io/r/biosustain/marsi?branch=master
+.. |Coverage Status| image:: https://img.shields.io/codecov/c/github/biosustain/marsi/master.svg
+   :target: https://codecov.io/gh/biosustain/marsi/branch/master
