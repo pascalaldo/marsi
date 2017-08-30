@@ -97,7 +97,7 @@ after_success:
 - codecov
 
 before_deploy:
-- pip install twine
+- pip install twine jupyter
 - python setup.py sdist
 - cd docs && make apidoc && make examples && make html && touch _build/html/.nojekyll
 - cd $TRAVIS_BUILD_DIR
