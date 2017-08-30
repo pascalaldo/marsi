@@ -28,7 +28,7 @@ from marsi.io.retriaval import retrieve_chebi_names, retrieve_chebi_relation, re
     retrieve_chebi_structures, retrieve_drugbank_open_structures, retrieve_drugbank_open_vocabulary, \
     retrieve_bigg_reactions, retrieve_bigg_metabolites, retrieve_kegg_brite, retrieve_pubchem_mol_files, \
     retrieve_kegg_mol_files, retrieve_zinc_structures
-from marsi.utils import data_dir, src_dir
+from marsi.utils import data_dir, src_dir, internal_data_dir
 
 
 class DatabaseController(CementBaseController):
@@ -51,17 +51,8 @@ class DatabaseController(CementBaseController):
     def init(self):
         self.migrate()
         self.download()
-        self._hold_for_pubchem()
         self.build_data()
         self.build_database()
-
-    @expose(hide=True)
-    def _hold_for_pubchem(self):
-        yes_or_no = input("Did you place PubChem query file in %s? [y/n]" % data_dir)
-        if yes_or_no in ['y', '']:
-            print("Proceeding...")
-        else:
-            print("Cancelled, you can run 'marsi db build-database' when you have the PubChem query results")
 
     @expose(hide=True)
     def migrate(self):
@@ -120,13 +111,14 @@ class DatabaseController(CementBaseController):
 
     @expose(help="Retrieve PubChem files (part of download)")
     def download_pubchem(self):
-        print("We cannot download PubChem file")
-        print("To retrieve the necessary file follow this instructions:")
-        print("1. Visit 'https://pubchem.ncbi.nlm.nih.gov' and enter the following query:")
-        print("(antimetabolites) OR (analog) OR (analogue)")
-        print("2. Use the 'Send to:' option on the site and save the")
-        print("the file with the default values.")
-        print("3. Copy the file to %s and name it 'pubchem_compound_analogs_antimetabolites.txt'" % data_dir)
+        pubchem = parse_pubchem(os.path.join(internal_data_dir, "pubchem_compound_analogs_antimetabolites.txt"))
+        pubchem_ids = pubchem.compound_id.unique()
+        pbar = ProgressBar(maxval=len(pubchem_ids), widgets=["Downloading PubChem files",
+                                                                              Bar(), ETA()])
+        pbar.start()
+        for i in retrieve_pubchem_mol_files(pubchem_ids, dest=data_dir):
+            pbar.update(i)
+        pbar.finish()
 
     @expose(help="Retrieve Zinc files (part of download)")
     def download_zinc(self):
@@ -144,8 +136,7 @@ class DatabaseController(CementBaseController):
     @expose(help="Status of init")
     def status(self):
         necessary_files = ["chebi_names_3star.txt", "chebi_vertice_3star.tsv", "chebi_relation_3star.tsv",
-                           "chebi_lite_3star.sdf", "pubchem_compound_analogs_antimetabolites.txt",
-                           "kegg_brite_08310.keg", "drugbank_open_vocabulary.csv",
+                           "chebi_lite_3star.sdf",  "kegg_brite_08310.keg", "drugbank_open_vocabulary.csv",
                            "drugbank_open_structures.sdf"]
 
         if self.app.pargs.with_zinc:
@@ -188,9 +179,8 @@ class DatabaseController(CementBaseController):
         print("Complete!")
         print("--------------------------------------------")
         print("Building PubChem:")
-        pubchem = parse_pubchem(os.path.join(data_dir, "pubchem_compound_analogs_antimetabolites.txt"))
+        pubchem = parse_pubchem(os.path.join(internal_data_dir, "pubchem_compound_analogs_antimetabolites.txt"))
         pubchem.to_csv(os.path.join(data_dir, "pubchem_data.csv"))
-        retrieve_pubchem_mol_files(pubchem.compound_id.unique())
         print("Complete!")
         print("--------------------------------------------")
         print("Building KEGG:")
