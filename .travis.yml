@@ -125,7 +125,6 @@ deploy:
     branch: master
     tags: true
     repo: biosustain/marsi
-  docs_dir: docs/_build/html
 
 env:
   global:
