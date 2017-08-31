@@ -11,15 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from cameo import pfba, load_model
+
+from cameo.core.utils import get_reaction_for
+from cameo.flux_analysis.simulation import pfba
+from cameo.io import load_model
 from cameo.strain_design.heuristic.evolutionary.objective_functions import biomass_product_coupled_yield
 from cement.core.controller import CementBaseController, expose
 from pandas import DataFrame
 
-from marsi.utils import BIOMASS_RE
 from marsi.cobra.strain_design import RandomMutagenesisDesign, ALEDesign
-from marsi.cobra.utils import CURRENCY_METABOLITES
 from marsi.cobra.strain_design.post_processing import replace_design
+from marsi.cobra.utils import CURRENCY_METABOLITES
+from marsi.utils import BIOMASS_RE
 from marsi.utils import default_carbon_sources, unique
 
 
@@ -222,7 +225,7 @@ class OptimizationController(CementBaseController):
             exit(1)
         else:
             try:
-                target = model._reaction_for(self.app.pargs.target)
+                target = get_reaction_for(model, self.app.pargs.target)
             except KeyError:
                 print("Invalid target %s" % self.app.pargs.target)
                 exit(1)
@@ -233,7 +236,7 @@ class OptimizationController(CementBaseController):
         model_carbon_source = default_carbon_sources(model)[0]
         if self.app.pargs.carbon_source is not None:
             try:
-                carbon_source = model._reaction_for(self.app.pargs.carbon_source)
+                carbon_source = get_reaction_for(model, self.app.pargs.carbon_source)
             except KeyError:
                 print("Invalid carbon source %s" % self.app.pargs.carbon_source)
                 exit(1)
