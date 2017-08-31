@@ -91,7 +91,7 @@ before_script:
 - psql -d marsi-db -c 'SELECT COUNT(*) FROM metabolites;' -U postgres
 
 script:
-- py.test -v -rsx --cov=./ --cov-report=xml tests
+- py.test -v -rsx --cov=marsi --cov-report=xml tests
 
 after_success:
 - codecov
