@@ -46,8 +46,16 @@ User's guide
 
     examples/examples
 
-API
-===
+Command Line Interface (CLI)
+============================
+
+.. toctree::
+    :maxdepth: 1
+
+    cli
+
+Application Programming Interface (API)
+=======================================
 
 .. toctree::
     :maxdepth: 2
