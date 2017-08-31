@@ -35,20 +35,15 @@ and build the database. You can start by running `marsi db --help`.
 
 *marsi* will download the required files for you, setup the database and process the molecular structures. Just run `marsi db init`. **Make sure you have an stable internet 
 connection.** 
-
-
-The PubChem API does not provide a method for query. To retrieve the necessary files,
-go to [PubChem](https://pubchem.ncbi.nlm.nih.gov) and enter the following query:
- ```
-    (antimetabolites) OR (analog) OR (analogue)     
- ```
  
 And download the summary file. You should save the file in data folder at *marsi*'s working 
 directory (`$HOME/.marsi/data` by default) with the name `pubchem_compound_analogs_antimetabolites.txt`.
 
 
-Find Metabolite Targets
------------------------
+Documentation
+-------------
+
+Complete documentation can be found at [https://biosustain.github.io/marsi](https://biosustain.github.io/marsi).
 
 
 License
