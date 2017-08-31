@@ -94,6 +94,7 @@ script:
 - py.test -v -rsx --cov=./marsi --cov-report=xml tests
 
 after_success:
+- head coverage.xml
 - codecov
 
 before_deploy:
