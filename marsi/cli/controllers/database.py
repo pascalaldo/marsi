@@ -17,29 +17,25 @@ from __future__ import with_statement
 import os
 import tempfile
 
-from pandas import read_excel
-
 import pubchempy
-from bioservices import ChEBI
-
 from IProgress import ProgressBar, Bar, ETA
 from alembic import command
 from alembic.config import Config
+from bioservices import ChEBI
 from cement.core.controller import CementBaseController, expose
+from pandas import read_excel
 
+from marsi.chemistry import openbabel
 from marsi.config import db_url
 from marsi.io.build_database import build_database
+from marsi.io.db import Reference, Synonym, Metabolite
+from marsi.io.enrichment import find_best_chebi_structure
 from marsi.io.parsers import parse_chebi_data, parse_pubchem, parse_kegg_brite
 from marsi.io.retriaval import retrieve_chebi_names, retrieve_chebi_relation, retrieve_chebi_vertice, \
     retrieve_chebi_structures, retrieve_drugbank_open_structures, retrieve_drugbank_open_vocabulary, \
     retrieve_bigg_reactions, retrieve_bigg_metabolites, retrieve_kegg_brite, retrieve_pubchem_mol_files, \
     retrieve_kegg_mol_files, retrieve_zinc_structures
 from marsi.utils import data_dir, src_dir, internal_data_dir
-
-from marsi.io.db import Reference, Synonym, Metabolite
-from marsi.io.enrichment import find_best_chebi_structure
-
-from marsi.chemistry import openbabel
 
 
 PUBCHEM_COMPOUND = "PubChem Compound"
@@ -208,7 +204,7 @@ class DatabaseController(CementBaseController):
     @expose(help="Build database")
     def build_database(self):
         from marsi.io import data
-        build_database(data, self.app.pargs.with_zinc, data_dir)
+        build_database(data, data_dir, self.app.pargs.with_zinc)
 
     @expose(help="Add known analogs")
     def add_known_analogs(self):
