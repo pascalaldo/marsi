@@ -13,7 +13,7 @@
 # limitations under the License.
 from cement.core.controller import CementBaseController, expose
 
-
+from marsi.chemistry.common import dynamic_fingerprint_cut
 from marsi.chemistry.molecule import Molecule
 from marsi.io import write_excel_file
 from marsi.nearest_neighbors import search_closest_compounds
@@ -41,6 +41,8 @@ class ChemistryController(CementBaseController):
             (['--sdf'], dict(help="The metabolite SDF to search")),
             (['--mol'], dict(help="The metabolite MOL to search")),
             (['--fingerprint-format', '-fp'], dict(help="The fingerprint format", default='maccs', action='store')),
+            (['--fingerprint-cutoff', '-fpcut'], dict(help="Fingerprint cutoff", default='dynamic', action='store')),
+            (['--similarity-cutoff', '-scut'], dict(help="Similarity cutoff", default=None, action='store')),
             (['--neighbors', '-k'], dict(help="Filter the first K hits")),
             (['--radius', '-r'], dict(help="Filter hits within R distance radius")),
             (['--atoms-weight', '-aw'], dict(help="The weight of the atoms for structural similarity")),
@@ -83,7 +85,9 @@ class ChemistryController(CementBaseController):
         atoms_weight = 0.5
         bonds_diff = 3
         atoms_diff = 4
-        rings_diff = 3
+        rings_diff = 2
+
+        fp_cut = self.app.pargs.fingerprint_cutoff
 
         if self.app.pargs.bonds_weight is not None:
             bonds_weight = float(self.app.pargs.bonds_weight)
@@ -110,10 +114,39 @@ class ChemistryController(CementBaseController):
             print("Please provide one of the following inputs --inchi, --sdf or --mol")
             exit(1)
 
+        print("Molecule processed!\nInChI key %s" % molecule.inchi_key)
+
+        if fp_cut == 'dynamic':
+            fp_cut = dynamic_fingerprint_cut(molecule.num_atoms)
+        else:
+            try:
+                fp_cut = float(fp_cut)
+                if fp_cut == 0 or fp_cut > 1:
+                    print("Fingerprint cutoff %s must be grater than 0 and less then or equal to 1" % fp_cut)
+                    exit(1)
+            except (ValueError, TypeError):
+                print("Invalid fingerprint cutoff '%s'. It must be 'dynamic' or a number" % fp_cut)
+                exit(1)
+
         fpformat = self.app.pargs.fingerprint_format
 
-        results = search_closest_compounds(molecule=molecule, fpformat=fpformat, bonds_weight=bonds_weight,
-                                           bonds_diff=bonds_diff, atoms_weight=atoms_weight, atoms_diff=atoms_diff,
+        results = search_closest_compounds(molecule=molecule, fp_cut=fp_cut, fpformat=fpformat,
+                                           bonds_weight=bonds_weight, bonds_diff=bonds_diff,
+                                           atoms_weight=atoms_weight, atoms_diff=atoms_diff,
                                            rings_diff=rings_diff)
-        results.sort_values('structural_similarity', ascending=False, inplace=True)
+
+        results.dropna(inplace=True)
+
+        similarity_cut = self.app.pargs.similarity_cutoff
+        if similarity_cut is not None:
+            try:
+                similarity_cut = float(similarity_cut)
+                if similarity_cut == 0 or similarity_cut > 1:
+                    print("Similarity cutoff %s must be grater than 0 and less then or equal to 1" % similarity_cut)
+                    exit(1)
+                results = results[results.structural_score >= similarity_cut]
+            except (ValueError, TypeError):
+                print("Invalid similarity cutoff '%s'. It must be a number" % similarity_cut)
+
+        results.sort_values('structural_score', ascending=False, inplace=True)
         OUTPUT_WRITERS[self.app.pargs.output_format](results, output_file, None)

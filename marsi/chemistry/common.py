@@ -13,13 +13,12 @@
 # limitations under the License.
 
 import re
+
 import numpy as np
 from cachetools import LRUCache
-from scipy.spatial import ConvexHull
-
 from marsi.chemistry.common_ext import tanimoto_coefficient, tanimoto_distance, rmsd, monte_carlo_volume
+from scipy.spatial import ConvexHull
 from scipy.spatial.qhull import QhullError
-
 
 __all__ = ["rmsd", "tanimoto_coefficient", "tanimoto_distance", "monte_carlo_volume",
            "INCHI_KEY_REGEX", 'SOLUBILITY']
@@ -44,3 +43,7 @@ def convex_hull_volume(xyz):
         return ConvexHull(xyz).volume
     except (QhullError, ValueError):
         return np.nan
+
+
+def dynamic_fingerprint_cut(n_atoms):
+    return min(0.017974 * n_atoms + 0.008239, 0.75)
