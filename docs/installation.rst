@@ -5,8 +5,17 @@ Installation
 Setting up a virtual environment first
 ======================================
 
-We highly recommended installing cameo inside a virtual environment (virtualenv_).
-virtualenvwrapper_ tremendously simplifies using virtualenv_ and can easily
+We highly recommended installing marsi inside using (anaconda_).
+
+There is no conda recipe for marsi, but the dependencies can be easily installed using ``conda``.
+*Marsi* needs to install it using ``pip``. Do the following to create a virtual environment and get
+ some of the heavier dependencies out of the way.
+
+.. code-block:: bash
+
+    $ conda create -y -n marsi python=3.4 cython
+
+Alternatively you can use ``virtualenv``. virtualenvwrapper_ tremendously simplifies using virtualenv_ and can easily
 be installed using virtualenv-burrito_. Once you installed virtualenv_ and virtualenvwrapper_, run
 
 .. code-block:: bash
@@ -16,16 +25,22 @@ be installed using virtualenv-burrito_. Once you installed virtualenv_ and virtu
 
 and then continue with the installation instructions described below.
 
-Alternatively you can use ``conda`` if you're already an anaconda_ user (there is no conda recipe for cameo though so you'll
-still need to install it using ``pip``). Do the following to create a virtual environment and get some of the heavier dependencies out of the way.
-
-.. code-block:: bash
-
-    $ conda create -y -n marsi python=3.4
-
 
 Dependencies required before installation
 =========================================
+
+Using conda
+-----------
+
+All dependencies will by installed by running the following commands
+
+.. code-block:: bash
+
+    $ conda install -c openbabel openbabel
+    $ conda install -c rdkit rdkit
+
+
+Alternativly you can install the dependencies one by one.
 
 Cython
 ------
@@ -34,7 +49,13 @@ To install Cython follow the cython-installation_ documentation provided on thei
 Numpy
 -----
 
-Numpy can be installed using pip:
+Numpy can be installed using ``conda``:
+
+.. code-block:: bash
+
+    $ conda install numpy
+
+Or can also be installed using pip:
 
 .. code-block:: bash
 
@@ -53,8 +74,7 @@ To install Eigen3 on MacOS X use homebrew_:
 
 .. code-block:: bash
 
-    $ brew install open-babel
-
+    $ brew install eigen3
 
 
 OpenBabel
