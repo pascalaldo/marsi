@@ -364,7 +364,7 @@ def convert_design(model, strain_design, fitness, objective_function, simulation
 def test_target_substitutions(model, all_targets, target, replacement_targets, objective_function, fitness,
                               base_fitness, simulation_method, simulation_kwargs, reference, loss_validation, results):
     fitness2targets = {}
-    index = len(results) - 1
+    index = len(results)
     for species_id, replacement_target in replacement_targets.items():
         assert isinstance(replacement_target, AntiMetaboliteManipulationTarget)
         with model:
@@ -398,7 +398,7 @@ def test_target_substitutions(model, all_targets, target, replacement_targets, o
         else:
             for fit, anti_mets in fitness2targets.items():
                 delta = fitness - fit
-                results.loc[index] = [StrainDesign(all_targets), target, anti_mets, fitness, fit, delta]
+                results.loc[index] = [StrainDesign(all_targets), target, tuple(anti_mets), fitness, fit, delta]
                 index += 1
 
 
@@ -468,7 +468,7 @@ def replace_strain_design_results(model, results, objective_function, simulation
 
 def replace_design(model, strain_design, fitness, objective_function, simulation_method, simulation_kwargs=None,
                    ignore_metabolites=None, ignore_transport=True, allow_accumulation=True,
-                   essential_metabolites=None, max_loss=0.2):
+                   essential_metabolites=None, max_loss=0.2, allow_modulation=True):
     """
     Converts a StrainDesign into a DataFrame of possible substitutions.
 
@@ -494,6 +494,8 @@ def replace_design(model, strain_design, fitness, objective_function, simulation
         A list of essential metabolites.
     max_loss : float
         A number between 0 and 1 for how much the fitness is allowed to drop with the metabolite target.
+    allow_modulation : bool
+        If False does not allow modulation targets (MILP and QP are not compatible)
 
     Returns
     -------
@@ -557,7 +559,9 @@ def replace_design(model, strain_design, fitness, objective_function, simulation
                                                          ignore_transport=ignore_transport,
                                                          ignore_metabolites=ignore_metabolites,
                                                          allow_accumulation=allow_accumulation,
-                                                         reference=reference)
+                                                         reference=reference,
+                                                         allow_modulation=allow_modulation)
+
                 test_target_substitutions(base_model, all_targets, test_target, anti_metabolite_targets,
                                           objective_function, fitness, base_fitness, simulation_method,
                                           simulation_kwargs, reference, valid_loss, anti_metabolites)
@@ -567,13 +571,16 @@ def replace_design(model, strain_design, fitness, objective_function, simulation
             finally:  # put the target back on the list.
                 test_targets.append(test_target)
 
+    anti_metabolites.drop_duplicates(['replaced_target', 'metabolite_targets'], inplace=True)
+    anti_metabolites.index = [i for i in range(len(anti_metabolites))]
+
     return anti_metabolites
 
 
-def convert_target(model, target, essential_metabolites, ignore_transport=True,
-                   ignore_metabolites=None, allow_accumulation=True, reference=None):
+def convert_target(model, target, essential_metabolites, ignore_transport=True, ignore_metabolites=None,
+                   allow_accumulation=True, reference=None, allow_modulation=True):
     """
-    Generates a dictionary {species_id -> MetaboliteKnockoutTarget}.
+    Generates a dictionary {species_id -> (MetaboliteKnockoutTarget, MetaboliteModulationTarget)}.
 
     Parameters
     ----------
@@ -591,6 +598,8 @@ def convert_target(model, target, essential_metabolites, ignore_transport=True,
         A dictionary containing the flux values of a reference flux distribution.
     essential_metabolites : list
         A list of essential metabolites
+    allow_modulation : bool
+        If False does not allow modulation targets (MILP and QP are not compatible).
 
     Returns
     -------
@@ -616,7 +625,7 @@ def convert_target(model, target, essential_metabolites, ignore_transport=True,
                                                        ignore_metabolites=ignore_metabolites | essential_metabolites,
                                                        allow_accumulation=allow_accumulation)
 
-    elif isinstance(target, ReactionModulationTarget):
+    elif isinstance(target, ReactionModulationTarget) and allow_modulation:
         substitutions = find_anti_metabolite_modulation(target.get_model_target(model),
                                                         target.fold_change,
                                                         essential_metabolites,
@@ -626,13 +635,13 @@ def convert_target(model, target, essential_metabolites, ignore_transport=True,
                                                         allow_accumulation=allow_accumulation)
 
     else:
-        raise ValueError("Don't know what to do with the target of type %s" % type(target))
+        substitutions = {}
 
     return substitutions
 
 
-def convert_target_group(model, target_group, essential_metabolites, ignore_transport=True,
-                         ignore_metabolites=None, allow_accumulation=True, reference=None):
+def convert_target_group(model, target_group, essential_metabolites, ignore_transport=True, ignore_metabolites=None,
+                         allow_accumulation=True, reference=None, allow_modulation=True):
     """
     Generates a dictionary {species_id -> MetaboliteKnockoutTarget}.
 
@@ -651,13 +660,15 @@ def convert_target_group(model, target_group, essential_metabolites, ignore_tran
     reference : dict
         A dictionary containing the flux values of a reference flux distribution.
     essential_metabolites : set
-        A list of essential metabolites
+        A list of essential metabolites.
+    allow_modulation : bool
+        If False does not allow modulation targets (MILP and QP are not compatible).
 
     Returns
     -------
     tuple
         A dictionary with the antimetabolites to test and another dictionary with the reaction where those metabolites
-        belong
+        belong.
     """
 
     if ignore_metabolites is None:
@@ -682,7 +693,7 @@ def convert_target_group(model, target_group, essential_metabolites, ignore_tran
                                                             ignore_metabolites=ignore,
                                                             allow_accumulation=allow_accumulation)
 
-        elif isinstance(target, ReactionModulationTarget):
+        elif isinstance(target, ReactionModulationTarget) and allow_modulation:
             _substitutions = find_anti_metabolite_modulation(target.get_model_target(model),
                                                              target.fold_change,
                                                              essential_metabolites,
