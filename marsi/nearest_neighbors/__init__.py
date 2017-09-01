@@ -252,6 +252,7 @@ class DataBuilder(multiprocessing.Process):
     def __init__(self, inchi, task_queue, results_queue, atoms_weight, bonds_weight, timeout,
                  *args, **kwargs):
         super(DataBuilder, self).__init__(*args, **kwargs)
+
         self._inchi = inchi
         self._session = None
         self._tasks = task_queue
@@ -272,11 +273,11 @@ class DataBuilder(multiprocessing.Process):
         return rdkit.inchi_to_molecule(self._inchi)
 
     def run(self):
-        while True:
+        while not self._tasks.empty():
             try:
-                inchi_key, distance = self._tasks.get()
+                inchi_key, distance = self._tasks.get(block=False, timeout=10)
             except Empty:
-                break
+                continue
             else:
                 result = self.apply_similarity(inchi_key, distance)
                 self._results.put(result)
@@ -354,7 +355,7 @@ def search_closest_compounds(molecule, nn_model=None, fp_cut=0.5, fpformat="macc
     if molecule.inchi_key in neighbors:
         del neighbors[molecule.inchi_key]
 
-    dataframe = DataFrame(columns=["formula", "atoms", "bonds", "tanimoto_similarity", "structural_similarity"])
+    dataframe = DataFrame(columns=["formula", "atoms", "bonds", "tanimoto_similarity", "structural_score"])
     if len(neighbors) == 0:
         return dataframe
 
