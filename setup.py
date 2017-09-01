@@ -75,10 +75,11 @@ setup(
     license='Apache License Version 2.0',
     keywords='biology metabolism bioinformatics chemoinformatics',
     url='https://github.com/biosustain/marsi',
-    long_description=open("README.md").read(),
+    long_description="marsi is an open-source software to created to identify non-GMO strain design targets",
     classifiers=[
         'Development Status :: 3 - Alpha',
-        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 2.7',
         'License :: OSI Approved :: Apache Software License',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
 

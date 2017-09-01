@@ -11,7 +11,6 @@ Dependencies
 * eigen3 >= 3.0
 * OpenBabel >= 2.2.3
 * RDKit >= 2016
-* mongodb
 * glpk
 * cplex (optional)
 * Cython >= 0.25
