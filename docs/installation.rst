@@ -40,7 +40,7 @@ All dependencies will by installed by running the following commands
     $ conda install -c rdkit rdkit
 
 
-Alternativly you can install the dependencies one by one.
+Alternatively you can install the dependencies one by one.
 
 Cython
 ------
