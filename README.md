@@ -34,10 +34,6 @@ and build the database. You can start by running `marsi db --help`.
 
 *marsi* will download the required files for you, setup the database and process the molecular structures. Just run `marsi db init`. **Make sure you have an stable internet 
 connection.** 
- 
-And download the summary file. You should save the file in data folder at *marsi*'s working 
-directory (`$HOME/.marsi/data` by default) with the name `pubchem_compound_analogs_antimetabolites.txt`.
-
 
 Documentation
 -------------
