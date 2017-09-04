@@ -20,7 +20,7 @@ from ftplib import FTP
 from io import BytesIO
 
 import bioservices
-import pubchempy as pbc
+import pubchempy as pcp
 import requests
 from IProgress import ProgressBar, Bar, ETA
 from six.moves.urllib.request import urlretrieve
@@ -194,8 +194,8 @@ def retrieve_pubchem_mol_files(pubchem_ids, dest=data_dir):
 
     for i, pubchem_id in enumerate(pubchem_ids):
         try:
-            pbc.download('sdf', os.path.join(pubchem_files_path, '%i.sdf' % pubchem_id), int(pubchem_id))
-        except IOError:
+            pcp.download('sdf', os.path.join(pubchem_files_path, '%i.sdf' % pubchem_id), int(pubchem_id))
+        except (IOError, pcp.NotFoundError):
             # File already exists
             continue
         yield i
