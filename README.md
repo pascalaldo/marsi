@@ -1,5 +1,5 @@
-marsi - Metabolite Analogues for Strain Improvement
-===================================================
+marsi - Metabolite Analogues for Rational Strain Improvement
+============================================================
 
 [![Build Status](https://travis-ci.org/biosustain/marsi.svg?branch=master)](https://travis-ci.org/biosustain/marsi)
 
