@@ -90,7 +90,7 @@ try:
         except:
             raise KeyError("%s not found in PubChem Compound" % metabolite.inchi_key)
 
-except Exception:
+except Exception as e:
     from warnings import warn
     __all__ = ['no_services_available', 'find_best_chebi_structure']
     no_services_available = "Please check your internet connection"
@@ -110,7 +110,7 @@ except Exception:
     def find_pubchem_id(metabolite):
         raise RuntimeError(no_services_available)
 
-    warn(no_services_available)
+    warn(no_services_available + " because of " + str(e))
 
 
 def find_best_chebi_structure(entity):
