@@ -31,8 +31,8 @@ cache:
 install:
   - "powershell appveyor\\install.ps1"
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
-  - conda install -y -c rdkit rdkit
-  - conda install -y -c openbabel openbabel
+  - "conda install -y -c rdkit rdkit"
+  - "conda install -y -c openbabel openbabel"
   - "%PYTHON%/python -m pip install pytest pytest-cov"
   - "%PYTHON%/python -m pip install cython"
 
