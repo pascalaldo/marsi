@@ -87,7 +87,7 @@ try:
         try:
             return [(str(e.cid), e.iupac_name) for e in pubchempy.get_compounds(metabolite.inchi_key,
                                                                                 namespace="inchikey")][0]
-        except:
+        except Exception:
             raise KeyError("%s not found in PubChem Compound" % metabolite.inchi_key)
 
 except Exception as e:
