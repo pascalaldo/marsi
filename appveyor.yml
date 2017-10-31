@@ -36,7 +36,7 @@ install:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;C:\\Program Files\\PostgreSQL\\9.6\\bin;%PATH%"
   - "SET PGUSER=postgres"
   - "SET PGPASSWORD=Password12!"
-  - "SET CONDA=%PYTHON%\\Scripts\conda.exe"
+  - "SET CONDA=%PYTHON%\\Scripts\\conda.exe"
   - "createdb YourDatabase"
   - "%CONDA% install -q -c rdkit rdkit"
   - "%CONDA% install -q -c openbabel openbabel"
