@@ -51,7 +51,7 @@ def model_format(request):
 def bigg_model():
     return {
         "bigg_id": "iND750",
-        "organism": "Saccharomyces cerevisiae S288c",
+        "organism": "Saccharomyces cerevisiae S288C",
         "metabolite_count": 1059,
         "gene_count": 750,
         "reaction_count": 1266,
