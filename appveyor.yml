@@ -33,7 +33,7 @@ cache:
 
 install:
   - "powershell appveyor\\install.ps1"
-  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;C:\Program Files\PostgreSQL\9.6\bin\;%PATH%"
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;C:\\Program Files\\PostgreSQL\\9.6\\bin;%PATH%"
   - "SET PGUSER=postgres"
   - "SET PGPASSWORD=Password12!"
   - "SET CONDA=%PYTHON%\\Scripts\conda.exe"
