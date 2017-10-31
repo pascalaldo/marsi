@@ -49,7 +49,7 @@ try:
     def inchi_from_kegg(kegg_id):
         try:
             return mol_str_to_inchi(kegg_client.get(kegg_id, 'mol'))
-        except:
+        except Exception:
             return None
 
     def find_chebi_id(metabolite):
