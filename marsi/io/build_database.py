@@ -39,7 +39,7 @@ def build_database(data, data_dir, with_zinc=True, session=default_session):
         The path to where data is stored.
 
     """
-    keys = set()
+    keys = dict()
     i = 0
     chebi_structures_file = os.path.join(data_dir, "chebi_lite_3star.sdf")
     i = upload_chebi_entries(chebi_structures_file, data.chebi, i=i, session=session, keys=keys)
@@ -95,7 +95,7 @@ def _add_molecule(mol, synonyms, database, identifier, is_analog, session=defaul
                     clean_synonyms.append(Synonym.add_synonym(synonym))
 
             Metabolite.from_molecule(mol, [reference], clean_synonyms, is_analog, session=session, first_time=True)
-            keys.add(inchi_key)
+            keys[inchi_key] = True
 
 
 def upload_chebi_entries(chebi_structures_file, chebi_data, i=0, session=default_session, keys=None):
