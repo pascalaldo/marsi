@@ -6,19 +6,24 @@ environment:
     WITH_COMPILER: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
     PIP_CACHE_DIR: "pip_cache"
     POSTGRES_PATH: C:\Program Files\PostgreSQL\9.4
+    PGUSER: postgres
+    PGPASSWORD: Password12!
 
   matrix:
-    - PYTHON: "C:\\Python27-x64"
+    - PYTHON: "C:\\Miniconda-x64"
       PYTHON_VERSION: "2.7.12"
       PYTHON_ARCH: "64"
+      CONDA: true
 
-    - PYTHON: "C:\\Python34-x64"
-      PYTHON_VERSION: "3.4.5"
-      PYTHON_ARCH: "64"
-
-    - PYTHON: "C:\\Python35-x64"
+    - PYTHON: "C:\\Miniconda35-x64"
       PYTHON_VERSION: "3.5.2"
       PYTHON_ARCH: "64"
+      CONDA: true
+
+    - PYTHON: "C:\\Miniconda35-x64"
+      PYTHON_VERSION: "3.6.0"
+      PYTHON_ARCH: "64"
+      CONDA: true
 
 services:
   - postgresql94
@@ -33,20 +38,20 @@ cache:
 
 
 install:
-  - "powershell appveyor\\install.ps1"
-  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%POSTGRES_PATH%\bin;%PATH%"
-  - "SET PGUSER=postgres"
-  - "SET PGPASSWORD=Password12!"
-  - "%PYTHON\\Scripts\\conda install -q -c rdkit rdkit"
-  - "%PYTHON\\Scripts\\conda install -q -c openbabel openbabel"
-  - "%PYTHON%\\python -m pip install pytest pytest-cov"
-  - "%PYTHON%\\python -m pip install cython"
-  - "createdb marsi-db"
-  - "marsi db migrate"
-  - "%PYTHON%\\python bin/restore_db.py"
-  - "psql -d marsi-db -c 'SELECT COUNT(*) FROM metabolites;' -U postgres"
+  - "set PATH=%PYTHON%;%PYTHON%\\Scripts;%POSTGRES_PATH%\bin;%PATH%"
+  - ps: |
+    conda config --set always_yes yes --set changeps1 no;
+    conda install -q pip
+  - cmd: conda install -q -c rdkit rdkit
+  - cmd: conda install -q -c openbabel openbabel"
+  - cmd:  pip install pytest pytest-cov"
+  - cmd:  pip install cython"
+  - cmd: createdb marsi-db
+  - cmd: marsi db migrate
+  - cmd: python bin/restore_db.py"
+  - cmd: psql -d marsi-db -c 'SELECT COUNT(*) FROM metabolites;' -U postgres
 
 build: off
 
 test_script:
-  - "pytest test"
+  - pytest test
