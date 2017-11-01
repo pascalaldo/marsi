@@ -5,9 +5,10 @@ environment:
     # See: http://stackoverflow.com/a/13751649/163740
     WITH_COMPILER: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
     PIP_CACHE_DIR: "pip_cache"
-    POSTGRES_PATH: C:\Program Files\PostgreSQL\9.4
-    PGUSER: postgres
-    PGPASSWORD: Password12!
+
+  POSTGRES_PATH: C:\Program Files\PostgreSQL\9.4
+  PGUSER: postgres
+  PGPASSWORD: Password12!
 
   matrix:
     - PYTHON: "C:\\Miniconda-x64"
