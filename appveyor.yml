@@ -39,13 +39,12 @@ cache:
 
 install:
   - "set PATH=%PYTHON%;%PYTHON%\\Scripts;%POSTGRES_PATH%\bin;%PATH%"
-  - ps: |
-    conda config --set always_yes yes --set changeps1 no;
-    conda install -q pip;
+  - cmd: conda config --set always_yes yes --set changeps1 no
+  - cmd: conda install -q pip
   - cmd: conda install -q -c rdkit rdkit
   - cmd: conda install -q -c openbabel openbabel
-  - cmd:  pip install pytest pytest-cov
-  - cmd:  pip install cython
+  - cmd: pip install pytest pytest-cov
+  - cmd: pip install cython
   - cmd: createdb marsi-db
   - cmd: marsi db migrate
   - cmd: python bin/restore_db.py
