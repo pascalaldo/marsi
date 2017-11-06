@@ -139,6 +139,14 @@ class Reference(Base):
     __table_args__ = (UniqueConstraint('database', 'accession', name='_database_accession_uc'), )
 
     @classmethod
+    def get(cls, database, accession, session=default_session):
+        database = database.strip()
+        accession = accession.strip()
+        query = session.query(cls).filter(and_(cls.database == database, cls.accession == accession))
+
+        return query.one()
+
+    @classmethod
     def add_reference(cls, database, accession, session=default_session):
         database = database.strip()
         accession = accession.strip()
@@ -239,6 +247,15 @@ class Metabolite(Base):
             return query.one()
         except NoResultFound:
             raise KeyError(inchi_key)
+
+    @classmethod
+    def from_references(cls, references, session=default_session):
+        hits = []
+        for r in references:
+            query = session.query(cls).join(cls.references).filter(Reference.id == r.id)
+            hits.extend(list(query.all()))
+
+        return hits
 
     @classmethod
     def from_molecule(cls, molecule, references, synonyms, analog=False, session=default_session, first_time=False):
