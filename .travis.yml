@@ -76,7 +76,7 @@ before_install:
 install:
 - conda install -q -c rdkit boost rdkit=2016.09.4
 - conda install -q -c openbabel openbabel
-- if [[ $TRAVIS_OS_NAME == "linux"]] && [[ $PY == "2.7" ]]; then conda install pandas; fi
+- if [[ $TRAVIS_OS_NAME == "linux"] &&  [ $PY == "2.7" ]]; then conda install pandas; fi
 - pip install cython
 - pip install flake8 numpy scipy pyzmq pandas pytest pytest-cov pytest-benchmark swiglpk optlang
 - pip install .[test,docs]
