@@ -46,12 +46,15 @@ install:
   - cmd: conda install -q -c openbabel openbabel
   - cmd: pip install pytest pytest-cov
   - cmd: pip install cython
-  - cmd: psql -c 'CREATE DATABASE marsi;' -U postgres
+
+
+build: off
+
+before_test:
+  - cmd: psql -c -U postgres 'CREATE DATABASE marsi;'
   - cmd: marsi db migrate
   - cmd: python bin/restore_db.py
   - cmd: psql -d marsi-db -c 'SELECT COUNT(*) FROM metabolites;' -U postgres
-
-build: off
 
 test_script:
   - pytest test
