@@ -39,7 +39,7 @@ cache:
 
 
 install:
-  - "set PATH=%PYTHON%;%PYTHON%\\Scripts;%POSTGRES_PATH%\bin;%PATH%"
+  - "set PATH=%PYTHON%;%PYTHON%\\Scripts;%POSTGRES_PATH%\\bin;%PATH%"
   - cmd: conda config --set always_yes yes --set changeps1 no
   - cmd: conda install -q pip
   - cmd: conda install -q -c rdkit rdkit
