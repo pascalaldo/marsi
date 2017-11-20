@@ -39,7 +39,9 @@ cache:
 
 
 install:
-  - "set PATH=%PYTHON%;%PYTHON%\\Scripts;%POSTGRES_PATH%\\bin;%PATH%"
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%POSTGRES_PATH%\\bin;%PATH%"
+  - "SET PGUSER=postgres"
+  - "SET PGPASSWORD=Password12!"
   - cmd: conda config --set always_yes yes --set changeps1 no
   - cmd: conda install -q pip
   - cmd: conda install -q -c rdkit rdkit
@@ -51,7 +53,7 @@ install:
 build: off
 
 before_test:
-  - cmd: psql -c -U postgres "CREATE DATABASE marsi;"
+  - cmd: psql -c "CREATE DATABASE marsi;"
   - cmd: marsi db migrate
   - cmd: python bin/restore_db.py
   - cmd: psql -d marsi-db -c 'SELECT COUNT(*) FROM metabolites;' -U postgres
