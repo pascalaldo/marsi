@@ -48,6 +48,7 @@ install:
   - cmd: conda install -q -c openbabel openbabel
   - cmd: pip install pytest pytest-cov
   - cmd: pip install cython
+  - cmd: pip install .
 
 
 build: off
