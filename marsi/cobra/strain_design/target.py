@@ -14,7 +14,9 @@
 
 from cameo.core.target import Target
 from cameo.flux_analysis.analysis import find_essential_metabolites
-from gnomic import Genotype, Feature, Ins, Type, genotype_to_string
+from gnomic.genotype import Genotype
+from gnomic.types import Feature, Change
+from gnomic.utils import genotype_to_string
 
 from marsi.cobra.flux_analysis.manipulation import knockout_metabolite, apply_anti_metabolite
 from marsi.utils import search_metabolites
@@ -35,8 +37,11 @@ class AntiMetaboliteManipulationTarget(Target):
 
     __gnomic_feature_type__ = "antimetabolite"
 
-    def __init__(self, species_id, fraction=0.5, ignore_transport=True, allow_accumulation=True):
-        super(AntiMetaboliteManipulationTarget, self).__init__(species_id)
+    def __init__(self, species_id, fraction=0.5, ignore_transport=True, allow_accumulation=True,
+                 accession_id=None, accession_db=None):
+        super(AntiMetaboliteManipulationTarget, self).__init__(species_id,
+                                                               accession_id=accession_id,
+                                                               accession_db=accession_db)
         self.fraction = fraction
         self.ignore_transport = ignore_transport
         self.allow_accumulation = allow_accumulation
@@ -76,12 +81,15 @@ class AntiMetaboliteManipulationTarget(Target):
 
     def to_gnomic(self):
         accession = Target.to_gnomic(self)
-        feature = Feature(name=self.id, accession=accession, type=Type(self.__gnomic_feature_type__),
+        feature = Feature(name=self.id, accession=accession, type=self.__gnomic_feature_type__,
                           variant=["value=%.5f" % self.fraction])
-        return Ins(feature)
+        return Change(after=feature)
 
 
 class MetaboliteKnockoutTarget(AntiMetaboliteManipulationTarget):
+
+    __gnomic_feature_type__ = "antimetabolite"
+
     def __init__(self, species_id, ignore_transport=True, allow_accumulation=True):
         super(MetaboliteKnockoutTarget, self).__init__(species_id, 1.0, ignore_transport, allow_accumulation)
 
@@ -97,5 +105,5 @@ class MetaboliteKnockoutTarget(AntiMetaboliteManipulationTarget):
 
     def to_gnomic(self):
         accession = Target.to_gnomic(self)
-        feature = Feature(name=self.id, accession=accession, type=Type(self.__gnomic_feature_type__))
-        return Ins(feature)
+        feature = Feature(name=self.id, accession=accession, type=self.__gnomic_feature_type__)
+        return Change(after=feature)

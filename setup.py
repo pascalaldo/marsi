@@ -23,7 +23,7 @@ requirements = ['pandas>=0.18.1',
                 'bioservices>=1.4.14',
                 'requests>=2.11.1',
                 'bokeh==0.12',
-                'cameo>=0.11',
+                'cameo>=0.11.3',
                 'sqlalchemy>=1.1.9',
                 'scikit-learn>=0.18.1',
                 'psycopg2>=2.7.1',
@@ -32,7 +32,8 @@ requirements = ['pandas>=0.18.1',
                 'cement>2.10',
                 'pubchempy>=1.0.3 ',
                 'cachetools>=2.0.0',
-                'alembic>=0.9']
+                'alembic>=0.9',
+                'gnomic>=1.0.1']
 
 extra_requirements = {
     'docs': ['Sphinx>=1.3.5', 'numpydoc>=0.5'],
