@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import platform
+
 import cython
 cimport cython
 
@@ -22,7 +24,20 @@ from numpy import ndarray
 
 from libc.math cimport sqrt
 
-cdef extern int __builtin_popcount(unsigned int) nogil
+
+IF UNAME_SYSNAME == "Windows":
+    cdef extern from "intrin.h":
+        int __popcnt(unsigned int) nogil
+
+    cdef int popcount(unsigned int var):
+        return __popcnt(var)
+
+ELSE:
+    cdef extern int __builtin_popcount(unsigned int) nogil
+
+    cdef int popcount(unsigned int var):
+        return __builtin_popcount(var)
+
 
 @cython.boundscheck(False)
 @cython.nonecheck(False)
@@ -59,8 +74,8 @@ cdef float _tanimoto_coefficient(np.ndarray[INT32_t, ndim=1] fingerprint1, np.nd
         fp_and = fingerprint1[i] & fingerprint2[i]
         fp_or = fingerprint1[i] | fingerprint2[i]
 
-        and_bits += __builtin_popcount(fp_and)
-        or_bits += __builtin_popcount(fp_or)
+        and_bits += popcount(fp_and)
+        or_bits += popcount(fp_or)
 
     return float(and_bits)/float(or_bits)
 
