@@ -42,6 +42,7 @@ install:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%POSTGRES_PATH%\\bin;%PATH%"
   - "SET PGUSER=postgres"
   - "SET PGPASSWORD=Password12!"
+  - "SET DISTUTILS_USE_SDK=1"
   - cmd: conda config --set always_yes yes --set changeps1 no
   - cmd: conda install -q pip
   - cmd: conda install -q -c rdkit rdkit
