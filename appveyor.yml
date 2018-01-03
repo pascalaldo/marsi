@@ -44,6 +44,8 @@ install:
   - "SET PGPASSWORD=Password12!"
   - "SET DISTUTILS_USE_SDK=1"
   - cmd: conda config --set always_yes yes --set changeps1 no
+  - cmd: conda create -n test_env python=%PYTHON_VERSION%
+  - cmd: activate test_env
   - cmd: conda install -q pip
   - cmd: conda install -q -c rdkit rdkit
   - cmd: conda install -q -c openbabel openbabel
