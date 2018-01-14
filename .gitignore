@@ -4,6 +4,8 @@ MANIFEST
 
 *.py[cod]
 
+*.c
+
 # C extensions
 *.so
 
@@ -53,6 +55,8 @@ docs/examples
 tests/.coverage
 tests/.benchmarks
 
+notebooks/*.csv
+notebooks/*.xlsx
 # My stuf
 notebooks-old/*
 notebooks/.ipynb_checkpoints
