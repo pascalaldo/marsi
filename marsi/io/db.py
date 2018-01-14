@@ -13,7 +13,6 @@
 # limitations under the License.
 import six
 from bitarray import bitarray
-from sqlalchemy import func
 from sqlalchemy import inspect
 
 from marsi.chemistry import rdkit
