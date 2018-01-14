@@ -65,7 +65,7 @@ class CollectionWrapper(object):
             self.collection.restore(_dump, session=session)
 
     def __len__(self):
-        return self.session.query(func.count(self.collection.id))
+        return self.session.query(self.collection.id).count()
 
     def __iter__(self):
         return self.session.query(self.collection).yield_per(1000)
@@ -81,6 +81,9 @@ class CollectionWrapper(object):
                 return ColumnVector(self.collection, self.session, item)
             else:
                 return getattr(self.collection, item)
+
+    def _repr_html_(self):
+        return "Metabolites (%i entries)" % len(self)
 
 
 class Fingerprint(TypeDecorator):
