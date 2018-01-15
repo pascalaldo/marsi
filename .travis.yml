@@ -8,16 +8,16 @@ matrix:
       dist: trusty
       env: PY=3.5
       sudo: required
-#    - os: osx
-#      language: general
-#      env: PY=3.5
+    - os: osx
+      language: general
+      env: PY=3.5
     - os: linux
       dist: trusty
       env: PY=2.7
       sudo: required
-#    - os: osx
-#      language: general
-#      env: PY=2.7
+    - os: osx
+      language: general
+      env: PY=2.7
 
 branches:
   only:
