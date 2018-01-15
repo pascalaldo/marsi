@@ -60,7 +60,7 @@ before_test:
   - cmd: psql -c "CREATE DATABASE marsitest;"
   - cmd: marsi db migrate
   - cmd: python bin/restore_db.py
-  - cmd: psql -d marsitest -c 'SELECT COUNT(*) FROM metabolites;
+  - cmd: psql -d marsitest -c "SELECT COUNT(*) FROM metabolites;"
 
 test_script:
   - pytest test
