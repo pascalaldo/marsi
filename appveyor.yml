@@ -33,13 +33,13 @@ clone_depth: 25
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%bit"
+  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
 
 cache:
     - pip_cache -> appveyor.yml
 
 
 install:
-  - cmd: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat"
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%POSTGRES_PATH%\\bin;%PATH%"
   - "SET PGUSER=postgres"
   - "SET PGPASSWORD=Password12!"
