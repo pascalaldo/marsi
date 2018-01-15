@@ -29,3 +29,12 @@ class MarsiApp(CementApp):
             OptimizationController,
             ChemistryController
         ]
+
+
+def main():
+    try:
+        with MarsiApp() as app:
+            app.run()
+    except KeyboardInterrupt:
+        print("Cancelled by user")
+        exit(130)

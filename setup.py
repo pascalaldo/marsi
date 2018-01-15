@@ -68,7 +68,7 @@ setup(
     install_requires=requirements,
     extras_require=extra_requirements,
     ext_modules=ext_modules,
-    scripts=['bin/marsi'],
+    # scripts=['bin/marsi'],
     include_package_data=True,
     author='Joao Cardoso',
     author_email='joaca@biosustain.dtu.dk',
@@ -85,5 +85,8 @@ setup(
         'Topic :: Scientific/Engineering :: Bio-Informatics',
 
     ],
+    entry_points={
+          'console_scripts': ['marsi = marsi.cli.app:main'],
+    },
     include_dirs=include_dirs
 )
