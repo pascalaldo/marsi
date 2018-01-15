@@ -15,7 +15,6 @@ environment:
       PYTHON_VERSION: "2.7.12"
       PYTHON_ARCH: "64"
       CONDA: true
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
 
     - PYTHON: "C:\\Miniconda35-x64"
       PYTHON_VERSION: "3.5.2"
@@ -36,7 +35,7 @@ clone_depth: 25
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%bit"
-  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
+  - if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2017" call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
 
 cache:
     - pip_cache -> appveyor.yml
