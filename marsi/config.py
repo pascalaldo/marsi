@@ -23,6 +23,7 @@ from sqlalchemy.exc import DisconnectionError
 __all__ = ['Level', 'log', 'prj_dir', 'db_url']
 
 TRAVIS = os.environ.get("TRAVIS", False)
+APPVEYOR = os.environ.get("APPVEYOR", False)
 
 
 logger = logging.getLogger(__name__)
@@ -143,7 +144,12 @@ try:
     else:
         db_engine = get_default(config, 'marsi', 'db_engine', default)
 
-    if TRAVIS:
+    if APPVEYOR:
+        username = 'postgres'
+        password = 'Password12!'
+        host = 'localhost'
+        port = 5432
+    elif TRAVIS:
         username = 'postgres'
         password = None
         host = 'localhost'
