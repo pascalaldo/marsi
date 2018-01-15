@@ -63,4 +63,4 @@ before_test:
   - cmd: psql -d marsitest -c "SELECT COUNT(*) FROM metabolites;"
 
 test_script:
-  - pytest test
+  - pytest tests
