@@ -15,16 +15,19 @@ environment:
       PYTHON_VERSION: "2.7.12"
       PYTHON_ARCH: "64"
       CONDA: true
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
 
     - PYTHON: "C:\\Miniconda35-x64"
       PYTHON_VERSION: "3.5.2"
       PYTHON_ARCH: "64"
       CONDA: true
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
 
     - PYTHON: "C:\\Miniconda35-x64"
       PYTHON_VERSION: "3.6.0"
       PYTHON_ARCH: "64"
       CONDA: true
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
 
 services:
   - postgresql94
