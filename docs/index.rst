@@ -29,7 +29,7 @@ ALE
 The ALE scenario assumes a long term exposition and adaptation of the cells to an analog metabolite. Here we account for
 essential and non-essential metabolites. For essential metabolites the cells will produce more of the target metabolite
 so it can compete with the analog for the enzymes. For non-essential metabolites we assume reduced activity/specificity
-towards the target metabolite and the activity will be inhibited. To identify wich pathways should be inhibited we use
+towards the target metabolite and the activity will be inhibited. To identify which pathways should be inhibited we use
 DifferentialFVA[3].
 
 
