@@ -5,11 +5,11 @@ Installation
 Setting up a virtual environment first
 ======================================
 
-We highly recommended installing marsi inside using (anaconda_).
+We highly recommended installing marsi inside a virtual environment using (anaconda_).
 
 There is no conda recipe for marsi, but the dependencies can be easily installed using ``conda``.
-*Marsi* needs to install it using ``pip``. Do the following to create a virtual environment and get
- some of the heavier dependencies out of the way.
+*MARSI* needs to be installed it using ``pip``. To create a virtual environment and get
+ some of the heavier dependencies out of the way, run the following command:
 
 .. code-block:: bash
 
