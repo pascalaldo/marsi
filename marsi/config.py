@@ -149,6 +149,7 @@ try:
         password = 'Password12!'
         host = 'localhost'
         port = 5432
+        db_name = "marsitest"
     elif TRAVIS:
         username = 'postgres'
         password = None
