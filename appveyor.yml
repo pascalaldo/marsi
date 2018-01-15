@@ -57,7 +57,7 @@ install:
 build: off
 
 before_test:
-  - cmd: psql -c "CREATE DATABASE marsi;"
+  - cmd: psql -c "CREATE DATABASE marsi-db;"
   - cmd: marsi db migrate
   - cmd: python bin/restore_db.py
   - cmd: psql -d marsi-db -c 'SELECT COUNT(*) FROM metabolites;' -U postgres
