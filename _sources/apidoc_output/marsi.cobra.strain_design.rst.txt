@@ -1,0 +1,54 @@
+marsi\.cobra\.strain\_design package
+====================================
+
+Submodules
+----------
+
+marsi\.cobra\.strain\_design\.design\_methods module
+----------------------------------------------------
+
+.. automodule:: marsi.cobra.strain_design.design_methods
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.cobra\.strain\_design\.evolutionary module
+-------------------------------------------------
+
+.. automodule:: marsi.cobra.strain_design.evolutionary
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.cobra\.strain\_design\.metaheuristic module
+--------------------------------------------------
+
+.. automodule:: marsi.cobra.strain_design.metaheuristic
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.cobra\.strain\_design\.post\_processing module
+-----------------------------------------------------
+
+.. automodule:: marsi.cobra.strain_design.post_processing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.cobra\.strain\_design\.target module
+-------------------------------------------
+
+.. automodule:: marsi.cobra.strain_design.target
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: marsi.cobra.strain_design
+    :members:
+    :undoc-members:
+    :show-inheritance:

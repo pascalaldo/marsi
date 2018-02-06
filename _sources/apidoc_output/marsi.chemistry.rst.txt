@@ -1,0 +1,70 @@
+marsi\.chemistry package
+========================
+
+Submodules
+----------
+
+marsi\.chemistry\.common module
+-------------------------------
+
+.. automodule:: marsi.chemistry.common
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.chemistry\.common\_ext module
+------------------------------------
+
+.. automodule:: marsi.chemistry.common_ext
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.chemistry\.molecule module
+---------------------------------
+
+.. automodule:: marsi.chemistry.molecule
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.chemistry\.openbabel module
+----------------------------------
+
+.. automodule:: marsi.chemistry.openbabel
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.chemistry\.qsar module
+-----------------------------
+
+.. automodule:: marsi.chemistry.qsar
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.chemistry\.rdkit module
+------------------------------
+
+.. automodule:: marsi.chemistry.rdkit
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.chemistry\.solubility module
+-----------------------------------
+
+.. automodule:: marsi.chemistry.solubility
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: marsi.chemistry
+    :members:
+    :undoc-members:
+    :show-inheritance:

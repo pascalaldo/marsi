@@ -1,0 +1,215 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.io.enrichment &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.io.enrichment</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2016 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
+
+<span class="kn">import</span> <span class="nn">pubchempy</span>
+<span class="kn">from</span> <span class="nn">bioservices.chebi</span> <span class="k">import</span> <span class="n">ChEBI</span>
+<span class="kn">from</span> <span class="nn">bioservices.kegg</span> <span class="k">import</span> <span class="n">KEGG</span>
+<span class="kn">from</span> <span class="nn">bioservices.uniprot</span> <span class="k">import</span> <span class="n">UniProt</span>
+
+<span class="kn">from</span> <span class="nn">cachetools</span> <span class="k">import</span> <span class="n">cached</span><span class="p">,</span> <span class="n">LRUCache</span>
+<span class="kn">from</span> <span class="nn">cachetools.keys</span> <span class="k">import</span> <span class="n">hashkey</span>
+
+<span class="kn">from</span> <span class="nn">marsi.chemistry.openbabel</span> <span class="k">import</span> <span class="n">mol_str_to_inchi</span>
+
+<span class="n">lru_cache</span> <span class="o">=</span> <span class="n">LRUCache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1024</span><span class="p">)</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;find_chebi_id&#39;</span><span class="p">,</span> <span class="s1">&#39;find_pubchem_id&#39;</span><span class="p">,</span> <span class="s2">&quot;map_uniprot_from_pdb_ids&quot;</span><span class="p">,</span> <span class="s2">&quot;find_best_chebi_structure&quot;</span><span class="p">]</span>
+
+    <span class="n">chebi_client</span> <span class="o">=</span> <span class="n">ChEBI</span><span class="p">()</span>
+    <span class="n">kegg_client</span> <span class="o">=</span> <span class="n">KEGG</span><span class="p">()</span>
+    <span class="n">uniprot_client</span> <span class="o">=</span> <span class="n">UniProt</span><span class="p">()</span>
+
+    <span class="nd">@cached</span><span class="p">(</span><span class="n">lru_cache</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">hashkey</span><span class="p">,</span> <span class="s1">&#39;uniprot&#39;</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">map_uniprot_from_pdb_ids</span><span class="p">(</span><span class="n">pdb_ids</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">uniprot_client</span><span class="o">.</span><span class="n">mapping</span><span class="p">(</span><span class="n">fr</span><span class="o">=</span><span class="s2">&quot;PDB_ID&quot;</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="s2">&quot;ACC&quot;</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="n">pdb_ids</span><span class="p">)</span>
+
+    <span class="nd">@cached</span><span class="p">(</span><span class="n">lru_cache</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">hashkey</span><span class="p">,</span> <span class="s1">&#39;uniprot&#39;</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">inchi_from_chebi</span><span class="p">(</span><span class="n">chebi_id</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">chebi_client</span><span class="o">.</span><span class="n">getCompleteEntity</span><span class="p">(</span><span class="n">chebi_id</span><span class="p">)</span><span class="o">.</span><span class="n">inchi</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@cached</span><span class="p">(</span><span class="n">lru_cache</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">hashkey</span><span class="p">,</span> <span class="s1">&#39;uniprot&#39;</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">inchi_from_kegg</span><span class="p">(</span><span class="n">kegg_id</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mol_str_to_inchi</span><span class="p">(</span><span class="n">kegg_client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">kegg_id</span><span class="p">,</span> <span class="s1">&#39;mol&#39;</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">find_chebi_id</span><span class="p">(</span><span class="n">metabolite</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Queries ChEBI using InChI Key.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        metabolite : Metabolite</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            With tuples of (id, name)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">chebi_client</span><span class="o">.</span><span class="n">getLiteEntity</span><span class="p">(</span><span class="n">metabolite</span><span class="o">.</span><span class="n">inchi_key</span><span class="p">,</span> <span class="n">searchCategory</span><span class="o">=</span><span class="s2">&quot;INCHI KEY&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[(</span><span class="n">e</span><span class="o">.</span><span class="n">chebiId</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">chebiAsciiName</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">query</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> not found in ChEBI&quot;</span> <span class="o">%</span> <span class="n">metabolite</span><span class="o">.</span><span class="n">inchi_key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">find_pubchem_id</span><span class="p">(</span><span class="n">metabolite</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Queries PubChem Compound using InChI Key.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        metabolite : Metabolite</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            With tuples of (id, name)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">cid</span><span class="p">),</span> <span class="n">e</span><span class="o">.</span><span class="n">iupac_name</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">pubchempy</span><span class="o">.</span><span class="n">get_compounds</span><span class="p">(</span><span class="n">metabolite</span><span class="o">.</span><span class="n">inchi_key</span><span class="p">,</span>
+                                                                                <span class="n">namespace</span><span class="o">=</span><span class="s2">&quot;inchikey&quot;</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> not found in PubChem Compound&quot;</span> <span class="o">%</span> <span class="n">metabolite</span><span class="o">.</span><span class="n">inchi_key</span><span class="p">)</span>
+
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">warnings</span> <span class="k">import</span> <span class="n">warn</span>
+    <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;no_services_available&#39;</span><span class="p">,</span> <span class="s1">&#39;find_best_chebi_structure&#39;</span><span class="p">]</span>
+    <span class="n">no_services_available</span> <span class="o">=</span> <span class="s2">&quot;Please check your internet connection&quot;</span>
+
+<div class="viewcode-block" id="map_uniprot_from_pdb_ids"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.enrichment.map_uniprot_from_pdb_ids">[docs]</a>    <span class="k">def</span> <span class="nf">map_uniprot_from_pdb_ids</span><span class="p">(</span><span class="n">pdb_ids</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">no_services_available</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">inchi_from_chebi</span><span class="p">(</span><span class="n">chebi_id</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">no_services_available</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">inchi_from_kegg</span><span class="p">(</span><span class="n">kegg_id</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">no_services_available</span><span class="p">)</span>
+
+<div class="viewcode-block" id="find_chebi_id"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.enrichment.find_chebi_id">[docs]</a>    <span class="k">def</span> <span class="nf">find_chebi_id</span><span class="p">(</span><span class="n">metabolite</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">no_services_available</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="find_pubchem_id"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.enrichment.find_pubchem_id">[docs]</a>    <span class="k">def</span> <span class="nf">find_pubchem_id</span><span class="p">(</span><span class="n">metabolite</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">no_services_available</span><span class="p">)</span></div>
+
+    <span class="n">warn</span><span class="p">(</span><span class="n">no_services_available</span> <span class="o">+</span> <span class="s2">&quot; because of &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="find_best_chebi_structure"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.enrichment.find_best_chebi_structure">[docs]</a><span class="k">def</span> <span class="nf">find_best_chebi_structure</span><span class="p">(</span><span class="n">entity</span><span class="p">):</span>
+    <span class="n">structure</span> <span class="o">=</span> <span class="n">entity</span><span class="o">.</span><span class="n">ChemicalStructures</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">struct</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">entity</span><span class="o">.</span><span class="n">ChemicalStructures</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">struct</span><span class="o">.</span><span class="n">dimension</span> <span class="o">==</span> <span class="s2">&quot;3D&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">structure</span><span class="o">.</span><span class="n">dimension</span> <span class="o">==</span> <span class="s2">&quot;3D&quot;</span> <span class="ow">and</span> <span class="n">structure</span><span class="o">.</span><span class="n">defaultStructure</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">structure</span><span class="o">.</span><span class="n">structure</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">structure</span> <span class="o">=</span> <span class="n">struct</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">struct</span><span class="o">.</span><span class="n">defaultStructure</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">structure</span><span class="o">.</span><span class="n">dimension</span> <span class="o">==</span> <span class="s2">&quot;3D&quot;</span><span class="p">:</span>
+                <span class="n">structure</span> <span class="o">=</span> <span class="n">struct</span>
+
+    <span class="k">return</span> <span class="n">structure</span><span class="o">.</span><span class="n">structure</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../io.html">marsi.io</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

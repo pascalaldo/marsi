@@ -1,0 +1,798 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.cobra.strain_design.post_processing &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.cobra.strain_design.post_processing</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2016 The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">six</span>
+<span class="kn">from</span> <span class="nn">cameo.core.strain_design</span> <span class="k">import</span> <span class="n">StrainDesign</span>
+<span class="kn">from</span> <span class="nn">cameo.core.target</span> <span class="k">import</span> <span class="n">ReactionKnockoutTarget</span><span class="p">,</span> <span class="n">ReactionModulationTarget</span>
+<span class="kn">from</span> <span class="nn">cameo.flux_analysis.structural</span> <span class="k">import</span> <span class="n">create_stoichiometric_array</span><span class="p">,</span> <span class="n">find_coupled_reactions_nullspace</span>
+<span class="kn">from</span> <span class="nn">cameo.flux_analysis.structural</span> <span class="k">import</span> <span class="n">nullspace</span>
+<span class="kn">from</span> <span class="nn">cameo.strain_design.heuristic.evolutionary.objective_functions</span> <span class="k">import</span> <span class="n">ObjectiveFunction</span>
+<span class="kn">from</span> <span class="nn">cobra.core.model</span> <span class="k">import</span> <span class="n">Model</span>
+<span class="kn">from</span> <span class="nn">cobra.core.reaction</span> <span class="k">import</span> <span class="n">Reaction</span>
+<span class="kn">from</span> <span class="nn">cobra.exceptions</span> <span class="k">import</span> <span class="n">OptimizationError</span>
+<span class="kn">from</span> <span class="nn">optlang.exceptions</span> <span class="k">import</span> <span class="n">SolverError</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="k">import</span> <span class="n">DataFrame</span><span class="p">,</span> <span class="n">Series</span>
+
+<span class="kn">from</span> <span class="nn">marsi.cobra</span> <span class="k">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">marsi.cobra.strain_design.target</span> <span class="k">import</span> <span class="n">AntiMetaboliteManipulationTarget</span><span class="p">,</span> <span class="n">MetaboliteKnockoutTarget</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="find_anti_metabolite_knockouts"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.post_processing.find_anti_metabolite_knockouts">[docs]</a><span class="k">def</span> <span class="nf">find_anti_metabolite_knockouts</span><span class="p">(</span><span class="n">reaction</span><span class="p">,</span> <span class="n">ref_flux</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ignore_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignore_transport</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                   <span class="n">allow_accumulation</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a dictionary {species_id -&gt; MetaboliteKnockoutTarget}.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    reaction: cobra.Reaction</span>
+<span class="sd">        A COBRA reaction</span>
+<span class="sd">    ref_flux: float</span>
+<span class="sd">        The flux from the reference state (0 if unknown)</span>
+<span class="sd">    ignore_metabolites: list</span>
+<span class="sd">        A list of metabolites that should not be targeted (currency metabolites, etc.)</span>
+<span class="sd">    ignore_transport: bool</span>
+<span class="sd">        If False, also knockout the transport reactions.</span>
+<span class="sd">    allow_accumulation: bool</span>
+<span class="sd">        If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reaction</span><span class="p">,</span> <span class="n">Reaction</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ignore_metabolites</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">ref_flux</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">substrates</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">coefficient</span> <span class="ow">in</span> <span class="n">reaction</span><span class="o">.</span><span class="n">metabolites</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                      <span class="k">if</span> <span class="n">coefficient</span> <span class="o">*</span> <span class="n">ref_flux</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ignore_metabolites</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">reaction</span><span class="o">.</span><span class="n">reversibility</span><span class="p">:</span>
+            <span class="n">substrates</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">reaction</span><span class="o">.</span><span class="n">metabolites</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ignore_metabolites</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">substrates</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">coefficient</span> <span class="ow">in</span> <span class="n">reaction</span><span class="o">.</span><span class="n">metabolites</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                          <span class="k">if</span> <span class="n">coefficient</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ignore_metabolites</span><span class="p">]</span>
+
+    <span class="n">species_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">substrates</span><span class="p">]</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">species_id</span> <span class="ow">in</span> <span class="n">species_ids</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">species_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">MetaboliteKnockoutTarget</span><span class="p">(</span><span class="n">species_id</span><span class="p">,</span> <span class="n">ignore_transport</span><span class="p">,</span> <span class="n">allow_accumulation</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="find_anti_metabolite_modulation"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.post_processing.find_anti_metabolite_modulation">[docs]</a><span class="k">def</span> <span class="nf">find_anti_metabolite_modulation</span><span class="p">(</span><span class="n">reaction</span><span class="p">,</span> <span class="n">fold_change</span><span class="p">,</span> <span class="n">essential_metabolites</span><span class="p">,</span> <span class="n">ref_flux</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ignore_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                    <span class="n">ignore_transport</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">allow_accumulation</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a dictionary {species_id -&gt; AntiMetaboliteManipulationTarget}.</span>
+
+<span class="sd">    If the fold change &gt; 0:</span>
+<span class="sd">        1. Search for metabolites that are essential.</span>
+<span class="sd">        2. Calculate fraction using a link function.</span>
+
+<span class="sd">    If fold change &lt; 0:</span>
+<span class="sd">        1. Search for metabolites that are not essential</span>
+<span class="sd">        2. Calculated fraction is 1 - fold change</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    reaction : cobra.Reaction</span>
+<span class="sd">        A COBRA reaction.</span>
+<span class="sd">    fold_change : float</span>
+<span class="sd">        The fold change of the reaction flux.</span>
+<span class="sd">    essential_metabolites : list</span>
+<span class="sd">        A list of essential metabolites.</span>
+<span class="sd">    ref_flux : float</span>
+<span class="sd">        The flux from the reference state (0 if unknown)</span>
+<span class="sd">    ignore_metabolites : list</span>
+<span class="sd">        A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc.).</span>
+<span class="sd">    ignore_transport : bool</span>
+<span class="sd">        If False, also knockout the transport reactions.</span>
+<span class="sd">    allow_accumulation : bool</span>
+<span class="sd">        If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        {MetaboliteID -&gt; AntiMetaboliteManipulationTarget}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">ignore_metabolites</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ignore_metabolites</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">CURRENCY_METABOLITES</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">essential_metabolites</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">reaction</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">essential_metabolites</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">essential_species_ids</span><span class="p">(</span><span class="n">reaction</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reaction</span><span class="p">,</span> <span class="n">Reaction</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ignore_metabolites</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">essential_metabolites</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">fold_change</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">ignore_metabolites</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">ignore_metabolites</span><span class="p">)</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">essential_metabolites</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">ref_flux</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">substrates</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">coefficient</span> <span class="ow">in</span> <span class="n">reaction</span><span class="o">.</span><span class="n">metabolites</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                      <span class="k">if</span> <span class="n">coefficient</span> <span class="o">*</span> <span class="n">ref_flux</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ignore_metabolites</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">reaction</span><span class="o">.</span><span class="n">reversibility</span><span class="p">:</span>
+            <span class="n">substrates</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">reaction</span><span class="o">.</span><span class="n">metabolites</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ignore_metabolites</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">substrates</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">coefficient</span> <span class="ow">in</span> <span class="n">reaction</span><span class="o">.</span><span class="n">metabolites</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                          <span class="k">if</span> <span class="n">coefficient</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ignore_metabolites</span><span class="p">]</span>
+
+    <span class="n">species_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">substrates</span><span class="p">]</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Use a link function to convert fold change into ]0, 1]</span>
+    <span class="k">if</span> <span class="n">fold_change</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">fraction</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">fold_change</span> <span class="o">-</span> <span class="mi">5</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fraction</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">fold_change</span>
+
+    <span class="k">for</span> <span class="n">species_id</span> <span class="ow">in</span> <span class="n">species_ids</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">species_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">AntiMetaboliteManipulationTarget</span><span class="p">(</span><span class="n">species_id</span><span class="p">,</span> <span class="n">fraction</span><span class="o">=</span><span class="n">fraction</span><span class="p">,</span>
+                                                              <span class="n">ignore_transport</span><span class="o">=</span><span class="n">ignore_transport</span><span class="p">,</span>
+                                                              <span class="n">allow_accumulation</span><span class="o">=</span><span class="n">allow_accumulation</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="convert_strain_design_results"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.post_processing.convert_strain_design_results">[docs]</a><span class="k">def</span> <span class="nf">convert_strain_design_results</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">results</span><span class="p">,</span> <span class="n">objective_function</span><span class="p">,</span> <span class="n">simulation_method</span><span class="p">,</span> <span class="n">simulation_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                  <span class="n">ignore_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignore_transport</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">allow_accumulation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                  <span class="n">nullspace_matrix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">essential_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_loss</span><span class="o">=</span><span class="mf">0.2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a StrainDesignMethodResult into a DataFrame of possible substitutions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : cobra.Model</span>
+<span class="sd">        A COBRA model.</span>
+<span class="sd">    results : cameo.core.strain_design.StrainDesignMethodResult</span>
+<span class="sd">        The results of a strain design method.</span>
+<span class="sd">    objective_function : cameo.strain_design.heuristic.evolutionary.objective_functions.ObjectiveFunction</span>
+<span class="sd">        The cellular objective to evaluate.</span>
+<span class="sd">    simulation_method : cameo.flux_analysis.simulation.fba or equivalent</span>
+<span class="sd">        The method to compute a flux distribution using a COBRA model.</span>
+<span class="sd">    simulation_kwargs : dict</span>
+<span class="sd">        The arguments for the simulation_method.</span>
+<span class="sd">    ignore_metabolites : list</span>
+<span class="sd">        A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc).</span>
+<span class="sd">    ignore_transport : bool</span>
+<span class="sd">        If False, also knockout the transport reactions.</span>
+<span class="sd">    allow_accumulation : bool</span>
+<span class="sd">        If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.</span>
+<span class="sd">    nullspace_matrix : numpy.ndarray</span>
+<span class="sd">        The nullspace of the model.</span>
+<span class="sd">    essential_metabolites : list</span>
+<span class="sd">        A list of essential metabolites.</span>
+<span class="sd">    max_loss : float</span>
+<span class="sd">        A number between 0 and 1 for how much the fitness is allowed to drop with the metabolite target.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame</span>
+<span class="sd">        A data frame with the possible replacements.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">essential_metabolites</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">essential_metabolites</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">essential_species_ids</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">ignore_metabolites</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ignore_metabolites</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">CURRENCY_METABOLITES</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">nullspace_matrix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">nullspace_matrix</span> <span class="o">=</span> <span class="n">nullspace</span><span class="p">(</span><span class="n">create_stoichiometric_array</span><span class="p">(</span><span class="n">model</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">simulation_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">simulation_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">replacements</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">design</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">model</span><span class="p">:</span>
+            <span class="n">design</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+            <span class="n">solution</span> <span class="o">=</span> <span class="n">simulation_method</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">simulation_kwargs</span><span class="p">)</span>
+            <span class="n">fitness</span> <span class="o">=</span> <span class="n">objective_function</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="n">design</span><span class="o">.</span><span class="n">targets</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fitness</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="n">convert_design</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">design</span><span class="p">,</span> <span class="n">fitness</span><span class="p">,</span> <span class="n">objective_function</span><span class="p">,</span> <span class="n">simulation_method</span><span class="p">,</span>
+                             <span class="n">simulation_kwargs</span><span class="o">=</span><span class="n">simulation_kwargs</span><span class="p">,</span> <span class="n">ignore_metabolites</span><span class="o">=</span><span class="n">ignore_metabolites</span><span class="p">,</span>
+                             <span class="n">ignore_transport</span><span class="o">=</span><span class="n">ignore_transport</span><span class="p">,</span> <span class="n">allow_accumulation</span><span class="o">=</span><span class="n">allow_accumulation</span><span class="p">,</span>
+                             <span class="n">nullspace_matrix</span><span class="o">=</span><span class="n">nullspace_matrix</span><span class="p">,</span> <span class="n">essential_metabolites</span><span class="o">=</span><span class="n">essential_metabolites</span><span class="p">,</span>
+                             <span class="n">max_loss</span><span class="o">=</span><span class="n">max_loss</span><span class="p">)</span>
+
+        <span class="n">res</span><span class="p">[</span><span class="s1">&#39;index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="n">replacements</span> <span class="o">=</span> <span class="n">replacements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">replacements</span></div>
+
+
+<div class="viewcode-block" id="convert_design"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.post_processing.convert_design">[docs]</a><span class="k">def</span> <span class="nf">convert_design</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">strain_design</span><span class="p">,</span> <span class="n">fitness</span><span class="p">,</span> <span class="n">objective_function</span><span class="p">,</span> <span class="n">simulation_method</span><span class="p">,</span> <span class="n">simulation_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">ignore_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignore_transport</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">allow_accumulation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nullspace_matrix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">essential_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_loss</span><span class="o">=</span><span class="mf">0.2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a StrainDesign into a DataFrame of possible substitutions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model: cobra.Model</span>
+<span class="sd">        A COBRA model.</span>
+<span class="sd">    strain_design : cameo.core.strain_design.StrainDesign</span>
+<span class="sd">        The results of a strain design method.</span>
+<span class="sd">    objective_function : cameo.strain_design.heuristic.evolutionary.objective_functions.ObjectiveFunction</span>
+<span class="sd">        The cellular objective to evaluate.</span>
+<span class="sd">    simulation_method : cameo.flux_analysis.simulation.fba or equivalent</span>
+<span class="sd">        The method to compute a flux distribution using a COBRA model.</span>
+<span class="sd">    simulation_kwargs : dict</span>
+<span class="sd">        The arguments for the simulation_method.</span>
+<span class="sd">    ignore_metabolites : list</span>
+<span class="sd">        A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc).</span>
+<span class="sd">    ignore_transport : bool</span>
+<span class="sd">        If False, also knockout the transport reactions.</span>
+<span class="sd">    allow_accumulation : bool</span>
+<span class="sd">        If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.</span>
+<span class="sd">    nullspace_matrix : numpy.ndarray</span>
+<span class="sd">        The nullspace of the model.</span>
+<span class="sd">    essential_metabolites : list</span>
+<span class="sd">        A list of essential metabolites.</span>
+<span class="sd">    max_loss : float</span>
+<span class="sd">        A number between 0 and 1 for how much the fitness is allowed to drop with the metabolite target.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame</span>
+<span class="sd">        A data frame with the possible replacements.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">simulation_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">simulation_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="n">simulation_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;reference&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="n">simulation_kwargs</span><span class="p">[</span><span class="s1">&#39;reference&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">essential_metabolites</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">essential_metabolites</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">essential_species_ids</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">ignore_metabolites</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ignore_metabolites</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">CURRENCY_METABOLITES</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">nullspace_matrix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">nullspace_matrix</span> <span class="o">=</span> <span class="n">nullspace</span><span class="p">(</span><span class="n">create_stoichiometric_array</span><span class="p">(</span><span class="n">model</span><span class="p">))</span>
+
+    <span class="n">coupled_reactions</span> <span class="o">=</span> <span class="n">find_coupled_reactions_nullspace</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">ns</span><span class="o">=</span><span class="n">nullspace_matrix</span><span class="p">)</span>
+    <span class="n">coupled_reactions</span> <span class="o">=</span> <span class="p">[{</span><span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">six</span><span class="o">.</span><span class="n">iteritems</span><span class="p">(</span><span class="n">g</span><span class="p">)}</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">coupled_reactions</span><span class="p">]</span>
+
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Model</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">objective_function</span><span class="p">,</span> <span class="n">ObjectiveFunction</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nullspace_matrix</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">valid_loss</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">base</span><span class="p">):</span>
+        <span class="n">fitness_loss</span> <span class="o">=</span> <span class="n">fitness</span> <span class="o">-</span> <span class="n">val</span>
+
+        <span class="k">return</span> <span class="n">fitness_loss</span> <span class="o">/</span> <span class="n">fitness</span> <span class="o">&lt;</span> <span class="n">max_loss</span> <span class="ow">and</span> <span class="n">val</span> <span class="o">-</span> <span class="n">base</span> <span class="o">&gt;</span> <span class="mf">1e-6</span>
+
+    <span class="n">testable_targets</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">strain_design</span><span class="o">.</span><span class="n">targets</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="n">ReactionKnockoutTarget</span><span class="p">,</span> <span class="n">ReactionModulationTarget</span><span class="p">))]</span>
+
+    <span class="n">non_testable_targets</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">strain_design</span><span class="o">.</span><span class="n">targets</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="n">ReactionKnockoutTarget</span><span class="p">,</span> <span class="n">ReactionModulationTarget</span><span class="p">))}</span>
+    <span class="n">coupled_targets</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">testable_targets</span><span class="p">:</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">g</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">coupled_reactions</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">g</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">group</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">group</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">coupled_targets</span><span class="p">:</span>
+                <span class="n">coupled_targets</span><span class="p">[</span><span class="n">group</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">coupled_targets</span><span class="p">[</span><span class="n">group</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="n">coupled_targets</span> <span class="o">=</span> <span class="p">[</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">six</span><span class="o">.</span><span class="n">iteritems</span><span class="p">(</span><span class="n">coupled_targets</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">non_coupled_targets</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">testable_targets</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">t</span> <span class="ow">in</span> <span class="n">group</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">coupled_targets</span><span class="p">)}</span>
+
+    <span class="n">anti_metabolites</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;base_design&#39;</span><span class="p">,</span> <span class="s1">&#39;replaced_target&#39;</span><span class="p">,</span> <span class="s1">&#39;metabolite_targets&#39;</span><span class="p">,</span>
+                                          <span class="s1">&#39;old_fitness&#39;</span><span class="p">,</span> <span class="s1">&#39;fitness&#39;</span><span class="p">,</span> <span class="s1">&#39;delta&#39;</span><span class="p">])</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Coupled groups: </span><span class="si">%i</span><span class="s2">; non-coupled targets </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coupled_targets</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_coupled_targets</span><span class="p">)))</span>
+
+    <span class="k">with</span> <span class="n">model</span> <span class="k">as</span> <span class="n">base_model</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">non_testable_targets</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+        <span class="c1"># test non-coupled targets as before</span>
+        <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">non_coupled_targets</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">base_model</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">other_target</span> <span class="ow">in</span> <span class="n">non_coupled_targets</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">other_target</span> <span class="o">!=</span> <span class="n">target</span><span class="p">:</span>
+                        <span class="n">other_target</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">base_model</span><span class="p">)</span>
+
+                <span class="n">anti_metabolite_targets</span> <span class="o">=</span> <span class="n">convert_target</span><span class="p">(</span><span class="n">base_model</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">essential_metabolites</span><span class="p">,</span>
+                                                         <span class="n">ignore_metabolites</span><span class="o">=</span><span class="n">ignore_metabolites</span><span class="p">,</span>
+                                                         <span class="n">ignore_transport</span><span class="o">=</span><span class="n">ignore_transport</span><span class="p">,</span>
+                                                         <span class="n">allow_accumulation</span><span class="o">=</span><span class="n">allow_accumulation</span><span class="p">,</span>
+                                                         <span class="n">reference</span><span class="o">=</span><span class="n">reference</span><span class="p">)</span>
+
+                <span class="n">base_solution</span> <span class="o">=</span> <span class="n">simulation_method</span><span class="p">(</span><span class="n">base_model</span><span class="p">,</span> <span class="o">**</span><span class="n">simulation_kwargs</span><span class="p">)</span>
+                <span class="n">base_fitness</span> <span class="o">=</span> <span class="n">objective_function</span><span class="p">(</span><span class="n">base_model</span><span class="p">,</span> <span class="n">base_solution</span><span class="p">,</span> <span class="n">strain_design</span><span class="o">.</span><span class="n">targets</span><span class="p">)</span>
+
+                <span class="n">test_target_substitutions</span><span class="p">(</span><span class="n">base_model</span><span class="p">,</span> <span class="n">strain_design</span><span class="o">.</span><span class="n">targets</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">anti_metabolite_targets</span><span class="p">,</span>
+                                          <span class="n">objective_function</span><span class="p">,</span> <span class="n">fitness</span><span class="p">,</span> <span class="n">base_fitness</span><span class="p">,</span> <span class="n">simulation_method</span><span class="p">,</span>
+                                          <span class="n">simulation_kwargs</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span> <span class="n">anti_metabolites</span><span class="p">)</span>
+
+        <span class="c1"># test coupled targets as whole</span>
+        <span class="k">for</span> <span class="n">target_group</span> <span class="ow">in</span> <span class="n">coupled_targets</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">base_model</span><span class="p">:</span>
+
+                <span class="k">for</span> <span class="n">other_target_group</span> <span class="ow">in</span> <span class="n">non_coupled_targets</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">other_target_group</span> <span class="o">!=</span> <span class="n">target_group</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">other_target</span> <span class="ow">in</span> <span class="n">other_target_group</span><span class="p">:</span>
+                            <span class="n">other_target</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+                <span class="n">anti_metabolite_targets</span> <span class="o">=</span> <span class="n">convert_target_group</span><span class="p">(</span><span class="n">base_model</span><span class="p">,</span> <span class="n">target_group</span><span class="p">,</span> <span class="n">essential_metabolites</span><span class="p">,</span>
+                                                               <span class="n">ignore_transport</span><span class="o">=</span><span class="n">ignore_transport</span><span class="p">,</span>
+                                                               <span class="n">allow_accumulation</span><span class="o">=</span><span class="n">allow_accumulation</span><span class="p">,</span>
+                                                               <span class="n">reference</span><span class="o">=</span><span class="n">reference</span><span class="p">)</span>
+
+                <span class="n">base_solution</span> <span class="o">=</span> <span class="n">simulation_method</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">simulation_kwargs</span><span class="p">)</span>
+                <span class="n">base_fitness</span> <span class="o">=</span> <span class="n">objective_function</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">base_solution</span><span class="p">,</span> <span class="n">strain_design</span><span class="o">.</span><span class="n">targets</span><span class="p">)</span>
+
+                <span class="n">test_target_substitutions</span><span class="p">(</span><span class="n">base_model</span><span class="p">,</span> <span class="n">strain_design</span><span class="o">.</span><span class="n">targets</span><span class="p">,</span> <span class="n">target_group</span><span class="p">,</span> <span class="n">anti_metabolite_targets</span><span class="p">,</span>
+                                          <span class="n">objective_function</span><span class="p">,</span> <span class="n">fitness</span><span class="p">,</span> <span class="n">base_fitness</span><span class="p">,</span> <span class="n">simulation_method</span><span class="p">,</span>
+                                          <span class="n">simulation_kwargs</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span> <span class="n">anti_metabolites</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">anti_metabolites</span></div>
+
+
+<div class="viewcode-block" id="test_target_substitutions"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.post_processing.test_target_substitutions">[docs]</a><span class="k">def</span> <span class="nf">test_target_substitutions</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">all_targets</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">replacement_targets</span><span class="p">,</span> <span class="n">objective_function</span><span class="p">,</span> <span class="n">fitness</span><span class="p">,</span>
+                              <span class="n">base_fitness</span><span class="p">,</span> <span class="n">simulation_method</span><span class="p">,</span> <span class="n">simulation_kwargs</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">loss_validation</span><span class="p">,</span> <span class="n">results</span><span class="p">):</span>
+    <span class="n">fitness2targets</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">species_id</span><span class="p">,</span> <span class="n">replacement_target</span> <span class="ow">in</span> <span class="n">replacement_targets</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">replacement_target</span><span class="p">,</span> <span class="n">AntiMetaboliteManipulationTarget</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">model</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">replacement_target</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">reference</span><span class="o">=</span><span class="n">reference</span><span class="p">)</span>
+                <span class="n">new_solution</span> <span class="o">=</span> <span class="n">simulation_method</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">simulation_kwargs</span><span class="p">)</span>
+                <span class="n">new_fitness</span> <span class="o">=</span> <span class="n">objective_function</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">new_solution</span><span class="p">,</span> <span class="n">all_targets</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;New fitness </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">new_fitness</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Solver objective value </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">new_solution</span><span class="o">.</span><span class="n">objective_value</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">objective_function</span><span class="o">.</span><span class="n">reactions</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: </span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">new_solution</span><span class="p">[</span><span class="n">r</span><span class="p">]))</span>
+            <span class="k">except</span> <span class="n">OptimizationError</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Cannot solve </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">species_id</span><span class="p">)</span>
+                <span class="n">new_fitness</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">new_fitness</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fitness2targets</span><span class="p">:</span>
+                    <span class="n">fitness2targets</span><span class="p">[</span><span class="n">new_fitness</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">fitness2targets</span><span class="p">[</span><span class="n">new_fitness</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">replacement_target</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Applying </span><span class="si">%s</span><span class="s2"> yields </span><span class="si">%f</span><span class="s2"> (loss: </span><span class="si">%f</span><span class="s2">)&quot;</span> <span class="o">%</span>
+                                 <span class="p">(</span><span class="n">species_id</span><span class="p">,</span> <span class="n">new_fitness</span><span class="p">,</span> <span class="p">(</span><span class="n">new_fitness</span> <span class="o">-</span> <span class="n">fitness</span><span class="p">)</span> <span class="o">/</span> <span class="n">new_fitness</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Applying </span><span class="si">%s</span><span class="s2"> yields </span><span class="si">%f</span><span class="s2"> (loss: </span><span class="si">%f</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">species_id</span><span class="p">,</span> <span class="n">new_fitness</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># keep only targets that keep the fitness above the valid loss regarding the original fitness.</span>
+        <span class="n">fitness2targets</span> <span class="o">=</span> <span class="p">{</span><span class="n">fit</span><span class="p">:</span> <span class="n">anti_mets</span> <span class="k">for</span> <span class="n">fit</span><span class="p">,</span> <span class="n">anti_mets</span> <span class="ow">in</span> <span class="n">fitness2targets</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                           <span class="k">if</span> <span class="n">loss_validation</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">base_fitness</span><span class="p">)}</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fitness2targets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Return target </span><span class="si">%s</span><span class="s2">, no replacement found&quot;</span> <span class="o">%</span> <span class="n">target</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">fit</span><span class="p">,</span> <span class="n">anti_mets</span> <span class="ow">in</span> <span class="n">fitness2targets</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">delta</span> <span class="o">=</span> <span class="n">fitness</span> <span class="o">-</span> <span class="n">fit</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">StrainDesign</span><span class="p">(</span><span class="n">all_targets</span><span class="p">),</span> <span class="n">target</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">anti_mets</span><span class="p">),</span> <span class="n">fitness</span><span class="p">,</span> <span class="n">fit</span><span class="p">,</span> <span class="n">delta</span><span class="p">]</span>
+                <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+
+<div class="viewcode-block" id="replace_strain_design_results"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.post_processing.replace_strain_design_results">[docs]</a><span class="k">def</span> <span class="nf">replace_strain_design_results</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">results</span><span class="p">,</span> <span class="n">objective_function</span><span class="p">,</span> <span class="n">simulation_method</span><span class="p">,</span> <span class="n">simulation_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                  <span class="n">ignore_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignore_transport</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">allow_accumulation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                  <span class="n">essential_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_loss</span><span class="o">=</span><span class="mf">0.2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a StrainDesignMethodResult into a DataFrame of possible substitutions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : cobra.Model</span>
+<span class="sd">        A COBRA model.</span>
+<span class="sd">    results : cameo.core.strain_design.StrainDesignMethodResult</span>
+<span class="sd">        The results of a strain design method.</span>
+<span class="sd">    objective_function : cameo.strain_design.heuristic.evolutionary.objective_functions.ObjectiveFunction</span>
+<span class="sd">        The cellular objective to evaluate.</span>
+<span class="sd">    simulation_method : cameo.flux_analysis.simulation.fba or equivalent</span>
+<span class="sd">        The method to compute a flux distribution using a COBRA model.</span>
+<span class="sd">    simulation_kwargs : dict</span>
+<span class="sd">        The arguments for the simulation_method.</span>
+<span class="sd">    ignore_metabolites : list</span>
+<span class="sd">        A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc).</span>
+<span class="sd">    ignore_transport : bool</span>
+<span class="sd">        If False, also knockout the transport reactions.</span>
+<span class="sd">    allow_accumulation : bool</span>
+<span class="sd">        If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.</span>
+<span class="sd">    essential_metabolites : list</span>
+<span class="sd">        A list of essential metabolites.</span>
+<span class="sd">    max_loss : float</span>
+<span class="sd">        A number between 0 and 1 for how much the fitness is allowed to drop with the metabolite target.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame</span>
+<span class="sd">        A data frame with the possible replacements.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">essential_metabolites</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">essential_metabolites</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">essential_species_ids</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">ignore_metabolites</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ignore_metabolites</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">CURRENCY_METABOLITES</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">simulation_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">simulation_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">replacements</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">design</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">model</span><span class="p">:</span>
+            <span class="n">design</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+            <span class="n">solution</span> <span class="o">=</span> <span class="n">simulation_method</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">simulation_kwargs</span><span class="p">)</span>
+            <span class="n">fitness</span> <span class="o">=</span> <span class="n">objective_function</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="n">design</span><span class="o">.</span><span class="n">targets</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fitness</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="n">replace_design</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">design</span><span class="p">,</span> <span class="n">fitness</span><span class="p">,</span> <span class="n">objective_function</span><span class="p">,</span> <span class="n">simulation_method</span><span class="p">,</span>
+                             <span class="n">simulation_kwargs</span><span class="o">=</span><span class="n">simulation_kwargs</span><span class="p">,</span> <span class="n">ignore_metabolites</span><span class="o">=</span><span class="n">ignore_metabolites</span><span class="p">,</span>
+                             <span class="n">ignore_transport</span><span class="o">=</span><span class="n">ignore_transport</span><span class="p">,</span> <span class="n">allow_accumulation</span><span class="o">=</span><span class="n">allow_accumulation</span><span class="p">,</span>
+                             <span class="n">essential_metabolites</span><span class="o">=</span><span class="n">essential_metabolites</span><span class="p">,</span> <span class="n">max_loss</span><span class="o">=</span><span class="n">max_loss</span><span class="p">)</span>
+
+        <span class="n">res</span><span class="p">[</span><span class="s1">&#39;index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="n">replacements</span> <span class="o">=</span> <span class="n">replacements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">replacements</span></div>
+
+
+<div class="viewcode-block" id="replace_design"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.post_processing.replace_design">[docs]</a><span class="k">def</span> <span class="nf">replace_design</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">strain_design</span><span class="p">,</span> <span class="n">fitness</span><span class="p">,</span> <span class="n">objective_function</span><span class="p">,</span> <span class="n">simulation_method</span><span class="p">,</span> <span class="n">simulation_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">ignore_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignore_transport</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">allow_accumulation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                   <span class="n">essential_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_loss</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">allow_modulation</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a StrainDesign into a DataFrame of possible substitutions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model: cobra.Model</span>
+<span class="sd">        A COBRA model.</span>
+<span class="sd">    strain_design : cameo.core.strain_design.StrainDesign</span>
+<span class="sd">        The results of a strain design method.</span>
+<span class="sd">    objective_function : cameo.strain_design.heuristic.evolutionary.objective_functions.ObjectiveFunction</span>
+<span class="sd">        The cellular objective to evaluate.</span>
+<span class="sd">    simulation_method : cameo.flux_analysis.simulation.fba or equivalent</span>
+<span class="sd">        The method to compute a flux distribution using a COBRA model.</span>
+<span class="sd">    simulation_kwargs : dict</span>
+<span class="sd">        The arguments for the simulation_method.</span>
+<span class="sd">    ignore_metabolites : list</span>
+<span class="sd">        A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc).</span>
+<span class="sd">    ignore_transport : bool</span>
+<span class="sd">        If False, also knockout the transport reactions.</span>
+<span class="sd">    allow_accumulation : bool</span>
+<span class="sd">        If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.</span>
+<span class="sd">    essential_metabolites : list</span>
+<span class="sd">        A list of essential metabolites.</span>
+<span class="sd">    max_loss : float</span>
+<span class="sd">        A number between 0 and 1 for how much the fitness is allowed to drop with the metabolite target.</span>
+<span class="sd">    allow_modulation : bool</span>
+<span class="sd">        If False does not allow modulation targets (MILP and QP are not compatible)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame</span>
+<span class="sd">        A data frame with the possible replacements.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">simulation_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">simulation_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="n">simulation_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;reference&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="n">simulation_kwargs</span><span class="p">[</span><span class="s1">&#39;reference&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">essential_metabolites</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">essential_metabolites</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">essential_species_ids</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">ignore_metabolites</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ignore_metabolites</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">CURRENCY_METABOLITES</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Model</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">objective_function</span><span class="p">,</span> <span class="n">ObjectiveFunction</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">valid_loss</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">base</span><span class="p">):</span>
+        <span class="n">fitness_loss</span> <span class="o">=</span> <span class="n">fitness</span> <span class="o">-</span> <span class="n">val</span>
+
+        <span class="k">return</span> <span class="n">fitness_loss</span> <span class="o">/</span> <span class="n">fitness</span> <span class="o">&lt;</span> <span class="n">max_loss</span> <span class="ow">and</span> <span class="n">val</span> <span class="o">-</span> <span class="n">base</span> <span class="o">&gt;</span> <span class="mf">1e-6</span>
+
+    <span class="c1"># Keep track of which targets where tested</span>
+    <span class="n">target_test_count</span> <span class="o">=</span> <span class="p">{</span><span class="n">test</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">test</span> <span class="ow">in</span> <span class="n">strain_design</span><span class="o">.</span><span class="n">targets</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ReactionModulationTarget</span><span class="p">)}</span>
+    <span class="n">test_targets</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">strain_design</span><span class="o">.</span><span class="n">targets</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">ReactionModulationTarget</span><span class="p">)]</span>
+    <span class="n">keep_targets</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">strain_design</span><span class="o">.</span><span class="n">targets</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">ReactionModulationTarget</span><span class="p">)]</span>
+    <span class="n">anti_metabolites</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;base_design&#39;</span><span class="p">,</span> <span class="s1">&#39;replaced_target&#39;</span><span class="p">,</span> <span class="s1">&#39;metabolite_targets&#39;</span><span class="p">,</span>
+                                          <span class="s1">&#39;old_fitness&#39;</span><span class="p">,</span> <span class="s1">&#39;fitness&#39;</span><span class="p">,</span> <span class="s1">&#39;delta&#39;</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">termination_criteria</span><span class="p">():</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Targets: </span><span class="si">%i</span><span class="s2">/</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">target_test_count</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_targets</span><span class="p">)))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Anti metabolites: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">anti_metabolites</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_targets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">all</span><span class="p">(</span><span class="n">count</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">target_test_count</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+    <span class="c1"># Stop when all targets have been replaced or tested more then once.</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">termination_criteria</span><span class="p">():</span>
+        <span class="k">with</span> <span class="n">model</span> <span class="k">as</span> <span class="n">base_model</span><span class="p">:</span>
+            <span class="n">test_target</span> <span class="o">=</span> <span class="n">test_targets</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">target_test_count</span><span class="p">[</span><span class="n">test_target</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Testing target </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">test_target</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">test_target</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">test_targets</span>
+
+            <span class="n">all_targets</span> <span class="o">=</span> <span class="n">test_targets</span> <span class="o">+</span> <span class="n">keep_targets</span>
+
+            <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">all_targets</span><span class="p">:</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+            <span class="n">base_solution</span> <span class="o">=</span> <span class="n">simulation_method</span><span class="p">(</span><span class="n">base_model</span><span class="p">,</span> <span class="o">**</span><span class="n">simulation_kwargs</span><span class="p">)</span>
+            <span class="n">base_fitness</span> <span class="o">=</span> <span class="n">objective_function</span><span class="p">(</span><span class="n">base_model</span><span class="p">,</span> <span class="n">base_solution</span><span class="p">,</span> <span class="n">test_targets</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">anti_metabolite_targets</span> <span class="o">=</span> <span class="n">convert_target</span><span class="p">(</span><span class="n">base_model</span><span class="p">,</span> <span class="n">test_target</span><span class="p">,</span> <span class="n">essential_metabolites</span><span class="p">,</span>
+                                                         <span class="n">ignore_transport</span><span class="o">=</span><span class="n">ignore_transport</span><span class="p">,</span>
+                                                         <span class="n">ignore_metabolites</span><span class="o">=</span><span class="n">ignore_metabolites</span><span class="p">,</span>
+                                                         <span class="n">allow_accumulation</span><span class="o">=</span><span class="n">allow_accumulation</span><span class="p">,</span>
+                                                         <span class="n">reference</span><span class="o">=</span><span class="n">reference</span><span class="p">,</span>
+                                                         <span class="n">allow_modulation</span><span class="o">=</span><span class="n">allow_modulation</span><span class="p">)</span>
+
+                <span class="n">test_target_substitutions</span><span class="p">(</span><span class="n">base_model</span><span class="p">,</span> <span class="n">all_targets</span><span class="p">,</span> <span class="n">test_target</span><span class="p">,</span> <span class="n">anti_metabolite_targets</span><span class="p">,</span>
+                                          <span class="n">objective_function</span><span class="p">,</span> <span class="n">fitness</span><span class="p">,</span> <span class="n">base_fitness</span><span class="p">,</span> <span class="n">simulation_method</span><span class="p">,</span>
+                                          <span class="n">simulation_kwargs</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">valid_loss</span><span class="p">,</span> <span class="n">anti_metabolites</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="n">SolverError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                <span class="k">continue</span>
+            <span class="k">finally</span><span class="p">:</span>  <span class="c1"># put the target back on the list.</span>
+                <span class="n">test_targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">test_target</span><span class="p">)</span>
+
+    <span class="n">anti_metabolites</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">([</span><span class="s1">&#39;replaced_target&#39;</span><span class="p">,</span> <span class="s1">&#39;metabolite_targets&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">anti_metabolites</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">anti_metabolites</span><span class="p">))]</span>
+
+    <span class="k">return</span> <span class="n">anti_metabolites</span></div>
+
+
+<div class="viewcode-block" id="convert_target"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.post_processing.convert_target">[docs]</a><span class="k">def</span> <span class="nf">convert_target</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">essential_metabolites</span><span class="p">,</span> <span class="n">ignore_transport</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">allow_accumulation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">reference</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">allow_modulation</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a dictionary {species_id -&gt; (MetaboliteKnockoutTarget, MetaboliteModulationTarget)}.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : cobra.Model</span>
+<span class="sd">        A COBRA model</span>
+<span class="sd">    target : ReactionModulationTarget, ReactionKnockoutTarget</span>
+<span class="sd">        The flux from the reference state (0 if unknown)</span>
+<span class="sd">    ignore_metabolites : list</span>
+<span class="sd">        A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc.)</span>
+<span class="sd">    ignore_transport : bool</span>
+<span class="sd">        If False, also knockout the transport reactions.</span>
+<span class="sd">    allow_accumulation : bool</span>
+<span class="sd">        If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.</span>
+<span class="sd">    reference : dict</span>
+<span class="sd">        A dictionary containing the flux values of a reference flux distribution.</span>
+<span class="sd">    essential_metabolites : list</span>
+<span class="sd">        A list of essential metabolites</span>
+<span class="sd">    allow_modulation : bool</span>
+<span class="sd">        If False does not allow modulation targets (MILP and QP are not compatible).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">ignore_metabolites</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ignore_metabolites</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">CURRENCY_METABOLITES</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">essential_metabolites</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">essential_metabolites</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">essential_species_ids</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">reference</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">Series</span><span class="p">):</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="n">reference</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">ReactionKnockoutTarget</span><span class="p">):</span>
+
+        <span class="n">substitutions</span> <span class="o">=</span> <span class="n">find_anti_metabolite_knockouts</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">get_model_target</span><span class="p">(</span><span class="n">model</span><span class="p">),</span>
+                                                       <span class="n">ref_flux</span><span class="o">=</span><span class="n">reference</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                                       <span class="n">ignore_transport</span><span class="o">=</span><span class="n">ignore_transport</span><span class="p">,</span>
+                                                       <span class="n">ignore_metabolites</span><span class="o">=</span><span class="n">ignore_metabolites</span> <span class="o">|</span> <span class="n">essential_metabolites</span><span class="p">,</span>
+                                                       <span class="n">allow_accumulation</span><span class="o">=</span><span class="n">allow_accumulation</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">ReactionModulationTarget</span><span class="p">)</span> <span class="ow">and</span> <span class="n">allow_modulation</span><span class="p">:</span>
+        <span class="n">substitutions</span> <span class="o">=</span> <span class="n">find_anti_metabolite_modulation</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">get_model_target</span><span class="p">(</span><span class="n">model</span><span class="p">),</span>
+                                                        <span class="n">target</span><span class="o">.</span><span class="n">fold_change</span><span class="p">,</span>
+                                                        <span class="n">essential_metabolites</span><span class="p">,</span>
+                                                        <span class="n">ref_flux</span><span class="o">=</span><span class="n">reference</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                                        <span class="n">ignore_transport</span><span class="o">=</span><span class="n">ignore_transport</span><span class="p">,</span>
+                                                        <span class="n">ignore_metabolites</span><span class="o">=</span><span class="n">ignore_metabolites</span><span class="p">,</span>
+                                                        <span class="n">allow_accumulation</span><span class="o">=</span><span class="n">allow_accumulation</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">substitutions</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">return</span> <span class="n">substitutions</span></div>
+
+
+<div class="viewcode-block" id="convert_target_group"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.post_processing.convert_target_group">[docs]</a><span class="k">def</span> <span class="nf">convert_target_group</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">target_group</span><span class="p">,</span> <span class="n">essential_metabolites</span><span class="p">,</span> <span class="n">ignore_transport</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">allow_accumulation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">reference</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">allow_modulation</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a dictionary {species_id -&gt; MetaboliteKnockoutTarget}.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : cobra.Model</span>
+<span class="sd">        A COBRA model</span>
+<span class="sd">    target_group : dict</span>
+<span class="sd">        A dictionary of (target: relative coefficient)</span>
+<span class="sd">    ignore_metabolites : set</span>
+<span class="sd">        A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc.)</span>
+<span class="sd">    ignore_transport : bool</span>
+<span class="sd">        If False, also knockout the transport reactions.</span>
+<span class="sd">    allow_accumulation : bool</span>
+<span class="sd">        If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.</span>
+<span class="sd">    reference : dict</span>
+<span class="sd">        A dictionary containing the flux values of a reference flux distribution.</span>
+<span class="sd">    essential_metabolites : set</span>
+<span class="sd">        A list of essential metabolites.</span>
+<span class="sd">    allow_modulation : bool</span>
+<span class="sd">        If False does not allow modulation targets (MILP and QP are not compatible).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple</span>
+<span class="sd">        A dictionary with the antimetabolites to test and another dictionary with the reaction where those metabolites</span>
+<span class="sd">        belong.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">ignore_metabolites</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ignore_metabolites</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">CURRENCY_METABOLITES</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">essential_metabolites</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">essential_metabolites</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">essential_species_ids</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">reference</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">Series</span><span class="p">):</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="n">reference</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+
+    <span class="n">substitutions</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">metabolites_targets</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">target_group</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">ReactionKnockoutTarget</span><span class="p">):</span>
+            <span class="n">ignore</span> <span class="o">=</span> <span class="n">ignore_metabolites</span> <span class="o">|</span> <span class="n">essential_metabolites</span>
+            <span class="n">_substitutions</span> <span class="o">=</span> <span class="n">find_anti_metabolite_knockouts</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">get_model_target</span><span class="p">(</span><span class="n">model</span><span class="p">),</span>
+                                                            <span class="n">ref_flux</span><span class="o">=</span><span class="n">reference</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                                            <span class="n">ignore_transport</span><span class="o">=</span><span class="n">ignore_transport</span><span class="p">,</span>
+                                                            <span class="n">ignore_metabolites</span><span class="o">=</span><span class="n">ignore</span><span class="p">,</span>
+                                                            <span class="n">allow_accumulation</span><span class="o">=</span><span class="n">allow_accumulation</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">ReactionModulationTarget</span><span class="p">)</span> <span class="ow">and</span> <span class="n">allow_modulation</span><span class="p">:</span>
+            <span class="n">_substitutions</span> <span class="o">=</span> <span class="n">find_anti_metabolite_modulation</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">get_model_target</span><span class="p">(</span><span class="n">model</span><span class="p">),</span>
+                                                             <span class="n">target</span><span class="o">.</span><span class="n">fold_change</span><span class="p">,</span>
+                                                             <span class="n">essential_metabolites</span><span class="p">,</span>
+                                                             <span class="n">ref_flux</span><span class="o">=</span><span class="n">reference</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                                             <span class="n">ignore_transport</span><span class="o">=</span><span class="n">ignore_transport</span><span class="p">,</span>
+                                                             <span class="n">ignore_metabolites</span><span class="o">=</span><span class="n">ignore_metabolites</span><span class="p">,</span>
+                                                             <span class="n">allow_accumulation</span><span class="o">=</span><span class="n">allow_accumulation</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_substitutions</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">substitutions</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_substitutions</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">substitution</span> <span class="ow">in</span> <span class="n">_substitutions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">substitution</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metabolites_targets</span><span class="p">:</span>
+                <span class="n">metabolites_targets</span><span class="p">[</span><span class="n">substitution</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="n">metabolites_targets</span><span class="p">[</span><span class="n">substitution</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">substitutions</span><span class="p">,</span> <span class="n">metabolites_targets</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

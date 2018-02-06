@@ -1,0 +1,237 @@
+2.1 Find metabolites in the database
+========================================
+
+.. code:: ipython3
+
+    from marsi.io.db import Metabolite, Reference, Database
+
+
+.. parsed-literal::
+
+    Looking for local setup.cfg
+    Not available [Errno 2] No such file or directory: 'setup.cfg'
+
+
+.. parsed-literal::
+
+    /Users/joaca/Documents/repositories/marsi/marsi/chemistry/rdkit.py:25: DeprecationWarning: The rdkit.Chem.MCS module is deprecated; please use rdkit.Chem.rdFMCS instead.
+      from rdkit.Chem import AllChem, MACCSkeys, MCS
+
+
+.. code:: ipython3
+
+    len(Database.metabolites)
+
+
+::
+
+
+    ---------------------------------------------------------------------------
+
+    TypeError                                 Traceback (most recent call last)
+
+    <ipython-input-3-c03391927b54> in <module>()
+    ----> 1 len(Database.metabolites)
+    
+
+    TypeError: 'result' object cannot be interpreted as an integer
+
+
+Metabolites are indexed using InChI key.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For example: 1. 2-Deoxy-Glucose: PMMURAAUARKVCB-CERMHHMHSA-N-D 2.
+Norvaline: SNDPXSYFESPGGJ-SCSAIBSYSA-N
+
+.. code:: ipython3
+
+    Metabolite.get('PMMURAAUARKVCB-CERMHHMHSA-N')
+
+
+
+
+.. raw:: html
+
+    
+    <table>
+        <tbody>
+            <tr><td><strong>Formula</strong></td><td>C6H12O5</td></tr>
+            <tr><td><strong>InChi</strong></td><td>InChI=1S/C6H12O5/c7-2-4-6(10)3(8)1-5(9)11-4/h3-10H,1-2H2/t3-,4-,5?,6+/m1/s1</td></tr>
+            <tr><td><strong>InChi Key</strong></td><td>PMMURAAUARKVCB-CERMHHMHSA-N</td></tr>
+            <tr><td><strong>Structure</strong></td><td><?xml version="1.0"?>
+    <svg version="1.1" id="topsvg"
+    xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:cml="http://www.xml-cml.org/schema" x="0" y="0" width="200px" height="200px" viewBox="0 0 100 100">
+    <title> - Open Babel Depiction</title>
+    <rect x="0" y="0" width="100" height="100" fill="white"/>
+    <g transform="translate(0,0)">
+    <svg width="100" height="100" x="0" y="0" viewBox="0 0 218.564 240"
+    font-family="sans-serif" stroke="rgb(0,0,0)" stroke-width="2"  stroke-linecap="round">
+    <line x1="151.3" y1="143.3" x2="150.5" y2="144.7" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+    <line x1="157.1" y1="146.0" x2="155.7" y2="148.4" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+    <line x1="163.0" y1="148.6" x2="160.9" y2="152.2" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+    <line x1="168.8" y1="151.2" x2="166.1" y2="156.0" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+    <line x1="174.7" y1="153.9" x2="171.3" y2="159.7" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+    <line x1="180.6" y1="156.5" x2="176.6" y2="163.5" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+    <line x1="70.4" y1="143.4" x2="69.6" y2="142.0" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+    <line x1="67.0" y1="146.1" x2="65.6" y2="143.6" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+    <line x1="63.6" y1="148.8" x2="61.5" y2="145.2" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+    <line x1="60.2" y1="151.5" x2="57.5" y2="146.8" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+    <line x1="56.8" y1="154.2" x2="53.5" y2="148.3" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+    <line x1="53.4" y1="156.9" x2="49.4" y2="149.9" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+    <line x1="109.3" y1="80.0" x2="108.5" y2="74.6" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="108.5" y1="74.6" x2="110.7" y2="70.4" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="110.7" y1="70.4" x2="107.2" y2="66.1" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="107.2" y1="66.1" x2="112.0" y2="61.8" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="112.0" y1="61.8" x2="105.9" y2="57.5" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="105.9" y1="57.5" x2="113.3" y2="53.2" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="178.6" y1="160.0" x2="178.6" y2="187.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <polygon points="109.282032 160.000000 113.282032 186.800000 105.282032 186.800000 " stroke-width="2.000000" fill="rgb(0,0,0)"  stroke="rgb(0,0,0)" />
+    <line x1="143.9" y1="140.0" x2="143.9" y2="113.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="132.7" y1="93.5" x2="109.3" y2="80.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="109.3" y1="80.0" x2="74.6" y2="100.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="74.6" y1="100.0" x2="74.6" y2="140.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="74.6" y1="140.0" x2="109.3" y2="160.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="109.3" y1="160.0" x2="143.9" y2="140.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <text x="137.923048" y="108.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >O</text>
+    <text x="172.564065" y="208.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >OH</text>
+    <text x="103.282032" y="208.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >OH</text>
+    <text x="22.000000" y="168.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >HO</text>
+    <text x="103.282032" y="48.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >OH</text>
+    </svg>
+    </g>
+    <text font-size="18.000000" fill ="black" font-family="sans-serif"
+    x="10.000000" y="20.000000" ></text>
+    </svg></td></tr>
+            <tr><td><strong>DBs</strong></td><td>drugbank: DB08831</td></tr>
+            <tr><td><strong>Synonyms</strong></td><td>2-Deoxy-D-arabino-hexose</td></tr>
+        </tbody>
+    </table>
+
+
+
+.. code:: ipython3
+
+    Metabolite.get('SNDPXSYFESPGGJ-SCSAIBSYSA-N')
+
+
+
+
+.. raw:: html
+
+    
+    <table>
+        <tbody>
+            <tr><td><strong>Formula</strong></td><td>C5H11NO2</td></tr>
+            <tr><td><strong>InChi</strong></td><td>InChI=1S/C5H11NO2/c1-2-3-4(6)5(7)8/h4H,2-3,6H2,1H3,(H,7,8)/t4-/m1/s1</td></tr>
+            <tr><td><strong>InChi Key</strong></td><td>SNDPXSYFESPGGJ-SCSAIBSYSA-N</td></tr>
+            <tr><td><strong>Structure</strong></td><td><?xml version="1.0"?>
+    <svg version="1.1" id="topsvg"
+    xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:cml="http://www.xml-cml.org/schema" x="0" y="0" width="200px" height="200px" viewBox="0 0 100 100">
+    <title> - Open Babel Depiction</title>
+    <rect x="0" y="0" width="100" height="100" fill="white"/>
+    <g transform="translate(0,0)">
+    <svg width="100" height="100" x="0" y="0" viewBox="0 0 218.564 180"
+    font-family="sans-serif" stroke="rgb(0,0,0)" stroke-width="2"  stroke-linecap="round">
+    <line x1="178.6" y1="127.0" x2="178.6" y2="100.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="178.6" y1="100.0" x2="143.9" y2="80.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="109.3" y1="100.0" x2="74.6" y2="80.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <polygon points="109.282032 100.000000 113.282032 126.800000 105.282032 126.800000 " stroke-width="2.000000" fill="rgb(0,0,0)"  stroke="rgb(0,0,0)" />
+    <line x1="71.6" y1="80.0" x2="71.6" y2="53.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="77.6" y1="80.0" x2="77.6" y2="53.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="74.6" y1="80.0" x2="51.3" y2="93.5" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="109.3" y1="100.0" x2="143.9" y2="80.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <text x="174.564065" y="148.000000" fill="rgb(102,102,102)"  stroke="rgb(102,102,102)" stroke-width="1" font-size="16" >CH</text>
+    <text x="198.564065" y="151.680000" fill="rgb(102,102,102)"  stroke="rgb(102,102,102)" stroke-width="1" font-size="13" >3</text>
+    <text x="68.641016" y="48.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >O</text>
+    <text x="22.000000" y="108.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >HO</text>
+    <text x="105.282032" y="148.000000" fill="rgb(12,12,255)"  stroke="rgb(12,12,255)" stroke-width="1" font-size="16" >NH</text>
+    <text x="129.282032" y="151.680000" fill="rgb(12,12,255)"  stroke="rgb(12,12,255)" stroke-width="1" font-size="13" >2</text>
+    </svg>
+    </g>
+    <text font-size="18.000000" fill ="black" font-family="sans-serif"
+    x="10.000000" y="20.000000" ></text>
+    </svg></td></tr>
+            <tr><td><strong>DBs</strong></td><td>zinc: ZINC00391822</td></tr>
+            <tr><td><strong>Synonyms</strong></td><td></td></tr>
+        </tbody>
+    </table>
+
+
+
+The query can also be done using identifiers from databases
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+References are not indexed so this can be very slow.
+
+.. code:: ipython3
+
+    ref = Reference.get(accession="ZINC00391822", database="zinc")
+
+.. code:: ipython3
+
+    ref.id
+
+
+
+
+.. parsed-literal::
+
+    3004454
+
+
+
+.. code:: ipython3
+
+    mets = Metabolite.from_references(references=[ref])
+
+.. code:: ipython3
+
+    mets[0]
+
+
+
+
+.. raw:: html
+
+    
+    <table>
+        <tbody>
+            <tr><td><strong>Formula</strong></td><td>C5H11NO2</td></tr>
+            <tr><td><strong>InChi</strong></td><td>InChI=1S/C5H11NO2/c1-2-3-4(6)5(7)8/h4H,2-3,6H2,1H3,(H,7,8)/t4-/m1/s1</td></tr>
+            <tr><td><strong>InChi Key</strong></td><td>SNDPXSYFESPGGJ-SCSAIBSYSA-N</td></tr>
+            <tr><td><strong>Structure</strong></td><td><?xml version="1.0"?>
+    <svg version="1.1" id="topsvg"
+    xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:cml="http://www.xml-cml.org/schema" x="0" y="0" width="200px" height="200px" viewBox="0 0 100 100">
+    <title> - Open Babel Depiction</title>
+    <rect x="0" y="0" width="100" height="100" fill="white"/>
+    <g transform="translate(0,0)">
+    <svg width="100" height="100" x="0" y="0" viewBox="0 0 218.564 180"
+    font-family="sans-serif" stroke="rgb(0,0,0)" stroke-width="2"  stroke-linecap="round">
+    <line x1="178.6" y1="127.0" x2="178.6" y2="100.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="178.6" y1="100.0" x2="143.9" y2="80.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="109.3" y1="100.0" x2="74.6" y2="80.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <polygon points="109.282032 100.000000 113.282032 126.800000 105.282032 126.800000 " stroke-width="2.000000" fill="rgb(0,0,0)"  stroke="rgb(0,0,0)" />
+    <line x1="71.6" y1="80.0" x2="71.6" y2="53.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="77.6" y1="80.0" x2="77.6" y2="53.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="74.6" y1="80.0" x2="51.3" y2="93.5" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <line x1="109.3" y1="100.0" x2="143.9" y2="80.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+    <text x="174.564065" y="148.000000" fill="rgb(102,102,102)"  stroke="rgb(102,102,102)" stroke-width="1" font-size="16" >CH</text>
+    <text x="198.564065" y="151.680000" fill="rgb(102,102,102)"  stroke="rgb(102,102,102)" stroke-width="1" font-size="13" >3</text>
+    <text x="68.641016" y="48.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >O</text>
+    <text x="22.000000" y="108.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >HO</text>
+    <text x="105.282032" y="148.000000" fill="rgb(12,12,255)"  stroke="rgb(12,12,255)" stroke-width="1" font-size="16" >NH</text>
+    <text x="129.282032" y="151.680000" fill="rgb(12,12,255)"  stroke="rgb(12,12,255)" stroke-width="1" font-size="13" >2</text>
+    </svg>
+    </g>
+    <text font-size="18.000000" fill ="black" font-family="sans-serif"
+    x="10.000000" y="20.000000" ></text>
+    </svg></td></tr>
+            <tr><td><strong>DBs</strong></td><td>zinc: ZINC00391822</td></tr>
+            <tr><td><strong>Synonyms</strong></td><td></td></tr>
+        </tbody>
+    </table>
+
+

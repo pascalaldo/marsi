@@ -1,0 +1,29 @@
+marsi\.alembic package
+======================
+
+Subpackages
+-----------
+
+.. toctree::
+
+    marsi.alembic.versions
+
+Submodules
+----------
+
+marsi\.alembic\.env module
+--------------------------
+
+.. automodule:: marsi.alembic.env
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: marsi.alembic
+    :members:
+    :undoc-members:
+    :show-inheritance:

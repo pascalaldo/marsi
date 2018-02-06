@@ -1,0 +1,535 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.cli.controllers package &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="marsi.cli package" href="marsi.cli.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="marsi-cli-controllers-package">
+<h1>marsi.cli.controllers package<a class="headerlink" href="#marsi-cli-controllers-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-marsi.cli.controllers.chemistry">
+<span id="marsi-cli-controllers-chemistry-module"></span><h2>marsi.cli.controllers.chemistry module<a class="headerlink" href="#module-marsi.cli.controllers.chemistry" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="marsi.cli.controllers.chemistry.ChemistryController">
+<em class="property">class </em><code class="descclassname">marsi.cli.controllers.chemistry.</code><code class="descname">ChemistryController</code><span class="sig-paren">(</span><em>*args</em>, <em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/chemistry.html#ChemistryController"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.chemistry.ChemistryController" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">cement.core.controller.CementBaseController</span></code></p>
+<p>This is the Optimization Controller. It allows to run optimizations from the command line.</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.controllers.chemistry.ChemistryController.Meta" title="marsi.cli.controllers.chemistry.ChemistryController.Meta"><code class="xref py py-obj docutils literal"><span class="pre">Meta</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cli.controllers.chemistry.ChemistryController.default" title="marsi.cli.controllers.chemistry.ChemistryController.default"><code class="xref py py-obj docutils literal"><span class="pre">default</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.controllers.chemistry.ChemistryController.find_analogs" title="marsi.cli.controllers.chemistry.ChemistryController.find_analogs"><code class="xref py py-obj docutils literal"><span class="pre">find_analogs</span></code></a>()</td>
+<td><ol class="arabic simple">
+<li>Make a fingerprint from the –inchi, –sdf or –mol.</li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="marsi.cli.controllers.chemistry.ChemistryController.Meta">
+<em class="property">class </em><code class="descname">Meta</code><a class="reference internal" href="../_modules/marsi/cli/controllers/chemistry.html#ChemistryController.Meta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.chemistry.ChemistryController.Meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dl class="attribute">
+<dt id="marsi.cli.controllers.chemistry.ChemistryController.Meta.label">
+<code class="descname">label</code><em class="property"> = 'chem'</em><a class="headerlink" href="#marsi.cli.controllers.chemistry.ChemistryController.Meta.label" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cli.controllers.chemistry.ChemistryController.Meta.stacked_on">
+<code class="descname">stacked_on</code><em class="property"> = 'base'</em><a class="headerlink" href="#marsi.cli.controllers.chemistry.ChemistryController.Meta.stacked_on" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cli.controllers.chemistry.ChemistryController.Meta.stacked_type">
+<code class="descname">stacked_type</code><em class="property"> = 'nested'</em><a class="headerlink" href="#marsi.cli.controllers.chemistry.ChemistryController.Meta.stacked_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cli.controllers.chemistry.ChemistryController.Meta.description">
+<code class="descname">description</code><em class="property"> = 'Metabolite database query and filter tools'</em><a class="headerlink" href="#marsi.cli.controllers.chemistry.ChemistryController.Meta.description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cli.controllers.chemistry.ChemistryController.Meta.arguments">
+<code class="descname">arguments</code><em class="property"> = [(['--inchi'], {'help': 'The metabolite InChI to search'}), (['--sdf'], {'help': 'The metabolite SDF to search'}), (['--mol'], {'help': 'The metabolite MOL to search'}), (['--fingerprint-format', '-fp'], {'default': 'maccs', 'help': 'The fingerprint format', 'action': 'store'}), (['--fingerprint-cutoff', '-fpcut'], {'default': 'dynamic', 'help': 'Fingerprint cutoff', 'action': 'store'}), (['--similarity-cutoff', '-scut'], {'default': None, 'help': 'Similarity cutoff', 'action': 'store'}), (['--neighbors', '-k'], {'help': 'Filter the first K hits'}), (['--radius', '-r'], {'help': 'Filter hits within R distance radius'}), (['--atoms-weight', '-aw'], {'help': 'The weight of the atoms for structural similarity'}), (['--bonds-weight', '-bw'], {'help': 'The weight of the bonds for structural similarity'}), (['--atoms-diff', '-ad'], {'help': 'The maximum number of the atoms difference for database query'}), (['--bonds-diff', '-bd'], {'help': 'The maximum number of the bonds difference for database query'}), (['--rings-diff', '-rd'], {'help': 'The maximum number of the rings difference for database query'}), (['--output-file', '-o'], {'help': 'Output file'}), (['--output-format', '-f'], {'default': 'csv', 'help': 'Output format (default: csv)'})]</em><a class="headerlink" href="#marsi.cli.controllers.chemistry.ChemistryController.Meta.arguments" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.chemistry.ChemistryController.default">
+<code class="descname">default</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/chemistry.html#ChemistryController.default"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.chemistry.ChemistryController.default" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.chemistry.ChemistryController.find_analogs">
+<code class="descname">find_analogs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/chemistry.html#ChemistryController.find_analogs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.chemistry.ChemistryController.find_analogs" title="Permalink to this definition">¶</a></dt>
+<dd><ol class="arabic simple">
+<li>Make a fingerprint from the –inchi, –sdf or –mol.</li>
+<li>Query the database</li>
+</ol>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-marsi.cli.controllers.database">
+<span id="marsi-cli-controllers-database-module"></span><h2>marsi.cli.controllers.database module<a class="headerlink" href="#module-marsi.cli.controllers.database" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="marsi.cli.controllers.database.DatabaseController">
+<em class="property">class </em><code class="descclassname">marsi.cli.controllers.database.</code><code class="descname">DatabaseController</code><span class="sig-paren">(</span><em>*args</em>, <em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/database.html#DatabaseController"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">cement.core.controller.CementBaseController</span></code></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.controllers.database.DatabaseController.Meta" title="marsi.cli.controllers.database.DatabaseController.Meta"><code class="xref py py-obj docutils literal"><span class="pre">Meta</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cli.controllers.database.DatabaseController.add_known_analogs" title="marsi.cli.controllers.database.DatabaseController.add_known_analogs"><code class="xref py py-obj docutils literal"><span class="pre">add_known_analogs</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.controllers.database.DatabaseController.build_data" title="marsi.cli.controllers.database.DatabaseController.build_data"><code class="xref py py-obj docutils literal"><span class="pre">build_data</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cli.controllers.database.DatabaseController.build_database" title="marsi.cli.controllers.database.DatabaseController.build_database"><code class="xref py py-obj docutils literal"><span class="pre">build_database</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.controllers.database.DatabaseController.default" title="marsi.cli.controllers.database.DatabaseController.default"><code class="xref py py-obj docutils literal"><span class="pre">default</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cli.controllers.database.DatabaseController.download" title="marsi.cli.controllers.database.DatabaseController.download"><code class="xref py py-obj docutils literal"><span class="pre">download</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.controllers.database.DatabaseController.download_bigg" title="marsi.cli.controllers.database.DatabaseController.download_bigg"><code class="xref py py-obj docutils literal"><span class="pre">download_bigg</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cli.controllers.database.DatabaseController.download_chebi" title="marsi.cli.controllers.database.DatabaseController.download_chebi"><code class="xref py py-obj docutils literal"><span class="pre">download_chebi</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.controllers.database.DatabaseController.download_drug_bank" title="marsi.cli.controllers.database.DatabaseController.download_drug_bank"><code class="xref py py-obj docutils literal"><span class="pre">download_drug_bank</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cli.controllers.database.DatabaseController.download_kegg" title="marsi.cli.controllers.database.DatabaseController.download_kegg"><code class="xref py py-obj docutils literal"><span class="pre">download_kegg</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.controllers.database.DatabaseController.download_pubchem" title="marsi.cli.controllers.database.DatabaseController.download_pubchem"><code class="xref py py-obj docutils literal"><span class="pre">download_pubchem</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cli.controllers.database.DatabaseController.download_zinc" title="marsi.cli.controllers.database.DatabaseController.download_zinc"><code class="xref py py-obj docutils literal"><span class="pre">download_zinc</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.controllers.database.DatabaseController.init" title="marsi.cli.controllers.database.DatabaseController.init"><code class="xref py py-obj docutils literal"><span class="pre">init</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cli.controllers.database.DatabaseController.migrate" title="marsi.cli.controllers.database.DatabaseController.migrate"><code class="xref py py-obj docutils literal"><span class="pre">migrate</span></code></a>()</td>
+<td>Run database migration.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.controllers.database.DatabaseController.status" title="marsi.cli.controllers.database.DatabaseController.status"><code class="xref py py-obj docutils literal"><span class="pre">status</span></code></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="marsi.cli.controllers.database.DatabaseController.Meta">
+<em class="property">class </em><code class="descname">Meta</code><a class="reference internal" href="../_modules/marsi/cli/controllers/database.html#DatabaseController.Meta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.Meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dl class="attribute">
+<dt id="marsi.cli.controllers.database.DatabaseController.Meta.label">
+<code class="descname">label</code><em class="property"> = 'db'</em><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.Meta.label" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cli.controllers.database.DatabaseController.Meta.stacked_on">
+<code class="descname">stacked_on</code><em class="property"> = 'base'</em><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.Meta.stacked_on" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cli.controllers.database.DatabaseController.Meta.stacked_type">
+<code class="descname">stacked_type</code><em class="property"> = 'nested'</em><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.Meta.stacked_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cli.controllers.database.DatabaseController.Meta.description">
+<code class="descname">description</code><em class="property"> = 'Initialise MARSI (download data and build initial database)'</em><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.Meta.description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cli.controllers.database.DatabaseController.Meta.arguments">
+<code class="descname">arguments</code><em class="property"> = [(['--drugbank-version'], {'help': 'DrugBank version (5.0.3)'}), (['--with-zinc'], {'action': 'store_true', 'help': 'Include Zinc'})]</em><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.Meta.arguments" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.database.DatabaseController.default">
+<code class="descname">default</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/database.html#DatabaseController.default"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.default" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.database.DatabaseController.init">
+<code class="descname">init</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/database.html#DatabaseController.init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.init" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.database.DatabaseController.migrate">
+<code class="descname">migrate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/database.html#DatabaseController.migrate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.migrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run database migration.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.database.DatabaseController.download">
+<code class="descname">download</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/database.html#DatabaseController.download"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.download" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.database.DatabaseController.download_chebi">
+<code class="descname">download_chebi</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/database.html#DatabaseController.download_chebi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.download_chebi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.database.DatabaseController.download_drug_bank">
+<code class="descname">download_drug_bank</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/database.html#DatabaseController.download_drug_bank"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.download_drug_bank" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.database.DatabaseController.download_bigg">
+<code class="descname">download_bigg</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/database.html#DatabaseController.download_bigg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.download_bigg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.database.DatabaseController.download_pubchem">
+<code class="descname">download_pubchem</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/database.html#DatabaseController.download_pubchem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.download_pubchem" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.database.DatabaseController.download_zinc">
+<code class="descname">download_zinc</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/database.html#DatabaseController.download_zinc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.download_zinc" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.database.DatabaseController.download_kegg">
+<code class="descname">download_kegg</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/database.html#DatabaseController.download_kegg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.download_kegg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.database.DatabaseController.status">
+<code class="descname">status</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/database.html#DatabaseController.status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.database.DatabaseController.build_data">
+<code class="descname">build_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/database.html#DatabaseController.build_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.build_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.database.DatabaseController.build_database">
+<code class="descname">build_database</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/database.html#DatabaseController.build_database"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.build_database" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.database.DatabaseController.add_known_analogs">
+<code class="descname">add_known_analogs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/database.html#DatabaseController.add_known_analogs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.database.DatabaseController.add_known_analogs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-marsi.cli.controllers.modeling">
+<span id="marsi-cli-controllers-modeling-module"></span><h2>marsi.cli.controllers.modeling module<a class="headerlink" href="#module-marsi.cli.controllers.modeling" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="marsi.cli.controllers.modeling.OptimizationController">
+<em class="property">class </em><code class="descclassname">marsi.cli.controllers.modeling.</code><code class="descname">OptimizationController</code><span class="sig-paren">(</span><em>*args</em>, <em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/modeling.html#OptimizationController"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.modeling.OptimizationController" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">cement.core.controller.CementBaseController</span></code></p>
+<p>This is the Optimization Controller. It allows to run optimizations from the command line.</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.controllers.modeling.OptimizationController.Meta" title="marsi.cli.controllers.modeling.OptimizationController.Meta"><code class="xref py py-obj docutils literal"><span class="pre">Meta</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cli.controllers.modeling.OptimizationController.ale" title="marsi.cli.controllers.modeling.OptimizationController.ale"><code class="xref py py-obj docutils literal"><span class="pre">ale</span></code></a>()</td>
+<td><ol class="arabic simple">
+<li>Load model specified by –model.</li>
+</ol>
+</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.controllers.modeling.OptimizationController.convert" title="marsi.cli.controllers.modeling.OptimizationController.convert"><code class="xref py py-obj docutils literal"><span class="pre">convert</span></code></a>()</td>
+<td><ol class="arabic simple">
+<li>Load model specified by –model.</li>
+</ol>
+</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cli.controllers.modeling.OptimizationController.default" title="marsi.cli.controllers.modeling.OptimizationController.default"><code class="xref py py-obj docutils literal"><span class="pre">default</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.controllers.modeling.OptimizationController.mutagenesis" title="marsi.cli.controllers.modeling.OptimizationController.mutagenesis"><code class="xref py py-obj docutils literal"><span class="pre">mutagenesis</span></code></a>()</td>
+<td><ol class="arabic simple">
+<li>Load model specified by –model.</li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="marsi.cli.controllers.modeling.OptimizationController.exclude_reactions">
+<code class="descname">exclude_reactions</code><em class="property"> = ['ATPM']</em><a class="headerlink" href="#marsi.cli.controllers.modeling.OptimizationController.exclude_reactions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="marsi.cli.controllers.modeling.OptimizationController.Meta">
+<em class="property">class </em><code class="descname">Meta</code><a class="reference internal" href="../_modules/marsi/cli/controllers/modeling.html#OptimizationController.Meta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.modeling.OptimizationController.Meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dl class="attribute">
+<dt id="marsi.cli.controllers.modeling.OptimizationController.Meta.label">
+<code class="descname">label</code><em class="property"> = 'optimize'</em><a class="headerlink" href="#marsi.cli.controllers.modeling.OptimizationController.Meta.label" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cli.controllers.modeling.OptimizationController.Meta.stacked_on">
+<code class="descname">stacked_on</code><em class="property"> = 'base'</em><a class="headerlink" href="#marsi.cli.controllers.modeling.OptimizationController.Meta.stacked_on" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cli.controllers.modeling.OptimizationController.Meta.stacked_type">
+<code class="descname">stacked_type</code><em class="property"> = 'nested'</em><a class="headerlink" href="#marsi.cli.controllers.modeling.OptimizationController.Meta.stacked_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cli.controllers.modeling.OptimizationController.Meta.description">
+<code class="descname">description</code><em class="property"> = 'Optimize a host phenotype using Metabolites as targets'</em><a class="headerlink" href="#marsi.cli.controllers.modeling.OptimizationController.Meta.description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cli.controllers.modeling.OptimizationController.Meta.arguments">
+<code class="descname">arguments</code><em class="property"> = [(['--model', '-m'], {'help': 'path or identifier of the model to be used'}), (['--carbon-source'], {'help': '(optional) the carbon source exchange reaction. It will be auto-detected if not defined'}), (['--target', '-t'], {'help': 'The exchange reaction of the target phenotype or the metabolite to accumulate'}), (['--approach', '-a'], {'help': 'classic: use reaction search; metabolites: search for metabolite targets directly. (default: classic)'}), (['--biomass'], {'help': '(optional) the biomass reaction (needed if there is none or many reactions containing biomass on their ids or names'}), (['--max-interventions', '-mi'], {'help': '(optional) maximum number of interventions (default: 2)'}), (['--max-evaluations', '-me'], {'help': '(optional) maximum number of evaluations (default: 20000)'}), (['--output-file', '-o'], {'help': 'output file'}), (['--input-file', '-i'], {'help': 'input file'}), (['--transporters'], {'help': 'Include transporters knockout'})]</em><a class="headerlink" href="#marsi.cli.controllers.modeling.OptimizationController.Meta.arguments" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.modeling.OptimizationController.default">
+<code class="descname">default</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/modeling.html#OptimizationController.default"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.modeling.OptimizationController.default" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.modeling.OptimizationController.mutagenesis">
+<code class="descname">mutagenesis</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/modeling.html#OptimizationController.mutagenesis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.modeling.OptimizationController.mutagenesis" title="Permalink to this definition">¶</a></dt>
+<dd><ol class="arabic simple">
+<li>Load model specified by –model.</li>
+<li>Detect carbon source if not defined, otherwise change the carbon source.</li>
+<li>Detect biomass if not defined</li>
+<li>Run the optimization.</li>
+<li>Return the results.</li>
+</ol>
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.modeling.OptimizationController.ale">
+<code class="descname">ale</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/modeling.html#OptimizationController.ale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.modeling.OptimizationController.ale" title="Permalink to this definition">¶</a></dt>
+<dd><ol class="arabic simple">
+<li>Load model specified by –model.</li>
+<li>Detect carbon source if not defined, otherwise change the carbon source.</li>
+<li>Detect biomass if not defined</li>
+<li>Run the optimization.</li>
+<li>Return the results.</li>
+</ol>
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.modeling.OptimizationController.convert">
+<code class="descname">convert</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers/modeling.html#OptimizationController.convert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.modeling.OptimizationController.convert" title="Permalink to this definition">¶</a></dt>
+<dd><ol class="arabic simple">
+<li>Load model specified by –model.</li>
+<li>Detect carbon source if not defined, otherwise change the carbon source.</li>
+<li>Detect biomass if not defined</li>
+<li>Convert the results.</li>
+</ol>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-marsi.cli.controllers">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-marsi.cli.controllers" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="marsi.cli.controllers.MarsiBaseController">
+<em class="property">class </em><code class="descclassname">marsi.cli.controllers.</code><code class="descname">MarsiBaseController</code><span class="sig-paren">(</span><em>*args</em>, <em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers.html#MarsiBaseController"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.MarsiBaseController" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">cement.core.controller.CementBaseController</span></code></p>
+<p>This is the application base controller.</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.controllers.MarsiBaseController.Meta" title="marsi.cli.controllers.MarsiBaseController.Meta"><code class="xref py py-obj docutils literal"><span class="pre">Meta</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cli.controllers.MarsiBaseController.db_status" title="marsi.cli.controllers.MarsiBaseController.db_status"><code class="xref py py-obj docutils literal"><span class="pre">db_status</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.controllers.MarsiBaseController.default" title="marsi.cli.controllers.MarsiBaseController.default"><code class="xref py py-obj docutils literal"><span class="pre">default</span></code></a>()</td>
+<td><ol class="arabic simple">
+<li>Download necessary files.</li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="marsi.cli.controllers.MarsiBaseController.Meta">
+<em class="property">class </em><code class="descname">Meta</code><a class="reference internal" href="../_modules/marsi/cli/controllers.html#MarsiBaseController.Meta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.MarsiBaseController.Meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dl class="attribute">
+<dt id="marsi.cli.controllers.MarsiBaseController.Meta.label">
+<code class="descname">label</code><em class="property"> = 'base'</em><a class="headerlink" href="#marsi.cli.controllers.MarsiBaseController.Meta.label" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.MarsiBaseController.default">
+<code class="descname">default</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers.html#MarsiBaseController.default"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.MarsiBaseController.default" title="Permalink to this definition">¶</a></dt>
+<dd><ol class="arabic simple">
+<li>Download necessary files.</li>
+<li>Build the data files.</li>
+<li>Build the database.</li>
+</ol>
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.cli.controllers.MarsiBaseController.db_status">
+<code class="descname">db_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/controllers.html#MarsiBaseController.db_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.controllers.MarsiBaseController.db_status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">marsi.cli.controllers package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-marsi.cli.controllers.chemistry">marsi.cli.controllers.chemistry module</a></li>
+<li><a class="reference internal" href="#module-marsi.cli.controllers.database">marsi.cli.controllers.database module</a></li>
+<li><a class="reference internal" href="#module-marsi.cli.controllers.modeling">marsi.cli.controllers.modeling module</a></li>
+<li><a class="reference internal" href="#module-marsi.cli.controllers">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../API.html">API Docs</a><ul>
+  <li><a href="marsi.html">marsi package</a><ul>
+  <li><a href="marsi.cli.html">marsi.cli package</a><ul>
+      <li>Previous: <a href="marsi.cli.html" title="previous chapter">marsi.cli package</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/apidoc_output/marsi.cli.controllers.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/apidoc_output/marsi.cli.controllers.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

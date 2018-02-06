@@ -1,0 +1,38 @@
+marsi\.cli\.controllers package
+===============================
+
+Submodules
+----------
+
+marsi\.cli\.controllers\.chemistry module
+-----------------------------------------
+
+.. automodule:: marsi.cli.controllers.chemistry
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.cli\.controllers\.database module
+----------------------------------------
+
+.. automodule:: marsi.cli.controllers.database
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.cli\.controllers\.modeling module
+----------------------------------------
+
+.. automodule:: marsi.cli.controllers.modeling
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: marsi.cli.controllers
+    :members:
+    :undoc-members:
+    :show-inheritance:

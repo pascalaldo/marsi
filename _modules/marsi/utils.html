@@ -1,0 +1,272 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.utils &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2016 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">gzip</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">IProgress</span> <span class="k">import</span> <span class="n">ProgressBar</span><span class="p">,</span> <span class="n">Percentage</span>
+<span class="kn">from</span> <span class="nn">cameo</span> <span class="k">import</span> <span class="n">fba</span>
+<span class="kn">from</span> <span class="nn">cameo.flux_analysis.analysis</span> <span class="k">import</span> <span class="n">n_carbon</span>
+<span class="kn">from</span> <span class="nn">cobra.core.reaction</span> <span class="k">import</span> <span class="n">Reaction</span>
+
+<span class="kn">from</span> <span class="nn">marsi</span> <span class="k">import</span> <span class="n">config</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;data_dir&#39;</span><span class="p">,</span> <span class="s1">&#39;log_dir&#39;</span><span class="p">,</span> <span class="s1">&#39;pickle_large&#39;</span><span class="p">,</span> <span class="s1">&#39;unpickle_large&#39;</span><span class="p">,</span> <span class="s1">&#39;frange&#39;</span><span class="p">,</span> <span class="s1">&#39;src_dir&#39;</span><span class="p">,</span> <span class="s1">&#39;internal_data_dir&#39;</span><span class="p">]</span>
+
+<span class="n">data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">prj_dir</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">)</span>
+<span class="n">models_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">prj_dir</span><span class="p">,</span> <span class="s2">&quot;models&quot;</span><span class="p">)</span>
+<span class="n">log_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">prj_dir</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">)</span>
+<span class="n">src_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)))</span>
+
+<span class="n">internal_data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">src_dir</span><span class="p">,</span> <span class="s1">&#39;io&#39;</span><span class="p">,</span> <span class="s1">&#39;files&#39;</span><span class="p">)</span>
+
+<span class="n">INCHI_KEY_TYPE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s2">&quot;a27&quot;</span><span class="p">)</span>
+
+<span class="n">BIOMASS_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;biomass&quot;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+
+<span class="n">MAX_BYTES</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span> <span class="o">-</span> <span class="mi">1</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="pickle_large"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.utils.pickle_large">[docs]</a><span class="k">def</span> <span class="nf">pickle_large</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">model_handler</span><span class="p">:</span>
+        <span class="n">bytes_out</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="n">output_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bytes_out</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">progress</span><span class="p">:</span>
+            <span class="n">pbar</span> <span class="o">=</span> <span class="n">ProgressBar</span><span class="p">(</span><span class="n">maxval</span><span class="o">=</span><span class="n">output_size</span><span class="p">,</span> <span class="n">widgets</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Writing &quot;</span><span class="p">,</span> <span class="n">Percentage</span><span class="p">()])</span>
+            <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">pbar</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">output_size</span><span class="p">,</span> <span class="n">MAX_BYTES</span><span class="p">)):</span>
+                <span class="n">model_handler</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">bytes_out</span><span class="p">[</span><span class="n">idx</span><span class="p">:</span><span class="n">idx</span> <span class="o">+</span> <span class="n">MAX_BYTES</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">output_size</span><span class="p">,</span> <span class="n">MAX_BYTES</span><span class="p">):</span>
+                <span class="n">model_handler</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">bytes_out</span><span class="p">[</span><span class="n">idx</span><span class="p">:</span><span class="n">idx</span> <span class="o">+</span> <span class="n">MAX_BYTES</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="unpickle_large"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.utils.unpickle_large">[docs]</a><span class="k">def</span> <span class="nf">unpickle_large</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">input_size</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Input size: </span><span class="si">%f</span><span class="s2"> bytes&quot;</span> <span class="o">%</span> <span class="n">input_size</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_handler</span><span class="p">:</span>
+        <span class="n">bytes_in</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">progress</span><span class="p">:</span>
+            <span class="n">pbar</span> <span class="o">=</span> <span class="n">ProgressBar</span><span class="p">(</span><span class="n">maxval</span><span class="o">=</span><span class="n">input_size</span><span class="p">,</span> <span class="n">widgets</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Loading &quot;</span><span class="p">,</span> <span class="n">Percentage</span><span class="p">()])</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">pbar</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span> <span class="n">MAX_BYTES</span><span class="p">)):</span>
+                <span class="n">bytes_in</span> <span class="o">+=</span> <span class="n">file_handler</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">MAX_BYTES</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span> <span class="n">MAX_BYTES</span><span class="p">):</span>
+                <span class="n">bytes_in</span> <span class="o">+=</span> <span class="n">file_handler</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">MAX_BYTES</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">bytes_in</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="frange"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.utils.frange">[docs]</a><span class="k">def</span> <span class="nf">frange</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Float range generator.</span>
+
+<span class="sd">    Generates *steps* equally separated between *start* and *stop*.</span>
+<span class="sd">    If *stop* is None, the values are between 0 and *start*</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    start : float</span>
+<span class="sd">        The initial value.</span>
+<span class="sd">    stop : float</span>
+<span class="sd">        The final value.</span>
+<span class="sd">    steps : int</span>
+<span class="sd">        Number of values to generate.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    generator</span>
+<span class="sd">        A generator that yields float.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">stop</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="n">start</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Python 2 division of int returns int</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+    <span class="n">stop</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+
+    <span class="n">step_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Step size </span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">step_size</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Iteration </span><span class="si">%i</span><span class="s2">: </span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">i</span> <span class="o">*</span> <span class="n">step_size</span><span class="p">))</span>
+        <span class="k">yield</span> <span class="n">start</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">step_size</span></div>
+
+
+<span class="k">def</span> <span class="nf">unique</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Removes repeated values from a list.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    l: list</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list</span>
+<span class="sd">        The same list with only unique values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">l</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">l</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+            <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">del</span> <span class="n">l</span><span class="p">[</span><span class="n">n</span><span class="p">:]</span>
+
+
+<span class="k">def</span> <span class="nf">timing</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+    <span class="k">def</span> <span class="nf">function_wrapper</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">debug_wrap_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">stop</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">level</span> <span class="o">&gt;=</span> <span class="n">config</span><span class="o">.</span><span class="n">Level</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> function took </span><span class="si">%0.3f</span><span class="s1"> ms&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1000.0</span><span class="p">))</span>
+                <span class="k">return</span> <span class="n">ret</span>
+            <span class="k">return</span> <span class="n">debug_wrap_func</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">wrap_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">stop</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> function took </span><span class="si">%0.3f</span><span class="s1"> ms&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1000.0</span><span class="p">))</span>
+                <span class="k">return</span> <span class="n">ret</span>
+            <span class="k">return</span> <span class="n">wrap_func</span>
+    <span class="k">return</span> <span class="n">function_wrapper</span>
+
+
+<span class="k">def</span> <span class="nf">default_carbon_sources</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+    <span class="n">solution</span> <span class="o">=</span> <span class="n">fba</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="n">carbon_sources</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">exchanges</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="n">Reaction</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ex</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">solution</span><span class="p">[</span><span class="n">ex</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">n_carbon</span><span class="p">(</span><span class="n">ex</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Found carbon source: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">carbon_sources</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">carbon_sources</span>
+
+
+<span class="k">def</span> <span class="nf">gunzip</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">file</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span> <span class="o">==</span> <span class="s2">&quot;.gz&quot;</span>
+    <span class="n">in_name</span> <span class="o">=</span> <span class="n">file</span>
+    <span class="n">out_name</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
+    <span class="k">with</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">in_name</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_in</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">out_name</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_out</span><span class="p">:</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copyfileobj</span><span class="p">(</span><span class="n">f_in</span><span class="p">,</span> <span class="n">f_out</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">search_metabolites</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">species_id</span><span class="p">,</span> <span class="n">ignore_external</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">ignore_external</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">metabolites</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mid</span><span class="p">:</span> <span class="n">mid</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">species_id</span> <span class="ow">and</span> <span class="n">mid</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">!=</span> <span class="s2">&quot;_e&quot;</span><span class="p">,</span> <span class="n">attribute</span><span class="o">=</span><span class="s1">&#39;id&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">metabolites</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mid</span><span class="p">:</span> <span class="n">mid</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">species_id</span><span class="p">,</span> <span class="n">attribute</span><span class="o">=</span><span class="s1">&#39;id&#39;</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

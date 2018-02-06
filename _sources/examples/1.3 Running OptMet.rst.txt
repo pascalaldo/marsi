@@ -1,0 +1,50 @@
+1.3 Running OptMet
+======================
+
+.. code:: ipython3
+
+    from bokeh.io import output_notebook
+    output_notebook()
+
+
+
+.. raw:: html
+
+    
+        <div class="bk-root">
+            <a href="http://bokeh.pydata.org" target="_blank" class="bk-logo bk-logo-small bk-logo-notebook"></a>
+            <span id="1e432909-f940-4472-b3ec-bdc118c7a702">Loading BokehJS ...</span>
+        </div>
+
+
+
+
+.. code:: ipython3
+
+    from cameo import models
+    from marsi.cobra.strain_design import OptMet
+
+.. code:: ipython3
+
+    model = models.bigg.iJO1366
+
+.. code:: ipython3
+
+    optimization = OptMet(model=model)
+
+.. code:: ipython3
+
+    target = model.metabolites.succ_c
+    biomass = model.reactions.BIOMASS_Ec_iJO1366_core_53p95M
+    substrate = model.reactions.EX_glc__D_e
+    
+    # Succinate production needs to be anaerobic to yield growth coupled designs.
+    model.reactions.EX_o2_e.lower_bound = 0
+
+.. code:: ipython3
+
+    result = optimization.run(target=target, biomass=biomass, substrate=substrate, max_evaluations=3000)
+
+.. code:: ipython3
+
+    result

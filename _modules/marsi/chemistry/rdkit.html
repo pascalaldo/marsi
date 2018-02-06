@@ -1,0 +1,478 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.chemistry.rdkit &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.chemistry.rdkit</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2016 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">rdkit</span>
+<span class="kn">from</span> <span class="nn">bitarray</span> <span class="k">import</span> <span class="n">bitarray</span>
+<span class="kn">from</span> <span class="nn">cachetools</span> <span class="k">import</span> <span class="n">cached</span><span class="p">,</span> <span class="n">LRUCache</span>
+<span class="kn">from</span> <span class="nn">rdkit</span> <span class="k">import</span> <span class="n">Chem</span>
+<span class="kn">from</span> <span class="nn">rdkit.Chem</span> <span class="k">import</span> <span class="n">AllChem</span><span class="p">,</span> <span class="n">MACCSkeys</span><span class="p">,</span> <span class="n">MCS</span>
+<span class="kn">from</span> <span class="nn">rdkit.Chem.SaltRemover</span> <span class="k">import</span> <span class="n">SaltRemover</span>
+
+<span class="kn">from</span> <span class="nn">marsi.chemistry.common</span> <span class="k">import</span> <span class="n">monte_carlo_volume</span> <span class="k">as</span> <span class="n">mc_vol</span><span class="p">,</span> <span class="n">inchi_key_lru_cache</span>
+
+
+<span class="n">lru_cache</span> <span class="o">=</span> <span class="n">LRUCache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">256</span><span class="p">)</span>
+
+<span class="n">periodic_table</span> <span class="o">=</span> <span class="n">Chem</span><span class="o">.</span><span class="n">GetPeriodicTable</span><span class="p">()</span>
+<span class="n">salt_remove</span> <span class="o">=</span> <span class="n">SaltRemover</span><span class="p">(</span><span class="n">defnData</span><span class="o">=</span><span class="s2">&quot;[Li,K,Rb,Cs,Fr,Be,Mg,Ca,Sr,Ba,Ra,F,Cl,Br]&quot;</span><span class="p">)</span>
+
+<span class="n">fps</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;maccs&quot;</span><span class="p">,</span> <span class="s2">&quot;morgan2&quot;</span><span class="p">,</span> <span class="s2">&quot;morgan3&quot;</span><span class="p">,</span> <span class="s2">&quot;morgan4&quot;</span><span class="p">,</span> <span class="s2">&quot;morgan5&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="inchi_to_molecule"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.rdkit.inchi_to_molecule">[docs]</a><span class="nd">@cached</span><span class="p">(</span><span class="n">lru_cache</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">inchi_to_molecule</span><span class="p">(</span><span class="n">inchi</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a molecule from a InChI string.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    inchi : str</span>
+<span class="sd">        A valid string.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rdkit.Chem.rdchem.Mol</span>
+<span class="sd">        A molecule.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mol</span> <span class="o">=</span> <span class="n">Chem</span><span class="o">.</span><span class="n">MolFromInchi</span><span class="p">(</span><span class="n">inchi</span><span class="p">)</span>
+    <span class="n">mol</span> <span class="o">=</span> <span class="n">salt_remove</span><span class="o">.</span><span class="n">StripMol</span><span class="p">(</span><span class="n">mol</span><span class="p">,</span> <span class="n">dontRemoveEverything</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">Chem</span><span class="o">.</span><span class="n">Kekulize</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
+    <span class="n">mol</span> <span class="o">=</span> <span class="n">Chem</span><span class="o">.</span><span class="n">AddHs</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mol</span></div>
+
+
+<div class="viewcode-block" id="mol_to_molecule"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.rdkit.mol_to_molecule">[docs]</a><span class="k">def</span> <span class="nf">mol_to_molecule</span><span class="p">(</span><span class="n">file_or_molecule_desc</span><span class="p">,</span> <span class="n">from_file</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a molecule from a MOL file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file_or_molecule_desc : str</span>
+<span class="sd">        A valid MOL file path or a valid MOL string.</span>
+<span class="sd">    from_file : bool</span>
+<span class="sd">        If True tries to read the molecule from a file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rdkit.Chem.rdchem.Mol</span>
+<span class="sd">        A molecule.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">from_file</span><span class="p">:</span>
+        <span class="n">mol</span> <span class="o">=</span> <span class="n">Chem</span><span class="o">.</span><span class="n">MolFromMolFile</span><span class="p">(</span><span class="n">file_or_molecule_desc</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mol</span> <span class="o">=</span> <span class="n">Chem</span><span class="o">.</span><span class="n">MolFromMolBlock</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">file_or_molecule_desc</span><span class="p">))</span>
+    <span class="n">mol</span> <span class="o">=</span> <span class="n">salt_remove</span><span class="o">.</span><span class="n">StripMol</span><span class="p">(</span><span class="n">mol</span><span class="p">,</span> <span class="n">dontRemoveEverything</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">Chem</span><span class="o">.</span><span class="n">Kekulize</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
+    <span class="n">mol</span> <span class="o">=</span> <span class="n">Chem</span><span class="o">.</span><span class="n">AddHs</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mol</span></div>
+
+
+<div class="viewcode-block" id="sdf_to_molecule"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.rdkit.sdf_to_molecule">[docs]</a><span class="k">def</span> <span class="nf">sdf_to_molecule</span><span class="p">(</span><span class="n">file_or_molecule_desc</span><span class="p">,</span> <span class="n">from_file</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a molecule from a SDF file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file_or_molecule_desc : str</span>
+<span class="sd">        A valid sdf file path or a valid SDF string.</span>
+<span class="sd">    from_file : bool</span>
+<span class="sd">        If True tries to read the molecule from a file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rdkit.Chem.rdchem.Mol</span>
+<span class="sd">        A molecule.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">from_file</span><span class="p">:</span>
+        <span class="n">supplier</span> <span class="o">=</span> <span class="n">Chem</span><span class="o">.</span><span class="n">SDMolSupplier</span><span class="p">(</span><span class="n">file_or_molecule_desc</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">supplier</span> <span class="o">=</span> <span class="n">Chem</span><span class="o">.</span><span class="n">SDMolSupplier</span><span class="p">()</span>
+        <span class="n">supplier</span><span class="o">.</span><span class="n">SetData</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">file_or_molecule_desc</span><span class="p">),</span> <span class="n">strictParsing</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">mol</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">supplier</span><span class="p">)</span>
+    <span class="n">mol</span> <span class="o">=</span> <span class="n">salt_remove</span><span class="o">.</span><span class="n">StripMol</span><span class="p">(</span><span class="n">mol</span><span class="p">,</span> <span class="n">dontRemoveEverything</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">Chem</span><span class="o">.</span><span class="n">Kekulize</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
+    <span class="n">mol</span> <span class="o">=</span> <span class="n">Chem</span><span class="o">.</span><span class="n">AddHs</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mol</span></div>
+
+
+<div class="viewcode-block" id="inchi_to_inchi_key"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.rdkit.inchi_to_inchi_key">[docs]</a><span class="nd">@cached</span><span class="p">(</span><span class="n">inchi_key_lru_cache</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">inchi_to_inchi_key</span><span class="p">(</span><span class="n">inchi</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Makes an InChI Key from a InChI string.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    inchi : str</span>
+<span class="sd">        A valid InChI string.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        A InChI key.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">Chem</span><span class="o">.</span><span class="n">InchiToInchiKey</span><span class="p">(</span><span class="n">inchi</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mol_to_inchi_key"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.rdkit.mol_to_inchi_key">[docs]</a><span class="k">def</span> <span class="nf">mol_to_inchi_key</span><span class="p">(</span><span class="n">mol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Makes an InChI Key from a Molecule.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mol : rdkit.Chem.rdchem.Mol</span>
+<span class="sd">        A molecule.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        A InChI key.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">inchi_to_inchi_key</span><span class="p">(</span><span class="n">mol_to_inchi</span><span class="p">(</span><span class="n">mol</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="mol_to_inchi"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.rdkit.mol_to_inchi">[docs]</a><span class="k">def</span> <span class="nf">mol_to_inchi</span><span class="p">(</span><span class="n">mol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Makes an InChI from a Molecule.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mol : rdkit.Chem.rdchem.Mol</span>
+<span class="sd">        A molecule.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        A InChI.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">Chem</span><span class="o">.</span><span class="n">MolToInchi</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="fingerprint"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.rdkit.fingerprint">[docs]</a><span class="k">def</span> <span class="nf">fingerprint</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="n">fpformat</span><span class="o">=</span><span class="s1">&#39;maccs&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the Fingerprint of the molecule.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    molecule : rdkit.Chem.rdchem.Mol</span>
+<span class="sd">        A molecule.</span>
+
+<span class="sd">    fpformat : str</span>
+<span class="sd">        A valid fingerprint format.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Fingerprint</span>
+<span class="sd">        rdkit.DataStructs.cDataStructs.ExplicitBitVect</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="n">Chem</span><span class="o">.</span><span class="n">rdchem</span><span class="o">.</span><span class="n">Mol</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fpformat</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">fp</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">fpformat</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fps</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">&quot;&#39;</span><span class="si">%s</span><span class="s2">&#39; is not a valid fingerprint format&quot;</span> <span class="o">%</span> <span class="n">fpformat</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">fpformat</span> <span class="o">==</span> <span class="s2">&quot;maccs&quot;</span><span class="p">:</span>
+        <span class="n">fp</span> <span class="o">=</span> <span class="n">MACCSkeys</span><span class="o">.</span><span class="n">FingerprintMol</span><span class="p">(</span><span class="n">molecule</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">fpformat</span> <span class="o">==</span> <span class="s2">&quot;morgan2&quot;</span><span class="p">:</span>
+        <span class="n">fp</span> <span class="o">=</span> <span class="n">AllChem</span><span class="o">.</span><span class="n">GetMorganFingerprintAsBitVect</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">fpformat</span> <span class="o">==</span> <span class="s2">&quot;morgan3&quot;</span><span class="p">:</span>
+        <span class="n">fp</span> <span class="o">=</span> <span class="n">AllChem</span><span class="o">.</span><span class="n">GetMorganFingerprintAsBitVect</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">fpformat</span> <span class="o">==</span> <span class="s2">&quot;morgan4&quot;</span><span class="p">:</span>
+        <span class="n">fp</span> <span class="o">=</span> <span class="n">AllChem</span><span class="o">.</span><span class="n">GetMorganFingerprintAsBitVect</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">fpformat</span> <span class="o">==</span> <span class="s2">&quot;morgan5&quot;</span><span class="p">:</span>
+        <span class="n">fp</span> <span class="o">=</span> <span class="n">AllChem</span><span class="o">.</span><span class="n">GetMorganFingerprintAsBitVect</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fp</span></div>
+
+
+<div class="viewcode-block" id="fingerprint_to_bits"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.rdkit.fingerprint_to_bits">[docs]</a><span class="k">def</span> <span class="nf">fingerprint_to_bits</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">bits</span><span class="o">=</span><span class="mi">1024</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a pybel.Fingerprint into a binary array</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fp : rdkit.DataStructs.cDataStructs.ExplicitBitVect</span>
+<span class="sd">        A fingerprint molecule.</span>
+<span class="sd">    bits : int</span>
+<span class="sd">        Number of bits (default is 1024)</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bitarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bits_list</span> <span class="o">=</span> <span class="n">bitarray</span><span class="p">(</span><span class="n">bits</span><span class="p">)</span>
+    <span class="n">bits_list</span><span class="o">.</span><span class="n">setall</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">GenNumBits</span><span class="p">()):</span>
+        <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">GetBit</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+            <span class="n">bits_list</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">bits_list</span></div>
+
+
+<div class="viewcode-block" id="maximum_common_substructure"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.rdkit.maximum_common_substructure">[docs]</a><span class="k">def</span> <span class="nf">maximum_common_substructure</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">molecule</span><span class="p">,</span> <span class="n">match_rings</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">match_fraction</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the Maximum Common Substructure (MCS) between two molecules.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    reference : rdkit.Chem.Mol</span>
+<span class="sd">        A molecule.</span>
+<span class="sd">    molecule : rdkit.Chem.Mol</span>
+<span class="sd">        Another molecule.</span>
+<span class="sd">    match_rings : bool</span>
+<span class="sd">        Force ring structure to match</span>
+<span class="sd">    match_fraction : float</span>
+<span class="sd">        Match is fraction of the reference atoms (default: 0.6)</span>
+<span class="sd">    timeout: int</span>
+<span class="sd">        Time out in seconds.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rdkit.Chem.MCS.MCSResult</span>
+<span class="sd">        Maximum Common Substructure result.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">rdkit</span><span class="o">.</span><span class="n">Chem</span><span class="o">.</span><span class="n">rdchem</span><span class="o">.</span><span class="n">Mol</span><span class="p">)</span>
+
+    <span class="n">min_num_atoms</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">reference</span><span class="o">.</span><span class="n">GetNumAtoms</span><span class="p">())</span> <span class="o">*</span> <span class="n">match_fraction</span>
+
+    <span class="k">return</span> <span class="n">MCS</span><span class="o">.</span><span class="n">FindMCS</span><span class="p">([</span><span class="n">reference</span><span class="p">,</span> <span class="n">molecule</span><span class="p">],</span> <span class="n">ringMatchesRingOnly</span><span class="o">=</span><span class="n">match_rings</span><span class="p">,</span>
+                        <span class="n">minNumAtoms</span><span class="o">=</span><span class="n">min_num_atoms</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
+                        <span class="n">atomCompare</span><span class="o">=</span><span class="s2">&quot;any&quot;</span><span class="p">,</span> <span class="n">bondCompare</span><span class="o">=</span><span class="s2">&quot;any&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mcs_similarity"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.rdkit.mcs_similarity">[docs]</a><span class="k">def</span> <span class="nf">mcs_similarity</span><span class="p">(</span><span class="n">mcs_result</span><span class="p">,</span> <span class="n">molecule</span><span class="p">,</span> <span class="n">atoms_weight</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">bonds_weight</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the Maximum Common Substructure (MCS) between two molecules.</span>
+
+<span class="sd">    $$ atoms\_weight * (mcs_res.similar\_atoms/mol.num_atoms) + bonds\_weight *</span>
+<span class="sd">    (mcs_res.similar\_bonds/mol.num\_bonds) $$</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mcs_result : rdkit.Chem.MCS.MCSResult</span>
+<span class="sd">        The result of a Maximum Common Substructure run.</span>
+<span class="sd">    molecule : rdkit.Chem.Mol</span>
+<span class="sd">        A molecule.</span>
+<span class="sd">    atoms_weight : float</span>
+<span class="sd">        How much similar atoms matter.</span>
+<span class="sd">    bonds_weight : float</span>
+<span class="sd">        How much similar bonds matter.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Similarity value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mcs_result</span><span class="p">,</span> <span class="n">MCS</span><span class="o">.</span><span class="n">MCSResult</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="n">Chem</span><span class="o">.</span><span class="n">rdchem</span><span class="o">.</span><span class="n">Mol</span><span class="p">)</span>
+
+    <span class="n">atoms_score</span> <span class="o">=</span> <span class="n">atoms_weight</span> <span class="o">*</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">mcs_result</span><span class="o">.</span><span class="n">numAtoms</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">molecule</span><span class="o">.</span><span class="n">GetNumAtoms</span><span class="p">()))</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">bonds_score</span> <span class="o">=</span> <span class="n">bonds_weight</span> <span class="o">*</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">mcs_result</span><span class="o">.</span><span class="n">numBonds</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">molecule</span><span class="o">.</span><span class="n">GetNumBonds</span><span class="p">()))</span>
+    <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
+        <span class="n">bonds_score</span> <span class="o">=</span> <span class="o">.</span><span class="mi">0</span>
+    <span class="k">return</span> <span class="n">atoms_score</span> <span class="o">+</span> <span class="n">bonds_score</span></div>
+
+
+<div class="viewcode-block" id="structural_similarity"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.rdkit.structural_similarity">[docs]</a><span class="k">def</span> <span class="nf">structural_similarity</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">molecule</span><span class="p">,</span> <span class="n">atoms_weight</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">bonds_weight</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                          <span class="n">match_rings</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">match_fraction</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a structural similarity based on the Maximum Common Substructure (MCS) between two molecules.</span>
+
+<span class="sd">    $$ mcs\_s(ref) * mcs\_s(mol) $$</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    reference : rdkit.Chem.Mol</span>
+<span class="sd">        The result of a Maximum Common Substructure run.</span>
+<span class="sd">    molecule : rdkit.Chem.Mol</span>
+<span class="sd">        A molecule.</span>
+<span class="sd">    atoms_weight : float</span>
+<span class="sd">        How much similar atoms matter.</span>
+<span class="sd">    bonds_weight : float</span>
+<span class="sd">        How much similar bonds matter.</span>
+<span class="sd">    match_rings : bool</span>
+<span class="sd">        Force ring structure to match.</span>
+<span class="sd">    match_fraction : float</span>
+<span class="sd">        Match is fraction of the reference atoms (default: 0.6).</span>
+<span class="sd">    timeout : int</span>
+<span class="sd">        Time out in seconds.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Similarity between reference and molecule.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">reference</span> <span class="o">=</span> <span class="n">Chem</span><span class="o">.</span><span class="n">RemoveHs</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">implicitOnly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">updateExplicitCount</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">molecule</span> <span class="o">=</span> <span class="n">Chem</span><span class="o">.</span><span class="n">RemoveHs</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="n">implicitOnly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">updateExplicitCount</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">mcs_res</span> <span class="o">=</span> <span class="n">maximum_common_substructure</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">molecule</span><span class="p">,</span> <span class="n">match_rings</span><span class="o">=</span><span class="n">match_rings</span><span class="p">,</span>
+                                          <span class="n">match_fraction</span><span class="o">=</span><span class="n">match_fraction</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+
+    <span class="n">ref_similarity</span> <span class="o">=</span> <span class="n">mcs_similarity</span><span class="p">(</span><span class="n">mcs_res</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">atoms_weight</span><span class="o">=</span><span class="n">atoms_weight</span><span class="p">,</span> <span class="n">bonds_weight</span><span class="o">=</span><span class="n">bonds_weight</span><span class="p">)</span>
+    <span class="n">mol_similarity</span> <span class="o">=</span> <span class="n">mcs_similarity</span><span class="p">(</span><span class="n">mcs_res</span><span class="p">,</span> <span class="n">molecule</span><span class="p">,</span> <span class="n">atoms_weight</span><span class="o">=</span><span class="n">atoms_weight</span><span class="p">,</span> <span class="n">bonds_weight</span><span class="o">=</span><span class="n">bonds_weight</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ref_similarity</span> <span class="o">*</span> <span class="n">mol_similarity</span></div>
+
+
+<div class="viewcode-block" id="monte_carlo_volume"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.rdkit.monte_carlo_volume">[docs]</a><span class="k">def</span> <span class="nf">monte_carlo_volume</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="n">coordinates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_iterations</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                       <span class="n">seed</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">forcefield</span><span class="o">=</span><span class="s1">&#39;mmff94&#39;</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adapted from:</span>
+
+<span class="sd">    Simple Monte Carlo estimation of VdW molecular volume (in A^3)</span>
+<span class="sd">    by Geoffrey Hutchison &lt;geoffh@pitt.edu&gt;</span>
+
+<span class="sd">    https://github.com/ghutchis/hutchison-cluster</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    molecule : rdkit.Chem.rdchem.Mol</span>
+<span class="sd">        A molecule from rdkit.</span>
+<span class="sd">    coordinates : list</span>
+<span class="sd">        A list of pre selected x,y,z coords. It must match the atoms order.</span>
+<span class="sd">    tolerance : float</span>
+<span class="sd">        The tolerance for convergence of the monte carlo abs(new_volume - volume) &lt; tolerance</span>
+<span class="sd">    max_iterations : int</span>
+<span class="sd">        Number of iterations before the algorithm starts.</span>
+<span class="sd">    step_size : int</span>
+<span class="sd">        Number of points to add each step.</span>
+<span class="sd">    seed : object</span>
+<span class="sd">        A valid seed for random.</span>
+<span class="sd">    verbose : bool</span>
+<span class="sd">        Print debug information if True.</span>
+<span class="sd">    forcefield : str</span>
+<span class="sd">        The force field to get a 3D molecule. (only if it is not 3D already)</span>
+<span class="sd">    steps : int</span>
+<span class="sd">        The number of steps used for the force field to get a 3D molecule. (only if it is not 3D already)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Molecule volume</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="n">rdkit</span><span class="o">.</span><span class="n">Chem</span><span class="o">.</span><span class="n">rdchem</span><span class="o">.</span><span class="n">Mol</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">coordinates</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">molecule</span><span class="o">.</span><span class="n">GetConformers</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">AllChem</span><span class="o">.</span><span class="n">EmbedMolecule</span><span class="p">(</span><span class="n">molecule</span><span class="p">)</span>
+            <span class="n">AllChem</span><span class="o">.</span><span class="n">UFFOptimizeMolecule</span><span class="p">(</span><span class="n">molecule</span><span class="p">)</span>
+
+        <span class="n">conformer</span> <span class="o">=</span> <span class="n">molecule</span><span class="o">.</span><span class="n">GetConformer</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">coordinates</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">atom</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">molecule</span><span class="o">.</span><span class="n">GetAtoms</span><span class="p">()):</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">conformer</span><span class="o">.</span><span class="n">GetAtomPosition</span><span class="p">(</span><span class="n">index</span><span class="p">))</span>
+            <span class="n">coordinates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+
+    <span class="n">vdw_radii</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">atom</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">molecule</span><span class="o">.</span><span class="n">GetAtoms</span><span class="p">()):</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="n">periodic_table</span><span class="o">.</span><span class="n">GetRvdw</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">GetAtomicNum</span><span class="p">())</span>
+        <span class="n">vdw_radii</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">radius</span><span class="p">)</span>
+
+    <span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">vdw_radii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vdw_radii</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mc_vol</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">vdw_radii</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="n">step_size</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">verbose</span><span class="p">))</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

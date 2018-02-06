@@ -1,0 +1,341 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.io.retriaval &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.io.retriaval</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2016 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">zipfile</span>
+<span class="kn">from</span> <span class="nn">ftplib</span> <span class="k">import</span> <span class="n">FTP</span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="k">import</span> <span class="n">BytesIO</span>
+
+<span class="kn">import</span> <span class="nn">bioservices</span>
+<span class="kn">import</span> <span class="nn">pubchempy</span> <span class="k">as</span> <span class="nn">pcp</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">from</span> <span class="nn">IProgress</span> <span class="k">import</span> <span class="n">ProgressBar</span><span class="p">,</span> <span class="n">Bar</span><span class="p">,</span> <span class="n">ETA</span>
+<span class="kn">from</span> <span class="nn">six.moves.urllib.request</span> <span class="k">import</span> <span class="n">urlretrieve</span>
+
+<span class="kn">from</span> <span class="nn">marsi.utils</span> <span class="k">import</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">gunzip</span>
+
+<span class="n">BIGG_BASE_URL</span> <span class="o">=</span> <span class="s2">&quot;http://bigg.ucsd.edu/static/namespace/&quot;</span>
+<span class="n">DRUGBANK_BASE_URL</span> <span class="o">=</span> <span class="s2">&quot;https://www.drugbank.ca/&quot;</span>
+<span class="n">CHEBI_FTP_URL</span> <span class="o">=</span> <span class="s2">&quot;ftp.ebi.ac.uk&quot;</span>
+<span class="n">KEGG_BASE_URL</span> <span class="o">=</span> <span class="s2">&quot;http://www.genome.jp&quot;</span>
+<span class="n">ZINC_BASE_URL</span> <span class="o">=</span> <span class="s2">&quot;http://zinc.docking.org/&quot;</span>
+
+<span class="n">ZINC_STRUCTURES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;16_p0.0.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.1.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.10.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.100.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.101.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.102.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.103.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.104.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.105.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.106.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.107.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.108.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.109.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.11.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.110.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.111.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.112.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.113.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.114.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.115.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.116.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.117.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.118.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.119.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.12.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.120.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.121.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.122.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.123.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.124.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.125.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.126.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.13.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.14.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.15.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.16.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.17.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.18.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.19.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.2.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.20.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.21.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.22.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.23.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.24.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.25.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.26.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.27.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.28.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.29.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.3.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.30.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.31.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.32.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.33.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.34.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.35.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.36.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.37.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.38.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.39.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.4.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.40.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.41.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.42.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.43.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.44.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.45.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.46.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.47.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.48.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.49.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.5.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.50.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.51.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.52.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.53.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.54.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.55.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.56.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.57.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.58.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.59.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.6.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.60.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.61.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.62.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.63.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.64.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.65.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.66.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.67.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.68.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.69.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.7.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.70.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.71.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.72.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.73.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.74.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.75.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.76.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.77.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.78.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.79.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.8.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.80.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.81.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.82.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.83.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.84.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.85.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.86.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.87.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.88.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.89.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.9.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.90.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.91.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.92.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.93.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.94.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.95.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.96.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.97.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p0.98.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p0.99.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.0.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.1.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.10.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p1.11.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.12.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.13.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.14.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.15.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p1.16.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.17.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.18.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.19.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.2.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p1.20.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.21.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.22.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.3.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.4.sdf.gz&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;16_p1.5.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.6.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.7.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.8.sdf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;16_p1.9.sdf.gz&quot;</span><span class="p">]</span>
+
+<span class="n">ZINC_SUBSET_16_BASE</span> <span class="o">=</span> <span class="s2">&quot;http://zinc.docking.org/db/bysubset/16&quot;</span>
+
+
+<div class="viewcode-block" id="retrieve_bigg_reactions"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.retriaval.retrieve_bigg_reactions">[docs]</a><span class="k">def</span> <span class="nf">retrieve_bigg_reactions</span><span class="p">(</span><span class="n">dest</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;bigg_models_reactions.txt&quot;</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves bigg reactions file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bigg_reactions_file</span> <span class="o">=</span> <span class="s2">&quot;bigg_models_reactions.txt&quot;</span>
+    <span class="n">urlretrieve</span><span class="p">(</span><span class="n">BIGG_BASE_URL</span> <span class="o">+</span> <span class="n">bigg_reactions_file</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="retrieve_bigg_metabolites"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.retriaval.retrieve_bigg_metabolites">[docs]</a><span class="k">def</span> <span class="nf">retrieve_bigg_metabolites</span><span class="p">(</span><span class="n">dest</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;bigg_models_metabolites.txt&quot;</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves bigg metabolites file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bigg_metabolites_file</span> <span class="o">=</span> <span class="s2">&quot;bigg_models_metabolites.txt&quot;</span>
+    <span class="n">urlretrieve</span><span class="p">(</span><span class="n">BIGG_BASE_URL</span> <span class="o">+</span> <span class="n">bigg_metabolites_file</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="retrieve_drugbank_open_structures"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.retriaval.retrieve_drugbank_open_structures">[docs]</a><span class="k">def</span> <span class="nf">retrieve_drugbank_open_structures</span><span class="p">(</span><span class="n">db_version</span><span class="o">=</span><span class="s2">&quot;5.0.3&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;drugbank_open_structures.sdf&quot;</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves Drugbank Open Structures.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    db_version: str</span>
+<span class="sd">        The version of drugbank to retrieve</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">encoded_version</span> <span class="o">=</span> <span class="n">db_version</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">DRUGBANK_BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;releases/</span><span class="si">%s</span><span class="s2">/downloads/all-open-structures&quot;</span> <span class="o">%</span> <span class="n">encoded_version</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">))</span> <span class="k">as</span> <span class="n">zip_ref</span><span class="p">:</span>
+        <span class="n">zip_ref</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">data_dir</span><span class="p">)</span>
+
+    <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;open structures.sdf&quot;</span><span class="p">),</span> <span class="n">dest</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="retrieve_drugbank_open_vocabulary"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.retriaval.retrieve_drugbank_open_vocabulary">[docs]</a><span class="k">def</span> <span class="nf">retrieve_drugbank_open_vocabulary</span><span class="p">(</span><span class="n">db_version</span><span class="o">=</span><span class="s2">&quot;5.0.3&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;drugbank_open_vocabulary.csv&quot;</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves Drugbank Open Vocabulary.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    db_version: str</span>
+<span class="sd">        The version of drugbank to retrieve</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">encoded_version</span> <span class="o">=</span> <span class="n">db_version</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">DRUGBANK_BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;releases/</span><span class="si">%s</span><span class="s2">/downloads/all-drugbank-vocabulary&quot;</span> <span class="o">%</span> <span class="n">encoded_version</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">))</span> <span class="k">as</span> <span class="n">zip_ref</span><span class="p">:</span>
+        <span class="n">zip_ref</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">data_dir</span><span class="p">)</span>
+
+    <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;drugbank vocabulary.csv&quot;</span><span class="p">),</span> <span class="n">dest</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="retrieve_chebi_structures"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.retriaval.retrieve_chebi_structures">[docs]</a><span class="k">def</span> <span class="nf">retrieve_chebi_structures</span><span class="p">(</span><span class="n">dest</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;chebi_lite_3star.sdf&quot;</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves ChEBI sdf (lite version).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sdf_file</span> <span class="o">=</span> <span class="s2">&quot;ChEBI_lite_3star.sdf.gz&quot;</span>
+    <span class="n">chebi_structures_file</span> <span class="o">=</span> <span class="n">dest</span> <span class="o">+</span> <span class="s2">&quot;.gz&quot;</span>
+    <span class="n">ftp</span> <span class="o">=</span> <span class="n">FTP</span><span class="p">(</span><span class="n">CHEBI_FTP_URL</span><span class="p">)</span>
+    <span class="n">ftp</span><span class="o">.</span><span class="n">login</span><span class="p">()</span>
+    <span class="n">ftp</span><span class="o">.</span><span class="n">cwd</span><span class="p">(</span><span class="s1">&#39;pub/databases/chebi/SDF&#39;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">chebi_structures_file</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">structures_file</span><span class="p">:</span>
+        <span class="n">ftp</span><span class="o">.</span><span class="n">retrbinary</span><span class="p">(</span><span class="s2">&quot;RETR </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">sdf_file</span><span class="p">,</span> <span class="n">structures_file</span><span class="o">.</span><span class="n">write</span><span class="p">)</span>
+    <span class="n">ftp</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+    <span class="n">gunzip</span><span class="p">(</span><span class="n">chebi_structures_file</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="retrieve_chebi_names"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.retriaval.retrieve_chebi_names">[docs]</a><span class="k">def</span> <span class="nf">retrieve_chebi_names</span><span class="p">(</span><span class="n">dest</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;chebi_names_3star.txt&quot;</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves ChEBI names.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gz_file</span> <span class="o">=</span> <span class="s2">&quot;names_3star.tsv.gz&quot;</span>
+    <span class="n">chebi_names_file</span> <span class="o">=</span> <span class="n">dest</span> <span class="o">+</span> <span class="s2">&quot;.gz&quot;</span>
+    <span class="n">ftp</span> <span class="o">=</span> <span class="n">FTP</span><span class="p">(</span><span class="n">CHEBI_FTP_URL</span><span class="p">)</span>
+    <span class="n">ftp</span><span class="o">.</span><span class="n">login</span><span class="p">()</span>
+    <span class="n">ftp</span><span class="o">.</span><span class="n">cwd</span><span class="p">(</span><span class="s1">&#39;pub/databases/chebi/Flat_file_tab_delimited&#39;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">chebi_names_file</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">names_file</span><span class="p">:</span>
+        <span class="n">ftp</span><span class="o">.</span><span class="n">retrbinary</span><span class="p">(</span><span class="s2">&quot;RETR </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">gz_file</span><span class="p">,</span> <span class="n">names_file</span><span class="o">.</span><span class="n">write</span><span class="p">)</span>
+    <span class="n">ftp</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+    <span class="n">gunzip</span><span class="p">(</span><span class="n">chebi_names_file</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="retrieve_chebi_relation"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.retriaval.retrieve_chebi_relation">[docs]</a><span class="k">def</span> <span class="nf">retrieve_chebi_relation</span><span class="p">(</span><span class="n">dest</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;chebi_relation_3star.tsv&quot;</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves ChEBI relation data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tsv_file</span> <span class="o">=</span> <span class="s2">&quot;relation_3star.tsv&quot;</span>
+    <span class="n">ftp</span> <span class="o">=</span> <span class="n">FTP</span><span class="p">(</span><span class="n">CHEBI_FTP_URL</span><span class="p">)</span>
+    <span class="n">ftp</span><span class="o">.</span><span class="n">login</span><span class="p">()</span>
+    <span class="n">ftp</span><span class="o">.</span><span class="n">cwd</span><span class="p">(</span><span class="s1">&#39;pub/databases/chebi/Flat_file_tab_delimited&#39;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">relation_file</span><span class="p">:</span>
+        <span class="n">ftp</span><span class="o">.</span><span class="n">retrbinary</span><span class="p">(</span><span class="s2">&quot;RETR </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">tsv_file</span><span class="p">,</span> <span class="n">relation_file</span><span class="o">.</span><span class="n">write</span><span class="p">)</span>
+    <span class="n">ftp</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="retrieve_chebi_vertice"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.retriaval.retrieve_chebi_vertice">[docs]</a><span class="k">def</span> <span class="nf">retrieve_chebi_vertice</span><span class="p">(</span><span class="n">dest</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;chebi_vertice_3star.tsv&quot;</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves ChEBI vertice data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tsv_file</span> <span class="o">=</span> <span class="s2">&quot;vertice_3star.tsv&quot;</span>
+    <span class="n">ftp</span> <span class="o">=</span> <span class="n">FTP</span><span class="p">(</span><span class="n">CHEBI_FTP_URL</span><span class="p">)</span>
+    <span class="n">ftp</span><span class="o">.</span><span class="n">login</span><span class="p">()</span>
+    <span class="n">ftp</span><span class="o">.</span><span class="n">cwd</span><span class="p">(</span><span class="s1">&#39;pub/databases/chebi/Flat_file_tab_delimited&#39;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">verice_file</span><span class="p">:</span>
+        <span class="n">ftp</span><span class="o">.</span><span class="n">retrbinary</span><span class="p">(</span><span class="s2">&quot;RETR </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">tsv_file</span><span class="p">,</span> <span class="n">verice_file</span><span class="o">.</span><span class="n">write</span><span class="p">)</span>
+    <span class="n">ftp</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="retrieve_kegg_brite"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.retriaval.retrieve_kegg_brite">[docs]</a><span class="k">def</span> <span class="nf">retrieve_kegg_brite</span><span class="p">(</span><span class="n">dest</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;kegg_brite_08310.keg&quot;</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves KEGG Brite 08310 (Target-based Classification of Drugs)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">urlretrieve</span><span class="p">(</span><span class="n">KEGG_BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;/kegg-bin/download_htext?htext=br08310.keg&amp;format=htext&amp;filedir=&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="retrieve_pubchem_mol_files"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.retriaval.retrieve_pubchem_mol_files">[docs]</a><span class="k">def</span> <span class="nf">retrieve_pubchem_mol_files</span><span class="p">(</span><span class="n">pubchem_ids</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="n">data_dir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves SDF Files from PubChem.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pubchem_files_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="s1">&#39;pubchem_sdf_files&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">pubchem_files_path</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">pubchem_files_path</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pubchem_id</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pubchem_ids</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">pcp</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s1">&#39;sdf&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pubchem_files_path</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%i</span><span class="s1">.sdf&#39;</span> <span class="o">%</span> <span class="n">pubchem_id</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">pubchem_id</span><span class="p">))</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">IOError</span><span class="p">,</span> <span class="n">pcp</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">):</span>
+            <span class="c1"># File already exists</span>
+            <span class="k">continue</span>
+        <span class="k">yield</span> <span class="n">i</span></div>
+
+
+<div class="viewcode-block" id="retrieve_kegg_mol_files"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.retriaval.retrieve_kegg_mol_files">[docs]</a><span class="k">def</span> <span class="nf">retrieve_kegg_mol_files</span><span class="p">(</span><span class="n">kegg</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="n">data_dir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves KEGG MOL Files using KEGG REST API.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kegg_client</span> <span class="o">=</span> <span class="n">bioservices</span><span class="o">.</span><span class="n">kegg</span><span class="o">.</span><span class="n">KEGG</span><span class="p">()</span>
+    <span class="n">drug_ids</span> <span class="o">=</span> <span class="n">kegg</span><span class="o">.</span><span class="n">kegg_drug_id</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+
+    <span class="n">not_found</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">kegg_mol_files_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="s2">&quot;kegg_mol_files&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">kegg_mol_files_dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">kegg_mol_files_dir</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">drug_id</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">drug_ids</span><span class="p">):</span>
+        <span class="n">file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">kegg_mol_files_dir</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.mol&quot;</span> <span class="o">%</span> <span class="n">drug_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_name</span><span class="p">):</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mol_file_handler</span><span class="p">:</span>
+                <span class="n">kegg_mol_data</span> <span class="o">=</span> <span class="n">kegg_client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">drug_id</span><span class="p">,</span> <span class="s1">&#39;mol&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kegg_mol_data</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">kegg_mol_data</span> <span class="o">==</span> <span class="mi">404</span><span class="p">:</span>
+                    <span class="n">not_found</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">drug_id</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">kegg_mol_data</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">not_found</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">drug_id</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">mol_file_handler</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">kegg_mol_data</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">i</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Not Found: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">not_found</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="retrieve_zinc_properties"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.retriaval.retrieve_zinc_properties">[docs]</a><span class="k">def</span> <span class="nf">retrieve_zinc_properties</span><span class="p">(</span><span class="n">dest</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;zinc_16_prop.tsv&quot;</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves ZINC properties file:</span>
+<span class="sd">    &quot;All Clean</span>
+<span class="sd">    As Subset #6, but without &#39;yuck&#39; compounds&quot;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">urlretrieve</span><span class="p">(</span><span class="n">ZINC_BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;db/bysubset/16/16_prop.xls&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="retrieve_zinc_structures"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.retriaval.retrieve_zinc_structures">[docs]</a><span class="k">def</span> <span class="nf">retrieve_zinc_structures</span><span class="p">(</span><span class="n">dest</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;zinc_16.sdf.gz&quot;</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves ZINC structures file:</span>
+<span class="sd">    &quot;All Clean</span>
+<span class="sd">    As Subset #6, but without &#39;yuck&#39; compounds&quot;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pbar</span> <span class="o">=</span> <span class="n">ProgressBar</span><span class="p">(</span><span class="n">maxval</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">ZINC_STRUCTURES</span><span class="p">),</span> <span class="n">widgets</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Downloading Zinc Structures 16: &quot;</span><span class="p">,</span> <span class="n">Bar</span><span class="p">(),</span> <span class="n">ETA</span><span class="p">()])</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">output_file</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">sdf_file</span> <span class="ow">in</span> <span class="n">pbar</span><span class="p">(</span><span class="n">ZINC_STRUCTURES</span><span class="p">):</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ZINC_SUBSET_16_BASE</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">sdf_file</span><span class="p">)</span>
+            <span class="n">output_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../io.html">marsi.io</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

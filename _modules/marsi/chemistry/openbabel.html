@@ -1,0 +1,594 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.chemistry.openbabel &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.chemistry.openbabel</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2016 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pybel</span>
+<span class="kn">from</span> <span class="nn">bitarray</span> <span class="k">import</span> <span class="n">bitarray</span>
+
+<span class="kn">from</span> <span class="nn">marsi.chemistry.common</span> <span class="k">import</span> <span class="n">inchi_key_lru_cache</span>
+
+<span class="kn">from</span> <span class="nn">cachetools</span> <span class="k">import</span> <span class="n">cached</span><span class="p">,</span> <span class="n">LRUCache</span>
+<span class="kn">from</span> <span class="nn">marsi.chemistry.common</span> <span class="k">import</span> <span class="n">convex_hull_volume</span><span class="p">,</span> <span class="n">monte_carlo_volume</span> <span class="k">as</span> <span class="n">mc_vol</span>
+
+
+<span class="n">lru_cache</span> <span class="o">=</span> <span class="n">LRUCache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">256</span><span class="p">)</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;has_radical&#39;</span><span class="p">,</span> <span class="s1">&#39;mol_to_inchi&#39;</span><span class="p">,</span> <span class="s1">&#39;mol_to_inchi_key&#39;</span><span class="p">,</span> <span class="s1">&#39;mol_to_svg&#39;</span><span class="p">,</span> <span class="s1">&#39;mol_chebi_id&#39;</span><span class="p">,</span> <span class="s1">&#39;mol_drugbank_id&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;mol_pubchem_id&#39;</span><span class="p">,</span> <span class="s1">&#39;mol_str_to_inchi&#39;</span><span class="p">,</span> <span class="s1">&#39;align_molecules&#39;</span><span class="p">,</span> <span class="s1">&#39;inchi_to_molecule&#39;</span><span class="p">,</span> <span class="s1">&#39;smiles_to_molecule&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;fingerprint&#39;</span><span class="p">,</span> <span class="s1">&#39;fingerprint_to_bits&#39;</span><span class="p">,</span> <span class="s1">&#39;get_spectrophore_data&#39;</span><span class="p">,</span> <span class="s1">&#39;inchi_to_inchi_key&#39;</span><span class="p">,</span> <span class="s1">&#39;solubility&#39;</span><span class="p">]</span>
+
+<span class="n">fps</span> <span class="o">=</span> <span class="n">pybel</span><span class="o">.</span><span class="n">fps</span>
+
+
+<span class="n">fp_bits</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;maccs&#39;</span><span class="p">:</span> <span class="mi">167</span><span class="p">,</span>
+    <span class="s1">&#39;fp2&#39;</span><span class="p">:</span> <span class="mi">1024</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="has_radical"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.openbabel.has_radical">[docs]</a><span class="k">def</span> <span class="nf">has_radical</span><span class="p">(</span><span class="n">mol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Finds if a pybel.Molecule has Radicals.</span>
+<span class="sd">    Radicals have an atomic number of 0.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mol : pybel.Molecule</span>
+<span class="sd">        A molecule.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        True if there are any radicals.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">atomicnum</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">mol</span><span class="o">.</span><span class="n">atoms</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mol_to_inchi"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.openbabel.mol_to_inchi">[docs]</a><span class="k">def</span> <span class="nf">mol_to_inchi</span><span class="p">(</span><span class="n">mol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Makes an InChI from a pybel.Molecule.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mol : pybel.Molecule</span>
+<span class="sd">        A molecule.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        A InChI string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">mol</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s2">&quot;inchi&quot;</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">errorlevel</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="mol_to_svg"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.openbabel.mol_to_svg">[docs]</a><span class="k">def</span> <span class="nf">mol_to_svg</span><span class="p">(</span><span class="n">mol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Makes an SVG from a pybel.Molecule.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mol : pybel.Molecule</span>
+<span class="sd">        A molecule.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        A SVG string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">mol</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s2">&quot;svg&quot;</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">errorlevel</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="mol_to_inchi_key"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.openbabel.mol_to_inchi_key">[docs]</a><span class="k">def</span> <span class="nf">mol_to_inchi_key</span><span class="p">(</span><span class="n">mol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Makes an InChI Key from a pybel.Molecule.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mol : pybel.Molecule</span>
+<span class="sd">        A molecule.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        A InChI key.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">mol</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s2">&quot;inchikey&quot;</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">errorlevel</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="inchi_to_inchi_key"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.openbabel.inchi_to_inchi_key">[docs]</a><span class="nd">@cached</span><span class="p">(</span><span class="n">inchi_key_lru_cache</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">inchi_to_inchi_key</span><span class="p">(</span><span class="n">inchi</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Makes an InChI Key from a InChI string.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    inchi : str</span>
+<span class="sd">        A valid InChI string.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        A InChI key.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">mol_to_inchi_key</span><span class="p">(</span><span class="n">inchi_to_molecule</span><span class="p">(</span><span class="n">inchi</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="mol_drugbank_id"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.openbabel.mol_drugbank_id">[docs]</a><span class="k">def</span> <span class="nf">mol_drugbank_id</span><span class="p">(</span><span class="n">mol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the DrugBank ID from the molecule data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mo l: pybel.Molecule</span>
+<span class="sd">        A molecule.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">       DrugBank ID</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">mol</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;DRUGBANK_ID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="mol_pubchem_id"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.openbabel.mol_pubchem_id">[docs]</a><span class="k">def</span> <span class="nf">mol_pubchem_id</span><span class="p">(</span><span class="n">mol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the PubChem Compound ID from the molecule data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mol : pybel.Molecule</span>
+<span class="sd">        A molecule.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">       PubChem Compound ID</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">mol</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;PUBCHEM_COMPOUND_CID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="mol_chebi_id"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.openbabel.mol_chebi_id">[docs]</a><span class="k">def</span> <span class="nf">mol_chebi_id</span><span class="p">(</span><span class="n">mol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the ChEBI ID from the molecule data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mol : pybel.Molecule</span>
+<span class="sd">        A molecule.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">       ChEBI ID</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">mol</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;ChEBI ID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="fingerprint"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.openbabel.fingerprint">[docs]</a><span class="k">def</span> <span class="nf">fingerprint</span><span class="p">(</span><span class="n">mol</span><span class="p">,</span> <span class="n">fpformat</span><span class="o">=</span><span class="s1">&#39;maccs&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the Fingerprint of the molecule.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mol : pybel.Molecule</span>
+<span class="sd">        A molecule.</span>
+<span class="sd">    fpformat : str</span>
+<span class="sd">        A valid fingerprint format (see pybel.fps)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pybel.Fingerprint</span>
+<span class="sd">        A fingerprint</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">fpformat</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pybel</span><span class="o">.</span><span class="n">fps</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">&quot;&#39;</span><span class="si">%s</span><span class="s2">&#39; is not a valid fingerprint format&quot;</span> <span class="o">%</span> <span class="n">fpformat</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mol</span><span class="o">.</span><span class="n">calcfp</span><span class="p">(</span><span class="n">fptype</span><span class="o">=</span><span class="n">fpformat</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="inchi_to_molecule"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.openbabel.inchi_to_molecule">[docs]</a><span class="nd">@cached</span><span class="p">(</span><span class="n">lru_cache</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">inchi_to_molecule</span><span class="p">(</span><span class="n">inchi</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a molecule from a InChI string.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    inchi : str</span>
+<span class="sd">        A valid string.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mol : pybel.Molecule</span>
+<span class="sd">        A molecule.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mol</span> <span class="o">=</span> <span class="n">pybel</span><span class="o">.</span><span class="n">readstring</span><span class="p">(</span><span class="s1">&#39;inchi&#39;</span><span class="p">,</span> <span class="n">inchi</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">errorlevel</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+    <span class="n">mol</span><span class="o">.</span><span class="n">OBMol</span><span class="o">.</span><span class="n">StripSalts</span><span class="p">()</span>
+    <span class="n">mol</span><span class="o">.</span><span class="n">OBMol</span><span class="o">.</span><span class="n">Kekulize</span><span class="p">()</span>
+    <span class="n">_set_zero_charge</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
+    <span class="n">mol</span><span class="o">.</span><span class="n">addh</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">mol</span></div>
+
+
+<span class="k">def</span> <span class="nf">_set_zero_charge</span><span class="p">(</span><span class="n">mol</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">mol</span><span class="o">.</span><span class="n">atoms</span><span class="p">:</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">OBAtom</span><span class="o">.</span><span class="n">SetFormalCharge</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">sdf_to_molecule</span><span class="p">(</span><span class="n">from_file_or_molecule_desc</span><span class="p">,</span> <span class="n">from_file</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a molecule from a SDF file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    from_file_or_molecule_desc : str</span>
+<span class="sd">        A valid SDF file path or a valid SDF string.</span>
+<span class="sd">    from_file : bool</span>
+<span class="sd">        If True tries to read the molecule from a file.</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mol : pybel.Molecule</span>
+<span class="sd">        A molecule.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">from_file</span><span class="p">:</span>
+        <span class="n">mol</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">pybel</span><span class="o">.</span><span class="n">readfile</span><span class="p">(</span><span class="s1">&#39;sdf&#39;</span><span class="p">,</span> <span class="n">from_file_or_molecule_desc</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">errorlevel</span><span class="o">=</span><span class="mi">0</span><span class="p">)))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mol</span> <span class="o">=</span> <span class="n">pybel</span><span class="o">.</span><span class="n">readstring</span><span class="p">(</span><span class="s1">&#39;sdf&#39;</span><span class="p">,</span> <span class="n">from_file_or_molecule_desc</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">errorlevel</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+    <span class="n">mol</span><span class="o">.</span><span class="n">OBMol</span><span class="o">.</span><span class="n">StripSalts</span><span class="p">()</span>
+    <span class="n">mol</span><span class="o">.</span><span class="n">OBMol</span><span class="o">.</span><span class="n">Kekulize</span><span class="p">()</span>
+    <span class="n">_set_zero_charge</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
+    <span class="n">mol</span><span class="o">.</span><span class="n">addh</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">mol</span>
+
+
+<span class="k">def</span> <span class="nf">molecule_to_sdf</span><span class="p">(</span><span class="n">molecule</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Makes an SDF from a pybel.Molecule.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    molecule : pybel.Molecule</span>
+<span class="sd">        A molecule.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">    A SDF string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">molecule</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;sdf&#39;</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">errorlevel</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">mol_to_molecule</span><span class="p">(</span><span class="n">file_or_molecule_desc</span><span class="p">,</span> <span class="n">from_file</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a molecule from a MOL file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file_or_molecule_desc : str</span>
+<span class="sd">        A valid MOL file path or a valid MOL string.</span>
+<span class="sd">    from_file : bool</span>
+<span class="sd">        If True tries to read the molecule from a file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mol: pybel.Molecule</span>
+<span class="sd">        A molecule.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">from_file</span><span class="p">:</span>
+        <span class="n">mol</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">pybel</span><span class="o">.</span><span class="n">readfile</span><span class="p">(</span><span class="s1">&#39;mol&#39;</span><span class="p">,</span> <span class="n">file_or_molecule_desc</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">errorlevel</span><span class="o">=</span><span class="mi">0</span><span class="p">)))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mol</span> <span class="o">=</span> <span class="n">pybel</span><span class="o">.</span><span class="n">readstring</span><span class="p">(</span><span class="s1">&#39;mol&#39;</span><span class="p">,</span> <span class="n">file_or_molecule_desc</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">errorlevel</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+    <span class="n">mol</span><span class="o">.</span><span class="n">OBMol</span><span class="o">.</span><span class="n">StripSalts</span><span class="p">()</span>
+    <span class="n">mol</span><span class="o">.</span><span class="n">OBMol</span><span class="o">.</span><span class="n">Kekulize</span><span class="p">()</span>
+    <span class="n">_set_zero_charge</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
+    <span class="n">mol</span><span class="o">.</span><span class="n">addh</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">mol</span>
+
+
+<div class="viewcode-block" id="mol_str_to_inchi"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.openbabel.mol_str_to_inchi">[docs]</a><span class="k">def</span> <span class="nf">mol_str_to_inchi</span><span class="p">(</span><span class="n">mol_str</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the InChI from the molecule data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mol_str : str</span>
+<span class="sd">        A valid MOL string.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        A InChI string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mol_to_inchi</span><span class="p">(</span><span class="n">pybel</span><span class="o">.</span><span class="n">readstring</span><span class="p">(</span><span class="s1">&#39;mol&#39;</span><span class="p">,</span> <span class="n">mol_str</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="smiles_to_molecule"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.openbabel.smiles_to_molecule">[docs]</a><span class="k">def</span> <span class="nf">smiles_to_molecule</span><span class="p">(</span><span class="n">smiles</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the pybel.Molecule from the molecule data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    smiles : str</span>
+<span class="sd">        A valid SMILES string.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pybel.Molecule</span>
+<span class="sd">        A Molecule.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pybel</span><span class="o">.</span><span class="n">readstring</span><span class="p">(</span><span class="s1">&#39;smi&#39;</span><span class="p">,</span> <span class="n">smiles</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="fingerprint_to_bits"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.openbabel.fingerprint_to_bits">[docs]</a><span class="k">def</span> <span class="nf">fingerprint_to_bits</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">bits</span><span class="o">=</span><span class="mi">1024</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a pybel.Fingerprint into a binary array</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fp : pybel.Fingerprint</span>
+<span class="sd">        A fingerprint molecule.</span>
+
+<span class="sd">    bits : int</span>
+<span class="sd">        Number of bits (default is 1024)</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bitarray</span>
+<span class="sd">        An array of 0&#39;s and 1&#39;s.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bits_list</span> <span class="o">=</span> <span class="n">bitarray</span><span class="p">(</span><span class="n">bits</span><span class="p">)</span>
+    <span class="n">bits_list</span><span class="o">.</span><span class="n">setall</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">fp</span><span class="o">.</span><span class="n">bits</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">bits</span><span class="p">:</span>
+            <span class="n">bits_list</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">bits_list</span></div>
+
+
+<div class="viewcode-block" id="align_molecules"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.openbabel.align_molecules">[docs]</a><span class="k">def</span> <span class="nf">align_molecules</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">molecule</span><span class="p">,</span> <span class="n">include_h</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">symmetry</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Align molecule to a reference.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    reference : pybel.Molecule</span>
+<span class="sd">        A reference molecule.</span>
+<span class="sd">    molecule : pybel.Molecule</span>
+<span class="sd">        Molecule to align.</span>
+<span class="sd">    include_h : bool</span>
+<span class="sd">        Include implicit hydrogen atoms.</span>
+<span class="sd">    symmetry : bool</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">align</span> <span class="o">=</span> <span class="n">pybel</span><span class="o">.</span><span class="n">ob</span><span class="o">.</span><span class="n">OBAlign</span>
+    <span class="k">return</span> <span class="n">align</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">molecule</span><span class="p">,</span> <span class="n">include_h</span><span class="p">,</span> <span class="n">symmetry</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_spectrophore_data"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.openbabel.get_spectrophore_data">[docs]</a><span class="k">def</span> <span class="nf">get_spectrophore_data</span><span class="p">(</span><span class="n">molecule</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A Spectrophore is calculated as a vector of 48 numbers (in the case of a non-stereospecific Spectrophore.</span>
+<span class="sd">    The 48 doubles are organised into 4 sets of 12 doubles each:</span>
+
+<span class="sd">    * numbers 01-11: Spectrophore values calculated from the atomic partial charges;</span>
+<span class="sd">    * numbers 13-24: Spectrophore values calculated from the atomic lipophilicity properties;</span>
+<span class="sd">    * numbers 25-36: Spectrophore values calculated from the atomic shape deviations;</span>
+<span class="sd">    * numbers 37-48: Spectrophore values calculated from the atomic electrophilicity properties;</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    molecule : pybel.Molecule</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ndarray:</span>
+<span class="sd">        Float 1D-Array with the 48 features generated by OBSpectrophore.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">spectrophore</span> <span class="o">=</span> <span class="n">pybel</span><span class="o">.</span><span class="n">ob</span><span class="o">.</span><span class="n">OBSpectrophore</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">spectrophore</span><span class="o">.</span><span class="n">GetSpectrophore</span><span class="p">(</span><span class="n">molecule</span><span class="o">.</span><span class="n">OBMol</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="solubility"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.openbabel.solubility">[docs]</a><span class="k">def</span> <span class="nf">solubility</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="n">log_value</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ESOL:  Estimating Aqueous Solubility Directly from Molecular Structure [1]</span>
+
+<span class="sd">        $Log(S_w) = 0.16 - 0.63 logP - 0.0062 MWT + 0.066 RB - 0.74 AP$</span>
+<span class="sd">        MWT = Molecular Weight</span>
+<span class="sd">        RB = Rotatable Bounds</span>
+<span class="sd">        AP = Aromatic Proportion</span>
+<span class="sd">        ogP$</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    molecule : pybel.Molecule</span>
+<span class="sd">         A molecule.</span>
+<span class="sd">    log_value : bool</span>
+<span class="sd">        Return log(Solubility) if true (default).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        log(S_w): log value of solubility</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">descriptors</span> <span class="o">=</span> <span class="n">molecule</span><span class="o">.</span><span class="n">calcdesc</span><span class="p">([</span><span class="s1">&#39;logP&#39;</span><span class="p">,</span> <span class="s1">&#39;MW&#39;</span><span class="p">,</span> <span class="s1">&#39;atoms&#39;</span><span class="p">])</span>
+    <span class="n">log_p</span> <span class="o">=</span> <span class="n">descriptors</span><span class="p">[</span><span class="s1">&#39;logP&#39;</span><span class="p">]</span>
+    <span class="n">mwt</span> <span class="o">=</span> <span class="n">descriptors</span><span class="p">[</span><span class="s1">&#39;MW&#39;</span><span class="p">]</span>
+    <span class="n">rb</span> <span class="o">=</span> <span class="n">molecule</span><span class="o">.</span><span class="n">OBMol</span><span class="o">.</span><span class="n">NumRotors</span><span class="p">()</span>
+    <span class="n">atoms</span> <span class="o">=</span> <span class="n">molecule</span><span class="o">.</span><span class="n">atoms</span>
+    <span class="n">ap</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">atoms</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">OBAtom</span><span class="o">.</span><span class="n">IsAromatic</span><span class="p">()])</span> <span class="o">/</span> <span class="n">descriptors</span><span class="p">[</span><span class="s1">&#39;atoms&#39;</span><span class="p">]</span>
+
+    <span class="n">log_sw</span> <span class="o">=</span> <span class="mf">0.16</span> <span class="o">-</span> <span class="mf">0.62</span> <span class="o">*</span> <span class="n">log_p</span> <span class="o">-</span> <span class="mf">0.0062</span> <span class="o">*</span> <span class="n">mwt</span> <span class="o">+</span> <span class="mf">0.066</span> <span class="o">*</span> <span class="n">rb</span> <span class="o">-</span> <span class="mf">0.74</span> <span class="o">*</span> <span class="n">ap</span>
+    <span class="k">if</span> <span class="n">log_value</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">log_sw</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_sw</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">molecule_convex_hull_volume</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="n">forcefield</span><span class="o">=</span><span class="s1">&#39;mmff94&#39;</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the volume of the convex hull formed by the molecule.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    molecule : pybel.Molecule</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="n">pybel</span><span class="o">.</span><span class="n">Molecule</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">forcefield</span> <span class="ow">in</span> <span class="n">pybel</span><span class="o">.</span><span class="n">forcefields</span>
+    <span class="n">molecule</span><span class="o">.</span><span class="n">addh</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">molecule</span><span class="o">.</span><span class="n">dim</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">molecule</span><span class="o">.</span><span class="n">make3D</span><span class="p">(</span><span class="n">forcefield</span><span class="o">=</span><span class="n">forcefield</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="n">steps</span><span class="p">)</span>
+
+    <span class="n">xyz</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">coords</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">molecule</span><span class="o">.</span><span class="n">atoms</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">convex_hull_volume</span><span class="p">(</span><span class="n">xyz</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">monte_carlo_volume</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="n">coordinates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_iterations</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                       <span class="n">seed</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">forcefield</span><span class="o">=</span><span class="s1">&#39;mmff94&#39;</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adapted from:</span>
+
+<span class="sd">    Simple Monte Carlo estimation of VdW molecular volume (in A^3)</span>
+<span class="sd">    by Geoffrey Hutchison &lt;geoffh@pitt.edu&gt;</span>
+
+<span class="sd">    https://github.com/ghutchis/hutchison-cluster</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    molecule : pybel.Molecule</span>
+<span class="sd">        A molecule from pybel.</span>
+<span class="sd">    coordinates : list</span>
+<span class="sd">        A list of pre selected x,y,z coords. It must match the atoms order.</span>
+<span class="sd">    tolerance : float</span>
+<span class="sd">        The tolerance for convergence of the monte carlo abs(new_volume - volume) &lt; tolerance</span>
+<span class="sd">    max_iterations : int</span>
+<span class="sd">        Number of iterations before the algorithm starts</span>
+<span class="sd">    step_size : int</span>
+<span class="sd">        Number of points to add each step.</span>
+<span class="sd">    seed : object</span>
+<span class="sd">        A valid seed for random.</span>
+<span class="sd">    verbose : bool</span>
+<span class="sd">        Print debug information if True.</span>
+<span class="sd">    forcefield : str</span>
+<span class="sd">        The force field to get a 3D molecule. (only if it is not 3D already)</span>
+<span class="sd">    steps : int</span>
+<span class="sd">        The number of steps used for the force field to get a 3D molecule. (only if it is not 3D already)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Molecule volume.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="n">pybel</span><span class="o">.</span><span class="n">Molecule</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">coordinates</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">molecule</span><span class="o">.</span><span class="n">dim</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">molecule</span><span class="o">.</span><span class="n">make3D</span><span class="p">(</span><span class="n">forcefield</span><span class="o">=</span><span class="n">forcefield</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="n">steps</span><span class="p">)</span>
+        <span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">a</span><span class="o">.</span><span class="n">coords</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">molecule</span><span class="o">.</span><span class="n">atoms</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">vdw_radii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">pybel</span><span class="o">.</span><span class="n">ob</span><span class="o">.</span><span class="n">etab</span><span class="o">.</span><span class="n">GetVdwRad</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">atomicnum</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">molecule</span><span class="o">.</span><span class="n">atoms</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mc_vol</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">vdw_radii</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="n">step_size</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">verbose</span><span class="p">))</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

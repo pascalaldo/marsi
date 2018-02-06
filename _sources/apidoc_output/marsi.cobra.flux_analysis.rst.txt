@@ -1,0 +1,30 @@
+marsi\.cobra\.flux\_analysis package
+====================================
+
+Submodules
+----------
+
+marsi\.cobra\.flux\_analysis\.analysis module
+---------------------------------------------
+
+.. automodule:: marsi.cobra.flux_analysis.analysis
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.cobra\.flux\_analysis\.manipulation module
+-------------------------------------------------
+
+.. automodule:: marsi.cobra.flux_analysis.manipulation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: marsi.cobra.flux_analysis
+    :members:
+    :undoc-members:
+    :show-inheritance:

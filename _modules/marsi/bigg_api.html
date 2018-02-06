@@ -1,0 +1,349 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.bigg_api &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.bigg_api</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2016 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">BiGG database API v2</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="n">BASE_URL</span> <span class="o">=</span> <span class="s2">&quot;http://bigg.ucsd.edu/api/v2/&quot;</span>
+
+
+<div class="viewcode-block" id="DBVersion"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.bigg_api.DBVersion">[docs]</a><span class="k">class</span> <span class="nc">DBVersion</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Version container.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    version : str</span>
+<span class="sd">        Database version.</span>
+<span class="sd">    api_version : str</span>
+<span class="sd">        Version of the API used.</span>
+<span class="sd">    last_update : str</span>
+<span class="sd">        Last update timestamp.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">api_version</span><span class="p">,</span> <span class="n">last_update</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">version</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">api_version</span> <span class="o">=</span> <span class="n">api_version</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_update</span> <span class="o">=</span> <span class="n">last_update</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;BiGG Database version </span><span class="si">%s</span><span class="s2"> (API </span><span class="si">%s</span><span class="s2">). Last update: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_version</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_update</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="database_version"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.bigg_api.database_version">[docs]</a><span class="k">def</span> <span class="nf">database_version</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves the current version of BiGG database</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;database_version&quot;</span><span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">DBVersion</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;bigg_models_version&#39;</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;api_version&#39;</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;last_updated&#39;</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="download_model"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.bigg_api.download_model">[docs]</a><span class="k">def</span> <span class="nf">download_model</span><span class="p">(</span><span class="n">model_id</span><span class="p">,</span> <span class="n">file_format</span><span class="o">=</span><span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Download models from BiGG. You can chose to save the file or to return the JSON data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    model_id: str</span>
+<span class="sd">        A valid id for a model in BiGG.</span>
+<span class="sd">    file_format: str</span>
+<span class="sd">        If you want to save the file, you can import the model in the following formats:</span>
+<span class="sd">            1. json (JSON format)</span>
+<span class="sd">            2. xml (SBML)</span>
+<span class="sd">            3. xml.gz (SBML compressed)</span>
+<span class="sd">            4. mat (MATLAB)</span>
+<span class="sd">    save: bool</span>
+<span class="sd">        If True, writes the model to a file with the model name (the path can be specified).</span>
+<span class="sd">    path: str</span>
+<span class="sd">        Specifies in which folder the model should be written if *save* is True.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;http://bigg.ucsd.edu/static/models/</span><span class="si">%s</span><span class="s2">.</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">model_id</span><span class="p">,</span> <span class="n">file_format</span><span class="p">),</span> <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">model_id</span><span class="p">,</span> <span class="n">file_format</span><span class="p">)),</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">model_file</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">iter_content</span><span class="p">(</span><span class="mi">1024</span><span class="p">):</span>
+                <span class="n">model_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;models/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">model_id</span><span class="p">)</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="model_details"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.bigg_api.model_details">[docs]</a><span class="k">def</span> <span class="nf">model_details</span><span class="p">(</span><span class="n">model_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Summarize the model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model_id: str</span>
+<span class="sd">        A valid id for a model in BiGG.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;models/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">model_id</span><span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="list_models"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.bigg_api.list_models">[docs]</a><span class="k">def</span> <span class="nf">list_models</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Lists all models available in BiGG.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;models/&quot;</span><span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="list_reactions"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.bigg_api.list_reactions">[docs]</a><span class="k">def</span> <span class="nf">list_reactions</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    List all reactions available in BiGG.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;universal/reactions&quot;</span><span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="list_model_reactions"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.bigg_api.list_model_reactions">[docs]</a><span class="k">def</span> <span class="nf">list_model_reactions</span><span class="p">(</span><span class="n">model_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    List all reactions in a model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model_id: str</span>
+<span class="sd">        A valid id for a model in BiGG.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;models/</span><span class="si">%s</span><span class="s2">/reactions&quot;</span> <span class="o">%</span> <span class="n">model_id</span><span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="get_reaction"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.bigg_api.get_reaction">[docs]</a><span class="k">def</span> <span class="nf">get_reaction</span><span class="p">(</span><span class="n">reaction_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieve a reaction from BiGG.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    reaction_id: str</span>
+<span class="sd">        A valid id for a reaction in BiGG.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;universal/reactions/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">reaction_id</span><span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="get_model_reaction"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.bigg_api.get_model_reaction">[docs]</a><span class="k">def</span> <span class="nf">get_model_reaction</span><span class="p">(</span><span class="n">model_id</span><span class="p">,</span> <span class="n">reaction_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieve a reaction in the context of a model from BiGG.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model_id: str</span>
+<span class="sd">        A valid id for a model in BiGG.</span>
+<span class="sd">    reaction_id: str</span>
+<span class="sd">        A valid id for a reaction in BiGG.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;models/</span><span class="si">%s</span><span class="s2">/reactions/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">model_id</span><span class="p">,</span> <span class="n">reaction_id</span><span class="p">))</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="list_metabolites"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.bigg_api.list_metabolites">[docs]</a><span class="k">def</span> <span class="nf">list_metabolites</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    List all metabolites in BiGG.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;universal/metabolites&quot;</span><span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="list_model_metabolites"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.bigg_api.list_model_metabolites">[docs]</a><span class="k">def</span> <span class="nf">list_model_metabolites</span><span class="p">(</span><span class="n">model_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    List all metabolites in a model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model_id: str</span>
+<span class="sd">        A valid id for a model in BiGG.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;models/</span><span class="si">%s</span><span class="s2">/metabolites&quot;</span> <span class="o">%</span> <span class="n">model_id</span><span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="get_metabolite"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.bigg_api.get_metabolite">[docs]</a><span class="k">def</span> <span class="nf">get_metabolite</span><span class="p">(</span><span class="n">metabolite_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieve a metabolite from BiGG.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    metabolite_id: str</span>
+<span class="sd">        A valid id for a reaction in BiGG.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;universal/metabolites/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">metabolite_id</span><span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="get_model_metabolite"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.bigg_api.get_model_metabolite">[docs]</a><span class="k">def</span> <span class="nf">get_model_metabolite</span><span class="p">(</span><span class="n">model_id</span><span class="p">,</span> <span class="n">metabolite_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieve a metabolite in the context of a model from BiGG.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    metabolite_id: str</span>
+<span class="sd">        A valid id for a reaction in BiGG.</span>
+<span class="sd">    model_id: str</span>
+<span class="sd">        A valid id for a model in BiGG.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;models/</span><span class="si">%s</span><span class="s2">/metabolites/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">model_id</span><span class="p">,</span> <span class="n">metabolite_id</span><span class="p">))</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="list_model_genes"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.bigg_api.list_model_genes">[docs]</a><span class="k">def</span> <span class="nf">list_model_genes</span><span class="p">(</span><span class="n">model_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    List all genes in a model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model_id: str</span>
+<span class="sd">        A valid id for a model in BiGG.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;models/</span><span class="si">%s</span><span class="s2">/genes&quot;</span> <span class="o">%</span> <span class="n">model_id</span><span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="get_model_gene"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.bigg_api.get_model_gene">[docs]</a><span class="k">def</span> <span class="nf">get_model_gene</span><span class="p">(</span><span class="n">model_id</span><span class="p">,</span> <span class="n">gene_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieve a gene in the context of a model from BiGG.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model_id: str</span>
+<span class="sd">        A valid id for a model in BiGG.</span>
+<span class="sd">    gene_id: str</span>
+<span class="sd">        A valid id for a gene in BiGG.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;models/</span><span class="si">%s</span><span class="s2">/metabolites/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">model_id</span><span class="p">,</span> <span class="n">gene_id</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="search"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.bigg_api.search">[docs]</a><span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">search_type</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fuzzy search the BiGG database.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    query: str</span>
+<span class="sd">        Whatever you are searching for (ids, names, etc...).</span>
+<span class="sd">    search_type: str</span>
+<span class="sd">        Search domain. One of &quot;models&quot;, &quot;genes&quot;, &quot;reactions&quot;, &quot;metabolites&quot;.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE_URL</span> <span class="o">+</span> <span class="s2">&quot;search&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span> <span class="n">search_type</span><span class="o">=</span><span class="n">search_type</span><span class="p">))</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

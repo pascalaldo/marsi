@@ -1,0 +1,78 @@
+marsi\.io package
+=================
+
+Submodules
+----------
+
+marsi\.io\.bigg module
+----------------------
+
+.. automodule:: marsi.io.bigg
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.io\.build\_database module
+---------------------------------
+
+.. automodule:: marsi.io.build_database
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.io\.data module
+----------------------
+
+.. automodule:: marsi.io.data
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.io\.db module
+--------------------
+
+.. automodule:: marsi.io.db
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.io\.enrichment module
+----------------------------
+
+.. automodule:: marsi.io.enrichment
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.io\.parsers module
+-------------------------
+
+.. automodule:: marsi.io.parsers
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.io\.plots module
+-----------------------
+
+.. automodule:: marsi.io.plots
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.io\.retriaval module
+---------------------------
+
+.. automodule:: marsi.io.retriaval
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: marsi.io
+    :members:
+    :undoc-members:
+    :show-inheritance:

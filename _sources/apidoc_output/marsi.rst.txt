@@ -1,0 +1,50 @@
+marsi package
+=============
+
+Subpackages
+-----------
+
+.. toctree::
+
+    marsi.alembic
+    marsi.chemistry
+    marsi.cli
+    marsi.cobra
+    marsi.io
+    marsi.nearest_neighbors
+
+Submodules
+----------
+
+marsi\.bigg\_api module
+-----------------------
+
+.. automodule:: marsi.bigg_api
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.config module
+--------------------
+
+.. automodule:: marsi.config
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.utils module
+-------------------
+
+.. automodule:: marsi.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: marsi
+    :members:
+    :undoc-members:
+    :show-inheritance:

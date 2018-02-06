@@ -1,0 +1,351 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.cli package &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="marsi.cli.controllers package" href="marsi.cli.controllers.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="marsi-cli-package">
+<h1>marsi.cli package<a class="headerlink" href="#marsi-cli-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="marsi.cli.controllers.html">marsi.cli.controllers package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="marsi.cli.controllers.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.cli.controllers.html#module-marsi.cli.controllers.chemistry">marsi.cli.controllers.chemistry module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.cli.controllers.html#module-marsi.cli.controllers.database">marsi.cli.controllers.database module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.cli.controllers.html#module-marsi.cli.controllers.modeling">marsi.cli.controllers.modeling module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.cli.controllers.html#module-marsi.cli.controllers">Module contents</a><ul class="simple">
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-marsi.cli.app">
+<span id="marsi-cli-app-module"></span><h2>marsi.cli.app module<a class="headerlink" href="#module-marsi.cli.app" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="marsi.cli.app.MarsiApp">
+<em class="property">class </em><code class="descclassname">marsi.cli.app.</code><code class="descname">MarsiApp</code><span class="sig-paren">(</span><em>label=None</em>, <em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/app.html#MarsiApp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.app.MarsiApp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">cement.core.foundation.CementApp</span></code></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">argv</span></code></td>
+<td>The arguments list that will be used when self.run() is called.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">debug</span></code></td>
+<td>Returns boolean based on whether <code class="docutils literal"><span class="pre">--debug</span></code> was passed at command line or set via the application’s configuration file.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">last_rendered</span></code></td>
+<td>Return the (data, output_text) tuple of the last time self.render() was called.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">pargs</span></code></td>
+<td>Returns the <cite>parsed_args</cite> object as returned by self.args.parse().</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.app.MarsiApp.Meta" title="marsi.cli.app.MarsiApp.Meta"><code class="xref py py-obj docutils literal"><span class="pre">Meta</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">add_arg</span></code>(*args,&nbsp;**kw)</td>
+<td>A shortcut for self.args.add_argument.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">add_template_dir</span></code>(path)</td>
+<td>Append a directory path to the list of template directories to parse for templates.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">catch_signal</span></code>(signum)</td>
+<td>Add <code class="docutils literal"><span class="pre">signum</span></code> to the list of signals to catch and handle by Cement.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">close</span></code>([code])</td>
+<td>Close the application.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">extend</span></code>(member_name,&nbsp;member_object)</td>
+<td>Extend the CementApp() object with additional functions/classes such as ‘app.my_custom_function()’, etc.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">get_last_rendered</span></code>()</td>
+<td>DEPRECATION WARNING: This function is deprecated as of Cement 2.1.3 in favor of the <cite>self.last_rendered</cite> property, and will be removed in future versions of Cement.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">reload</span></code>()</td>
+<td>This function is useful for reloading a running applications, for example to reload configuration settings, etc.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">remove_template_dir</span></code>(path)</td>
+<td>Remove a directory path from the list of template directories to parse for templates.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">render</span></code>(data[,&nbsp;template,&nbsp;out])</td>
+<td>This is a simple wrapper around self.output.render() which simply returns an empty string if no self.output handler is defined.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">run</span></code>()</td>
+<td>This function wraps everything together (after self._setup() is called) to run the application.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">run_forever</span></code>([interval,&nbsp;tb])</td>
+<td>This function wraps <code class="docutils literal"><span class="pre">run()</span></code> with an endless while loop.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">setup</span></code>()</td>
+<td>This function wraps all ‘_setup’ actons in one call.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">validate_config</span></code>()</td>
+<td>Validate application config settings.</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="marsi.cli.app.MarsiApp.Meta">
+<em class="property">class </em><code class="descname">Meta</code><a class="reference internal" href="../_modules/marsi/cli/app.html#MarsiApp.Meta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.app.MarsiApp.Meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dl class="attribute">
+<dt id="marsi.cli.app.MarsiApp.Meta.label">
+<code class="descname">label</code><em class="property"> = 'marsi'</em><a class="headerlink" href="#marsi.cli.app.MarsiApp.Meta.label" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cli.app.MarsiApp.Meta.base_controller">
+<code class="descname">base_controller</code><em class="property"> = 'base'</em><a class="headerlink" href="#marsi.cli.app.MarsiApp.Meta.base_controller" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cli.app.MarsiApp.Meta.handlers">
+<code class="descname">handlers</code><em class="property"> = [&lt;class 'marsi.cli.controllers.MarsiBaseController'&gt;, &lt;class 'marsi.cli.controllers.database.DatabaseController'&gt;, &lt;class 'marsi.cli.controllers.modeling.OptimizationController'&gt;, &lt;class 'marsi.cli.controllers.chemistry.ChemistryController'&gt;]</em><a class="headerlink" href="#marsi.cli.app.MarsiApp.Meta.handlers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.cli.app.main">
+<code class="descclassname">marsi.cli.app.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/app.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.app.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-marsi.cli">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-marsi.cli" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="marsi.cli.MarsiApp">
+<em class="property">class </em><code class="descclassname">marsi.cli.</code><code class="descname">MarsiApp</code><span class="sig-paren">(</span><em>label=None</em>, <em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cli/app.html#MarsiApp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.MarsiApp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">cement.core.foundation.CementApp</span></code></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">argv</span></code></td>
+<td>The arguments list that will be used when self.run() is called.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">debug</span></code></td>
+<td>Returns boolean based on whether <code class="docutils literal"><span class="pre">--debug</span></code> was passed at command line or set via the application’s configuration file.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">last_rendered</span></code></td>
+<td>Return the (data, output_text) tuple of the last time self.render() was called.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">pargs</span></code></td>
+<td>Returns the <cite>parsed_args</cite> object as returned by self.args.parse().</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cli.MarsiApp.Meta" title="marsi.cli.MarsiApp.Meta"><code class="xref py py-obj docutils literal"><span class="pre">Meta</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">add_arg</span></code>(*args,&nbsp;**kw)</td>
+<td>A shortcut for self.args.add_argument.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">add_template_dir</span></code>(path)</td>
+<td>Append a directory path to the list of template directories to parse for templates.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">catch_signal</span></code>(signum)</td>
+<td>Add <code class="docutils literal"><span class="pre">signum</span></code> to the list of signals to catch and handle by Cement.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">close</span></code>([code])</td>
+<td>Close the application.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">extend</span></code>(member_name,&nbsp;member_object)</td>
+<td>Extend the CementApp() object with additional functions/classes such as ‘app.my_custom_function()’, etc.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">get_last_rendered</span></code>()</td>
+<td>DEPRECATION WARNING: This function is deprecated as of Cement 2.1.3 in favor of the <cite>self.last_rendered</cite> property, and will be removed in future versions of Cement.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">reload</span></code>()</td>
+<td>This function is useful for reloading a running applications, for example to reload configuration settings, etc.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">remove_template_dir</span></code>(path)</td>
+<td>Remove a directory path from the list of template directories to parse for templates.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">render</span></code>(data[,&nbsp;template,&nbsp;out])</td>
+<td>This is a simple wrapper around self.output.render() which simply returns an empty string if no self.output handler is defined.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">run</span></code>()</td>
+<td>This function wraps everything together (after self._setup() is called) to run the application.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">run_forever</span></code>([interval,&nbsp;tb])</td>
+<td>This function wraps <code class="docutils literal"><span class="pre">run()</span></code> with an endless while loop.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">setup</span></code>()</td>
+<td>This function wraps all ‘_setup’ actons in one call.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">validate_config</span></code>()</td>
+<td>Validate application config settings.</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="marsi.cli.MarsiApp.Meta">
+<em class="property">class </em><code class="descname">Meta</code><a class="reference internal" href="../_modules/marsi/cli/app.html#MarsiApp.Meta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cli.MarsiApp.Meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dl class="attribute">
+<dt id="marsi.cli.MarsiApp.Meta.label">
+<code class="descname">label</code><em class="property"> = 'marsi'</em><a class="headerlink" href="#marsi.cli.MarsiApp.Meta.label" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cli.MarsiApp.Meta.base_controller">
+<code class="descname">base_controller</code><em class="property"> = 'base'</em><a class="headerlink" href="#marsi.cli.MarsiApp.Meta.base_controller" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cli.MarsiApp.Meta.handlers">
+<code class="descname">handlers</code><em class="property"> = [&lt;class 'marsi.cli.controllers.MarsiBaseController'&gt;, &lt;class 'marsi.cli.controllers.database.DatabaseController'&gt;, &lt;class 'marsi.cli.controllers.modeling.OptimizationController'&gt;, &lt;class 'marsi.cli.controllers.chemistry.ChemistryController'&gt;]</em><a class="headerlink" href="#marsi.cli.MarsiApp.Meta.handlers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">marsi.cli package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-marsi.cli.app">marsi.cli.app module</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-marsi.cli">Module contents</a><ul>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../API.html">API Docs</a><ul>
+  <li><a href="marsi.html">marsi package</a><ul>
+      <li>Next: <a href="marsi.cli.controllers.html" title="next chapter">marsi.cli.controllers package</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/apidoc_output/marsi.cli.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/apidoc_output/marsi.cli.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

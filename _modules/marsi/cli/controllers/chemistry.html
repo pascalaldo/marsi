@@ -1,0 +1,239 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.cli.controllers.chemistry &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.cli.controllers.chemistry</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2017 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="kn">from</span> <span class="nn">cement.core.controller</span> <span class="k">import</span> <span class="n">CementBaseController</span><span class="p">,</span> <span class="n">expose</span>
+
+<span class="kn">from</span> <span class="nn">marsi.chemistry.common</span> <span class="k">import</span> <span class="n">dynamic_fingerprint_cut</span>
+<span class="kn">from</span> <span class="nn">marsi.chemistry.molecule</span> <span class="k">import</span> <span class="n">Molecule</span>
+<span class="kn">from</span> <span class="nn">marsi.io</span> <span class="k">import</span> <span class="n">write_excel_file</span>
+<span class="kn">from</span> <span class="nn">marsi.nearest_neighbors</span> <span class="k">import</span> <span class="n">search_closest_compounds</span>
+
+<span class="n">OUTPUT_WRITERS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;csv&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">df</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">path</span><span class="p">),</span>
+    <span class="s1">&#39;excel&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">df</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">write_excel_file</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="ChemistryController"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.chemistry.ChemistryController">[docs]</a><span class="k">class</span> <span class="nc">ChemistryController</span><span class="p">(</span><span class="n">CementBaseController</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is the Optimization Controller. It allows to run optimizations from the command line.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ChemistryController.Meta"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.chemistry.ChemistryController.Meta">[docs]</a>    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;chem&#39;</span>
+        <span class="n">stacked_on</span> <span class="o">=</span> <span class="s1">&#39;base&#39;</span>
+        <span class="n">stacked_type</span> <span class="o">=</span> <span class="s1">&#39;nested&#39;</span>
+        <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;Metabolite database query and filter tools&quot;</span>
+        <span class="n">arguments</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">([</span><span class="s1">&#39;--inchi&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;The metabolite InChI to search&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--sdf&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;The metabolite SDF to search&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--mol&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;The metabolite MOL to search&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--fingerprint-format&#39;</span><span class="p">,</span> <span class="s1">&#39;-fp&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;The fingerprint format&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;maccs&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--fingerprint-cutoff&#39;</span><span class="p">,</span> <span class="s1">&#39;-fpcut&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Fingerprint cutoff&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--similarity-cutoff&#39;</span><span class="p">,</span> <span class="s1">&#39;-scut&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Similarity cutoff&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--neighbors&#39;</span><span class="p">,</span> <span class="s1">&#39;-k&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Filter the first K hits&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--radius&#39;</span><span class="p">,</span> <span class="s1">&#39;-r&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Filter hits within R distance radius&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--atoms-weight&#39;</span><span class="p">,</span> <span class="s1">&#39;-aw&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;The weight of the atoms for structural similarity&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--bonds-weight&#39;</span><span class="p">,</span> <span class="s1">&#39;-bw&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;The weight of the bonds for structural similarity&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--atoms-diff&#39;</span><span class="p">,</span> <span class="s1">&#39;-ad&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;The maximum number of the atoms difference for database query&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--bonds-diff&#39;</span><span class="p">,</span> <span class="s1">&#39;-bd&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;The maximum number of the bonds difference for database query&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--rings-diff&#39;</span><span class="p">,</span> <span class="s1">&#39;-rd&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;The maximum number of the rings difference for database query&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--output-file&#39;</span><span class="p">,</span> <span class="s1">&#39;-o&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Output file&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--output-format&#39;</span><span class="p">,</span> <span class="s1">&#39;-f&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s1">&#39;Output format (default: csv)&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;csv&#39;</span><span class="p">))</span>
+        <span class="p">]</span></div>
+
+<div class="viewcode-block" id="ChemistryController.default"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.chemistry.ChemistryController.default">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">hide</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Welcome to MARSI chemistry package&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Here you can find the tools to find and sort analogs for metabolites&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ChemistryController.find_analogs"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.chemistry.ChemistryController.find_analogs">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Find analogs for a metabolite&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">find_analogs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        1. Make a fingerprint from the --inchi, --sdf or --mol.</span>
+<span class="sd">        2. Query the database</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">output_file</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">output_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">output_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">output_file</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--output-file argument is required&quot;</span><span class="p">)</span>
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">output_file</span> <span class="o">+=</span> <span class="s2">&quot;.</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">output_format</span>
+
+        <span class="n">molecule</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">bonds_weight</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="n">atoms_weight</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="n">bonds_diff</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">atoms_diff</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">rings_diff</span> <span class="o">=</span> <span class="mi">2</span>
+
+        <span class="n">fp_cut</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">fingerprint_cutoff</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">bonds_weight</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">bonds_weight</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">bonds_weight</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">atoms_weight</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">atoms_weight</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">atoms_weight</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">bonds_diff</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">bonds_diff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">bonds_diff</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">atoms_diff</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">atoms_diff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">atoms_diff</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">rings_diff</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">rings_diff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">rings_diff</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">inchi</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">molecule</span> <span class="o">=</span> <span class="n">Molecule</span><span class="o">.</span><span class="n">from_inchi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">inchi</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">sdf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">molecule</span> <span class="o">=</span> <span class="n">Molecule</span><span class="o">.</span><span class="n">from_sdf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">sdf</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">mol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">molecule</span> <span class="o">=</span> <span class="n">Molecule</span><span class="o">.</span><span class="n">from_mol</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">mol</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Please provide one of the following inputs --inchi, --sdf or --mol&quot;</span><span class="p">)</span>
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Molecule processed!</span><span class="se">\n</span><span class="s2">InChI key </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">molecule</span><span class="o">.</span><span class="n">inchi_key</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">fp_cut</span> <span class="o">==</span> <span class="s1">&#39;dynamic&#39;</span><span class="p">:</span>
+            <span class="n">fp_cut</span> <span class="o">=</span> <span class="n">dynamic_fingerprint_cut</span><span class="p">(</span><span class="n">molecule</span><span class="o">.</span><span class="n">num_atoms</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">fp_cut</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">fp_cut</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">fp_cut</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">fp_cut</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fingerprint cutoff </span><span class="si">%s</span><span class="s2"> must be grater than 0 and less then or equal to 1&quot;</span> <span class="o">%</span> <span class="n">fp_cut</span><span class="p">)</span>
+                    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid fingerprint cutoff &#39;</span><span class="si">%s</span><span class="s2">&#39;. It must be &#39;dynamic&#39; or a number&quot;</span> <span class="o">%</span> <span class="n">fp_cut</span><span class="p">)</span>
+                <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">fpformat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">fingerprint_format</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="n">search_closest_compounds</span><span class="p">(</span><span class="n">molecule</span><span class="o">=</span><span class="n">molecule</span><span class="p">,</span> <span class="n">fp_cut</span><span class="o">=</span><span class="n">fp_cut</span><span class="p">,</span> <span class="n">fpformat</span><span class="o">=</span><span class="n">fpformat</span><span class="p">,</span>
+                                           <span class="n">bonds_weight</span><span class="o">=</span><span class="n">bonds_weight</span><span class="p">,</span> <span class="n">bonds_diff</span><span class="o">=</span><span class="n">bonds_diff</span><span class="p">,</span>
+                                           <span class="n">atoms_weight</span><span class="o">=</span><span class="n">atoms_weight</span><span class="p">,</span> <span class="n">atoms_diff</span><span class="o">=</span><span class="n">atoms_diff</span><span class="p">,</span>
+                                           <span class="n">rings_diff</span><span class="o">=</span><span class="n">rings_diff</span><span class="p">)</span>
+
+        <span class="n">results</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">similarity_cut</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">similarity_cutoff</span>
+        <span class="k">if</span> <span class="n">similarity_cut</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">similarity_cut</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">similarity_cut</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">similarity_cut</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">similarity_cut</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Similarity cutoff </span><span class="si">%s</span><span class="s2"> must be grater than 0 and less then or equal to 1&quot;</span> <span class="o">%</span> <span class="n">similarity_cut</span><span class="p">)</span>
+                    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">structural_score</span> <span class="o">&gt;=</span> <span class="n">similarity_cut</span><span class="p">]</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid similarity cutoff &#39;</span><span class="si">%s</span><span class="s2">&#39;. It must be a number&quot;</span> <span class="o">%</span> <span class="n">similarity_cut</span><span class="p">)</span>
+
+        <span class="n">results</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;structural_score&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">OUTPUT_WRITERS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">output_format</span><span class="p">](</span><span class="n">results</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  <li><a href="../controllers.html">marsi.cli.controllers</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

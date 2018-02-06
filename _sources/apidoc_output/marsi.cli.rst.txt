@@ -1,0 +1,29 @@
+marsi\.cli package
+==================
+
+Subpackages
+-----------
+
+.. toctree::
+
+    marsi.cli.controllers
+
+Submodules
+----------
+
+marsi\.cli\.app module
+----------------------
+
+.. automodule:: marsi.cli.app
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: marsi.cli
+    :members:
+    :undoc-members:
+    :show-inheritance:

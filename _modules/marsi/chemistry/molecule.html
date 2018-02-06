@@ -1,0 +1,217 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.chemistry.molecule &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.chemistry.molecule</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2017 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">marsi.chemistry</span> <span class="k">import</span> <span class="n">openbabel</span>
+<span class="kn">from</span> <span class="nn">marsi.chemistry</span> <span class="k">import</span> <span class="n">rdkit</span>
+
+
+<span class="n">VALID_FP_FORMATS</span> <span class="o">=</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">fps</span> <span class="o">+</span> <span class="n">rdkit</span><span class="o">.</span><span class="n">fps</span>
+
+
+<div class="viewcode-block" id="Molecule"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.molecule.Molecule">[docs]</a><span class="k">class</span> <span class="nc">Molecule</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Object representing a molecule.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Molecule.from_sdf"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.molecule.Molecule.from_sdf">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_sdf</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path_or_str</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Builds a molecule from a file or string.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path_or_str : str</span>
+<span class="sd">            The input file name or a string with the molecule description in SDF format.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        marsi.chemistry.molecule.Molecule</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">from_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path_or_str</span><span class="p">)</span>
+        <span class="n">ob_mol</span> <span class="o">=</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">sdf_to_molecule</span><span class="p">(</span><span class="n">path_or_str</span><span class="p">,</span> <span class="n">from_file</span><span class="p">)</span>
+        <span class="n">ob_mol</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">rd_mol</span> <span class="o">=</span> <span class="n">rdkit</span><span class="o">.</span><span class="n">sdf_to_molecule</span><span class="p">(</span><span class="n">path_or_str</span><span class="p">,</span> <span class="n">from_file</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">ob_mol</span><span class="p">,</span> <span class="n">rd_mol</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Molecule.from_inchi"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.molecule.Molecule.from_inchi">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_inchi</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">inchi</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Builds a molecule from an InChI key.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        inchi : str</span>
+<span class="sd">            A valid InChI key.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        marsi.chemistry.molecule.Molecule</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ob_mol</span> <span class="o">=</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">inchi_to_molecule</span><span class="p">(</span><span class="n">inchi</span><span class="p">)</span>
+        <span class="n">rd_mol</span> <span class="o">=</span> <span class="n">rdkit</span><span class="o">.</span><span class="n">inchi_to_molecule</span><span class="p">(</span><span class="n">inchi</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">ob_mol</span><span class="p">,</span> <span class="n">rd_mol</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Molecule.from_mol"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.molecule.Molecule.from_mol">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_mol</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path_or_str</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Builds a molecule from a file or string.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path_or_str : str</span>
+<span class="sd">            The input file name or a string with the molecule description in MOL format.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        marsi.chemistry.molecule.Molecule</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">from_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path_or_str</span><span class="p">)</span>
+        <span class="n">ob_mol</span> <span class="o">=</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">mol_to_molecule</span><span class="p">(</span><span class="n">path_or_str</span><span class="p">,</span> <span class="n">from_file</span><span class="p">)</span>
+        <span class="n">rd_mol</span> <span class="o">=</span> <span class="n">rdkit</span><span class="o">.</span><span class="n">mol_to_molecule</span><span class="p">(</span><span class="n">path_or_str</span><span class="p">,</span> <span class="n">from_file</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">ob_mol</span><span class="p">,</span> <span class="n">rd_mol</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ob_mol</span><span class="p">,</span> <span class="n">rd_mol</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ob_mol</span> <span class="o">=</span> <span class="n">ob_mol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rd_mol</span> <span class="o">=</span> <span class="n">rd_mol</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">inchi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">mol_to_inchi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ob_mol</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">inchi_key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">mol_to_inchi_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ob_mol</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_atoms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ob_mol</span><span class="o">.</span><span class="n">OBMol</span><span class="o">.</span><span class="n">NumAtoms</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_bonds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ob_mol</span><span class="o">.</span><span class="n">OBMol</span><span class="o">.</span><span class="n">NumBonds</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_rings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ob_mol</span><span class="o">.</span><span class="n">OBMol</span><span class="o">.</span><span class="n">GetLSSR</span><span class="p">())</span>
+
+<div class="viewcode-block" id="Molecule.fingerprint"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.molecule.Molecule.fingerprint">[docs]</a>    <span class="k">def</span> <span class="nf">fingerprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fpformat</span><span class="o">=</span><span class="s1">&#39;maccs&#39;</span><span class="p">,</span> <span class="n">bits</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">fpformat</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">VALID_FP_FORMATS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Fingerprint &#39;</span><span class="si">%s</span><span class="s2">&#39; is not valid. Use of of </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fpformat</span><span class="p">,</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">VALID_FP_FORMATS</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="n">fpformat</span> <span class="ow">in</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">fps</span><span class="p">:</span>
+            <span class="n">fp</span> <span class="o">=</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">fingerprint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ob_mol</span><span class="p">,</span> <span class="n">fpformat</span><span class="p">)</span>
+            <span class="n">bits</span> <span class="o">=</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">fp_bits</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">fpformat</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">bits</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">fingerprint_to_bits</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">bits</span><span class="o">=</span><span class="n">bits</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fp</span> <span class="o">=</span> <span class="n">rdkit</span><span class="o">.</span><span class="n">fingerprint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rd_mol</span><span class="p">,</span> <span class="n">fpformat</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">bits</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">bits</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">GetNumBits</span><span class="p">()</span>
+
+            <span class="k">return</span> <span class="n">rdkit</span><span class="o">.</span><span class="n">fingerprint_to_bits</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">bits</span><span class="o">=</span><span class="n">bits</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ob_mol</span><span class="o">.</span><span class="n">removeh</span><span class="p">()</span>
+        <span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ob_mol</span><span class="o">.</span><span class="n">_repr_html_</span><span class="p">()</span> <span class="ow">or</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">mol_to_svg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ob_mol</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ob_mol</span><span class="o">.</span><span class="n">addh</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">representation</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

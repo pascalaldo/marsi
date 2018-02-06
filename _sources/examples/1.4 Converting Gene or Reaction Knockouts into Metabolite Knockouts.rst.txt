@@ -1,0 +1,64 @@
+1.4 Converting Gene or Reaction Knockouts into Metabolite Knockouts
+=======================================================================
+
+.. code:: ipython3
+
+    from marsi.cobra.strain_design.post_processing import replace_strain_design_results
+
+.. code:: ipython3
+
+    from cameo import models
+    from cameo.strain_design import OptGene
+    from cameo.util import TimeMachine
+    from pandas import DataFrame
+
+Design a D-lactate producing strain
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In this example we are going to create strain designs using OptGene.
+
++-----------+-----------+--------------+---------------+
+| Model     | Medium    | Aerobicity   | Target        |
++===========+===========+==============+===============+
+| iJO1366   | Glucose   | Anaerobic    | lac\_\_D\_e   |
++-----------+-----------+--------------+---------------+
+
+.. code:: ipython3
+
+    model = models.bigg.iJO1366
+
+.. code:: ipython3
+
+    model.reactions.EX_o2_e.lower_bound = 0
+
+We search for reactions, because they can be directly translated into
+metabolite targets
+
+.. code:: ipython3
+
+    optgene = OptGene(model, manipulation_type="reactions", essential_reactions=["ATPM"])
+
+.. code:: ipython3
+
+    results = optgene.run(target="EX_lac__D_e", 
+                          biomass="BIOMASS_Ec_iJO1366_core_53p95M",
+                          substrate="EX_glc__D_e",
+                          max_knockouts=15,
+                          max_evaluations=15000)
+
+.. code:: ipython3
+
+    df = results.data_frame
+
+.. code:: ipython3
+
+    df
+
+.. code:: ipython3
+
+    replacements = replace_strain_design_results(model, results, results._objective_function, 
+                                                 results._simulation_method, results._simulation_kwargs)
+
+.. code:: ipython3
+
+    replacements.style

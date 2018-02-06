@@ -1,0 +1,134 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.chemistry.common &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.chemistry.common</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2016 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">cachetools</span> <span class="k">import</span> <span class="n">LRUCache</span>
+<span class="kn">from</span> <span class="nn">marsi.chemistry.common_ext</span> <span class="k">import</span> <span class="n">tanimoto_coefficient</span><span class="p">,</span> <span class="n">tanimoto_distance</span><span class="p">,</span> <span class="n">rmsd</span><span class="p">,</span> <span class="n">monte_carlo_volume</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="k">import</span> <span class="n">ConvexHull</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial.qhull</span> <span class="k">import</span> <span class="n">QhullError</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;rmsd&quot;</span><span class="p">,</span> <span class="s2">&quot;tanimoto_coefficient&quot;</span><span class="p">,</span> <span class="s2">&quot;tanimoto_distance&quot;</span><span class="p">,</span> <span class="s2">&quot;monte_carlo_volume&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;INCHI_KEY_REGEX&quot;</span><span class="p">,</span> <span class="s1">&#39;SOLUBILITY&#39;</span><span class="p">]</span>
+
+
+<span class="n">inchi_key_lru_cache</span> <span class="o">=</span> <span class="n">LRUCache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">512</span><span class="p">)</span>
+
+
+<span class="n">SOLUBILITY</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;high&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">sol</span><span class="p">:</span> <span class="n">sol</span> <span class="o">&gt;</span> <span class="mf">0.00006</span><span class="p">,</span>
+    <span class="s2">&quot;medium&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">sol</span><span class="p">:</span> <span class="mf">0.00001</span> <span class="o">&lt;=</span> <span class="n">sol</span> <span class="o">&lt;=</span> <span class="mf">0.00006</span><span class="p">,</span>
+    <span class="s2">&quot;low&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">sol</span><span class="p">:</span> <span class="n">sol</span> <span class="o">&lt;</span> <span class="mf">0.00001</span><span class="p">,</span>
+    <span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">sol</span><span class="p">:</span> <span class="kc">True</span>
+<span class="p">}</span>
+
+
+<span class="n">INCHI_KEY_REGEX</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;[0-9A-Z]</span><span class="si">{14}</span><span class="s2">\-[0-9A-Z]{8,10}\-[0-9A-Z]&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="convex_hull_volume"><a class="viewcode-back" href="../../../apidoc_output/marsi.chemistry.html#marsi.chemistry.convex_hull_volume">[docs]</a><span class="k">def</span> <span class="nf">convex_hull_volume</span><span class="p">(</span><span class="n">xyz</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ConvexHull</span><span class="p">(</span><span class="n">xyz</span><span class="p">)</span><span class="o">.</span><span class="n">volume</span>
+    <span class="k">except</span> <span class="p">(</span><span class="n">QhullError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span></div>
+
+
+<span class="k">def</span> <span class="nf">dynamic_fingerprint_cut</span><span class="p">(</span><span class="n">n_atoms</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="mf">0.017974</span> <span class="o">*</span> <span class="n">n_atoms</span> <span class="o">+</span> <span class="mf">0.008239</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,635 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.io package &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="marsi-io-package">
+<h1>marsi.io package<a class="headerlink" href="#marsi-io-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-marsi.io.bigg">
+<span id="marsi-io-bigg-module"></span><h2>marsi.io.bigg module<a class="headerlink" href="#module-marsi.io.bigg" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-marsi.io.build_database">
+<span id="marsi-io-build-database-module"></span><h2>marsi.io.build_database module<a class="headerlink" href="#module-marsi.io.build_database" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="marsi.io.build_database.build_database">
+<code class="descclassname">marsi.io.build_database.</code><code class="descname">build_database</code><span class="sig-paren">(</span><em>data</em>, <em>data_dir</em>, <em>with_zinc=True</em>, <em>session=&lt;sqlalchemy.orm.session.Session object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/build_database.html#build_database"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.build_database.build_database" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds then Molecules database.
+It requires that the input files have been downloaded.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-func docutils literal"><span class="pre">Initialization()</span></code></p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>data</strong> (<em>module</em>) – The marsi.io.data module</li>
+<li><strong>data_dir</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The path to where data is stored.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.build_database.upload_chebi_entries">
+<code class="descclassname">marsi.io.build_database.</code><code class="descname">upload_chebi_entries</code><span class="sig-paren">(</span><em>chebi_structures_file</em>, <em>chebi_data</em>, <em>i=0</em>, <em>session=&lt;sqlalchemy.orm.session.Session object&gt;</em>, <em>keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/build_database.html#upload_chebi_entries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.build_database.upload_chebi_entries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Import ChEBI data</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.build_database.upload_drugbank_entries">
+<code class="descclassname">marsi.io.build_database.</code><code class="descname">upload_drugbank_entries</code><span class="sig-paren">(</span><em>drugbank_structures_file</em>, <em>drugbank_data</em>, <em>i=0</em>, <em>session=&lt;sqlalchemy.orm.session.Session object&gt;</em>, <em>keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/build_database.html#upload_drugbank_entries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.build_database.upload_drugbank_entries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Import DrugBank</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.build_database.upload_kegg_entries">
+<code class="descclassname">marsi.io.build_database.</code><code class="descname">upload_kegg_entries</code><span class="sig-paren">(</span><em>kegg_mol_files_dir</em>, <em>kegg_data</em>, <em>i=0</em>, <em>session=&lt;sqlalchemy.orm.session.Session object&gt;</em>, <em>keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/build_database.html#upload_kegg_entries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.build_database.upload_kegg_entries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Import KEGG</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.build_database.upload_pubchem_entries">
+<code class="descclassname">marsi.io.build_database.</code><code class="descname">upload_pubchem_entries</code><span class="sig-paren">(</span><em>pubchem_sdf_files_dir</em>, <em>pubchem_data</em>, <em>i=0</em>, <em>session=&lt;sqlalchemy.orm.session.Session object&gt;</em>, <em>keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/build_database.html#upload_pubchem_entries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.build_database.upload_pubchem_entries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Import PubChem</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.build_database.upload_zinc_entries">
+<code class="descclassname">marsi.io.build_database.</code><code class="descname">upload_zinc_entries</code><span class="sig-paren">(</span><em>zinc_data_file</em>, <em>i=0</em>, <em>session=&lt;sqlalchemy.orm.session.Session object&gt;</em>, <em>keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/build_database.html#upload_zinc_entries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.build_database.upload_zinc_entries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add ZINC</p>
+</dd></dl>
+
+</div>
+<div class="section" id="marsi-io-data-module">
+<h2>marsi.io.data module<a class="headerlink" href="#marsi-io-data-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-marsi.io.db">
+<span id="marsi-io-db-module"></span><h2>marsi.io.db module<a class="headerlink" href="#module-marsi.io.db" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="marsi.io.db.Reference">
+<em class="property">class </em><code class="descclassname">marsi.io.db.</code><code class="descname">Reference</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/db.html#Reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.db.Reference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">sqlalchemy.ext.declarative.api.Base</span></code></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.io.db.Reference.add_reference" title="marsi.io.db.Reference.add_reference"><code class="xref py py-obj docutils literal"><span class="pre">add_reference</span></code></a>(database,&nbsp;accession[,&nbsp;session])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.io.db.Reference.get" title="marsi.io.db.Reference.get"><code class="xref py py-obj docutils literal"><span class="pre">get</span></code></a>(database,&nbsp;accession[,&nbsp;session])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.io.db.Reference.to_dict" title="marsi.io.db.Reference.to_dict"><code class="xref py py-obj docutils literal"><span class="pre">to_dict</span></code></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="marsi.io.db.Reference.id">
+<code class="descname">id</code><a class="headerlink" href="#marsi.io.db.Reference.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.io.db.Reference.database">
+<code class="descname">database</code><a class="headerlink" href="#marsi.io.db.Reference.database" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.io.db.Reference.accession">
+<code class="descname">accession</code><a class="headerlink" href="#marsi.io.db.Reference.accession" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="marsi.io.db.Reference.get">
+<em class="property">classmethod </em><code class="descname">get</code><span class="sig-paren">(</span><em>database</em>, <em>accession</em>, <em>session=&lt;sqlalchemy.orm.session.Session object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/db.html#Reference.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.db.Reference.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="marsi.io.db.Reference.add_reference">
+<em class="property">classmethod </em><code class="descname">add_reference</code><span class="sig-paren">(</span><em>database</em>, <em>accession</em>, <em>session=&lt;sqlalchemy.orm.session.Session object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/db.html#Reference.add_reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.db.Reference.add_reference" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.io.db.Reference.to_dict">
+<code class="descname">to_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/db.html#Reference.to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.db.Reference.to_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="marsi.io.db.Metabolite">
+<em class="property">class </em><code class="descclassname">marsi.io.db.</code><code class="descname">Metabolite</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/db.html#Metabolite"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.db.Metabolite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">sqlalchemy.ext.declarative.api.Base</span></code></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.io.db.Metabolite.volume" title="marsi.io.db.Metabolite.volume"><code class="xref py py-obj docutils literal"><span class="pre">volume</span></code></a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.io.db.Metabolite.calc_solubility" title="marsi.io.db.Metabolite.calc_solubility"><code class="xref py py-obj docutils literal"><span class="pre">calc_solubility</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.io.db.Metabolite.dump" title="marsi.io.db.Metabolite.dump"><code class="xref py py-obj docutils literal"><span class="pre">dump</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.io.db.Metabolite.fingerprint" title="marsi.io.db.Metabolite.fingerprint"><code class="xref py py-obj docutils literal"><span class="pre">fingerprint</span></code></a>([fingerprint_format])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.io.db.Metabolite.from_molecule" title="marsi.io.db.Metabolite.from_molecule"><code class="xref py py-obj docutils literal"><span class="pre">from_molecule</span></code></a>(molecule,&nbsp;references,&nbsp;synonyms)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.io.db.Metabolite.from_references" title="marsi.io.db.Metabolite.from_references"><code class="xref py py-obj docutils literal"><span class="pre">from_references</span></code></a>(references[,&nbsp;session])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.io.db.Metabolite.get" title="marsi.io.db.Metabolite.get"><code class="xref py py-obj docutils literal"><span class="pre">get</span></code></a>(inchi_key[,&nbsp;session])</td>
+<td>Retrieves a metabolite using the InChI Key.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.io.db.Metabolite.molecule" title="marsi.io.db.Metabolite.molecule"><code class="xref py py-obj docutils literal"><span class="pre">molecule</span></code></a>([library,&nbsp;get3d])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.io.db.Metabolite.restore" title="marsi.io.db.Metabolite.restore"><code class="xref py py-obj docutils literal"><span class="pre">restore</span></code></a>(dump[,&nbsp;session])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.io.db.Metabolite.to_dict" title="marsi.io.db.Metabolite.to_dict"><code class="xref py py-obj docutils literal"><span class="pre">to_dict</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.io.db.Metabolite.validate_inchi_key" title="marsi.io.db.Metabolite.validate_inchi_key"><code class="xref py py-obj docutils literal"><span class="pre">validate_inchi_key</span></code></a>(key,&nbsp;inchi_key)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="marsi.io.db.Metabolite.id">
+<code class="descname">id</code><a class="headerlink" href="#marsi.io.db.Metabolite.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.io.db.Metabolite.inchi_key">
+<code class="descname">inchi_key</code><a class="headerlink" href="#marsi.io.db.Metabolite.inchi_key" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.io.db.Metabolite.inchi">
+<code class="descname">inchi</code><a class="headerlink" href="#marsi.io.db.Metabolite.inchi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.io.db.Metabolite.analog">
+<code class="descname">analog</code><a class="headerlink" href="#marsi.io.db.Metabolite.analog" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.io.db.Metabolite.formula">
+<code class="descname">formula</code><a class="headerlink" href="#marsi.io.db.Metabolite.formula" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.io.db.Metabolite.num_atoms">
+<code class="descname">num_atoms</code><a class="headerlink" href="#marsi.io.db.Metabolite.num_atoms" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.io.db.Metabolite.num_bonds">
+<code class="descname">num_bonds</code><a class="headerlink" href="#marsi.io.db.Metabolite.num_bonds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.io.db.Metabolite.num_rings">
+<code class="descname">num_rings</code><a class="headerlink" href="#marsi.io.db.Metabolite.num_rings" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.io.db.Metabolite.sdf">
+<code class="descname">sdf</code><a class="headerlink" href="#marsi.io.db.Metabolite.sdf" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.io.db.Metabolite.references">
+<code class="descname">references</code><a class="headerlink" href="#marsi.io.db.Metabolite.references" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.io.db.Metabolite.synonyms">
+<code class="descname">synonyms</code><a class="headerlink" href="#marsi.io.db.Metabolite.synonyms" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.io.db.Metabolite.fingerprints">
+<code class="descname">fingerprints</code><a class="headerlink" href="#marsi.io.db.Metabolite.fingerprints" title="Permalink to this definition">¶</a></dt>
+<dd><p>A descriptor that presents a read/write view of an object attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.io.db.Metabolite.validate_inchi_key">
+<code class="descname">validate_inchi_key</code><span class="sig-paren">(</span><em>key</em>, <em>inchi_key</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/db.html#Metabolite.validate_inchi_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.db.Metabolite.validate_inchi_key" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="marsi.io.db.Metabolite.get">
+<em class="property">classmethod </em><code class="descname">get</code><span class="sig-paren">(</span><em>inchi_key</em>, <em>session=&lt;sqlalchemy.orm.session.Session object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/db.html#Metabolite.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.db.Metabolite.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves a metabolite using the InChI Key.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>inchi_key</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A valid InChi Key.</li>
+<li><strong>session</strong> (<em>sqlalchemy.orm.session.Session</em>) – A database session.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="#marsi.io.db.Metabolite" title="marsi.io.db.Metabolite">Metabolite</a></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">KeyError</span></code> – If the InChI Key is not available.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="marsi.io.db.Metabolite.from_references">
+<em class="property">classmethod </em><code class="descname">from_references</code><span class="sig-paren">(</span><em>references</em>, <em>session=&lt;sqlalchemy.orm.session.Session object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/db.html#Metabolite.from_references"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.db.Metabolite.from_references" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="marsi.io.db.Metabolite.from_molecule">
+<em class="property">classmethod </em><code class="descname">from_molecule</code><span class="sig-paren">(</span><em>molecule</em>, <em>references</em>, <em>synonyms</em>, <em>analog=False</em>, <em>session=&lt;sqlalchemy.orm.session.Session object&gt;</em>, <em>first_time=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/db.html#Metabolite.from_molecule"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.db.Metabolite.from_molecule" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.io.db.Metabolite.calc_solubility">
+<code class="descname">calc_solubility</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/db.html#Metabolite.calc_solubility"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.db.Metabolite.calc_solubility" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.io.db.Metabolite.volume">
+<code class="descname">volume</code><a class="headerlink" href="#marsi.io.db.Metabolite.volume" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.io.db.Metabolite.molecule">
+<code class="descname">molecule</code><span class="sig-paren">(</span><em>library='openbabel'</em>, <em>get3d=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/db.html#Metabolite.molecule"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.db.Metabolite.molecule" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.io.db.Metabolite.fingerprint">
+<code class="descname">fingerprint</code><span class="sig-paren">(</span><em>fingerprint_format='maccs'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/db.html#Metabolite.fingerprint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.db.Metabolite.fingerprint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.io.db.Metabolite.to_dict">
+<code class="descname">to_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/db.html#Metabolite.to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.db.Metabolite.to_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.io.db.Metabolite.dump">
+<code class="descname">dump</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/db.html#Metabolite.dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.db.Metabolite.dump" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="marsi.io.db.Metabolite.restore">
+<em class="property">classmethod </em><code class="descname">restore</code><span class="sig-paren">(</span><em>dump</em>, <em>session=&lt;sqlalchemy.orm.session.Session object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/db.html#Metabolite.restore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.db.Metabolite.restore" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="marsi.io.db.Database">
+<em class="property">class </em><code class="descclassname">marsi.io.db.</code><code class="descname">Database</code><a class="reference internal" href="../_modules/marsi/io/db.html#Database"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.db.Database" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dl class="attribute">
+<dt id="marsi.io.db.Database.metabolites">
+<code class="descname">metabolites</code><em class="property"> = &lt;marsi.io.db.CollectionWrapper object&gt;</em><a class="headerlink" href="#marsi.io.db.Database.metabolites" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-marsi.io.enrichment">
+<span id="marsi-io-enrichment-module"></span><h2>marsi.io.enrichment module<a class="headerlink" href="#module-marsi.io.enrichment" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="marsi.io.enrichment.map_uniprot_from_pdb_ids">
+<code class="descclassname">marsi.io.enrichment.</code><code class="descname">map_uniprot_from_pdb_ids</code><span class="sig-paren">(</span><em>pdb_ids</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/enrichment.html#map_uniprot_from_pdb_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.enrichment.map_uniprot_from_pdb_ids" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.enrichment.find_chebi_id">
+<code class="descclassname">marsi.io.enrichment.</code><code class="descname">find_chebi_id</code><span class="sig-paren">(</span><em>metabolite</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/enrichment.html#find_chebi_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.enrichment.find_chebi_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queries ChEBI using InChI Key.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>metabolite</strong> (<a class="reference internal" href="#marsi.io.db.Metabolite" title="marsi.io.db.Metabolite"><em>Metabolite</em></a>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">With tuples of (id, name)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.enrichment.find_pubchem_id">
+<code class="descclassname">marsi.io.enrichment.</code><code class="descname">find_pubchem_id</code><span class="sig-paren">(</span><em>metabolite</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/enrichment.html#find_pubchem_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.enrichment.find_pubchem_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queries PubChem Compound using InChI Key.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>metabolite</strong> (<a class="reference internal" href="#marsi.io.db.Metabolite" title="marsi.io.db.Metabolite"><em>Metabolite</em></a>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">With tuples of (id, name)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.enrichment.find_best_chebi_structure">
+<code class="descclassname">marsi.io.enrichment.</code><code class="descname">find_best_chebi_structure</code><span class="sig-paren">(</span><em>entity</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/enrichment.html#find_best_chebi_structure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.enrichment.find_best_chebi_structure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-marsi.io.parsers">
+<span id="marsi-io-parsers-module"></span><h2>marsi.io.parsers module<a class="headerlink" href="#module-marsi.io.parsers" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="marsi.io.parsers.parse_kegg_brite">
+<code class="descclassname">marsi.io.parsers.</code><code class="descname">parse_kegg_brite</code><span class="sig-paren">(</span><em>brite_file</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/parsers.html#parse_kegg_brite"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.parsers.parse_kegg_brite" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.parsers.parse_chebi_data">
+<code class="descclassname">marsi.io.parsers.</code><code class="descname">parse_chebi_data</code><span class="sig-paren">(</span><em>chebi_names_file</em>, <em>chebi_vertice_file</em>, <em>chebi_relation_file</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/parsers.html#parse_chebi_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.parsers.parse_chebi_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.parsers.parse_pubchem">
+<code class="descclassname">marsi.io.parsers.</code><code class="descname">parse_pubchem</code><span class="sig-paren">(</span><em>summary_file</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/parsers.html#parse_pubchem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.parsers.parse_pubchem" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-marsi.io.plots">
+<span id="marsi-io-plots-module"></span><h2>marsi.io.plots module<a class="headerlink" href="#module-marsi.io.plots" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="marsi.io.plots.summary_plot">
+<code class="descclassname">marsi.io.plots.</code><code class="descname">summary_plot</code><span class="sig-paren">(</span><em>summary, dbs=['chebi', 'kegg', 'drugbank', 'pubchem']</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/plots.html#summary_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.plots.summary_plot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.plots.venn_plot">
+<code class="descclassname">marsi.io.plots.</code><code class="descname">venn_plot</code><span class="sig-paren">(</span><em>summary, dbs=['chebi', 'kegg', 'drugbank', 'pubchem']</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/plots.html#venn_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.plots.venn_plot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-marsi.io.retriaval">
+<span id="marsi-io-retriaval-module"></span><h2>marsi.io.retriaval module<a class="headerlink" href="#module-marsi.io.retriaval" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="marsi.io.retriaval.retrieve_bigg_reactions">
+<code class="descclassname">marsi.io.retriaval.</code><code class="descname">retrieve_bigg_reactions</code><span class="sig-paren">(</span><em>dest='/home/travis/.marsi/data/bigg_models_reactions.txt'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/retriaval.html#retrieve_bigg_reactions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.retriaval.retrieve_bigg_reactions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves bigg reactions file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.retriaval.retrieve_bigg_metabolites">
+<code class="descclassname">marsi.io.retriaval.</code><code class="descname">retrieve_bigg_metabolites</code><span class="sig-paren">(</span><em>dest='/home/travis/.marsi/data/bigg_models_metabolites.txt'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/retriaval.html#retrieve_bigg_metabolites"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.retriaval.retrieve_bigg_metabolites" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves bigg metabolites file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.retriaval.retrieve_drugbank_open_structures">
+<code class="descclassname">marsi.io.retriaval.</code><code class="descname">retrieve_drugbank_open_structures</code><span class="sig-paren">(</span><em>db_version='5.0.3'</em>, <em>dest='/home/travis/.marsi/data/drugbank_open_structures.sdf'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/retriaval.html#retrieve_drugbank_open_structures"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.retriaval.retrieve_drugbank_open_structures" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves Drugbank Open Structures.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>db_version</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The version of drugbank to retrieve</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.retriaval.retrieve_drugbank_open_vocabulary">
+<code class="descclassname">marsi.io.retriaval.</code><code class="descname">retrieve_drugbank_open_vocabulary</code><span class="sig-paren">(</span><em>db_version='5.0.3'</em>, <em>dest='/home/travis/.marsi/data/drugbank_open_vocabulary.csv'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/retriaval.html#retrieve_drugbank_open_vocabulary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.retriaval.retrieve_drugbank_open_vocabulary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves Drugbank Open Vocabulary.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>db_version</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The version of drugbank to retrieve</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.retriaval.retrieve_chebi_structures">
+<code class="descclassname">marsi.io.retriaval.</code><code class="descname">retrieve_chebi_structures</code><span class="sig-paren">(</span><em>dest='/home/travis/.marsi/data/chebi_lite_3star.sdf'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/retriaval.html#retrieve_chebi_structures"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.retriaval.retrieve_chebi_structures" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves ChEBI sdf (lite version).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.retriaval.retrieve_chebi_names">
+<code class="descclassname">marsi.io.retriaval.</code><code class="descname">retrieve_chebi_names</code><span class="sig-paren">(</span><em>dest='/home/travis/.marsi/data/chebi_names_3star.txt'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/retriaval.html#retrieve_chebi_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.retriaval.retrieve_chebi_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves ChEBI names.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.retriaval.retrieve_chebi_relation">
+<code class="descclassname">marsi.io.retriaval.</code><code class="descname">retrieve_chebi_relation</code><span class="sig-paren">(</span><em>dest='/home/travis/.marsi/data/chebi_relation_3star.tsv'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/retriaval.html#retrieve_chebi_relation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.retriaval.retrieve_chebi_relation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves ChEBI relation data.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.retriaval.retrieve_chebi_vertice">
+<code class="descclassname">marsi.io.retriaval.</code><code class="descname">retrieve_chebi_vertice</code><span class="sig-paren">(</span><em>dest='/home/travis/.marsi/data/chebi_vertice_3star.tsv'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/retriaval.html#retrieve_chebi_vertice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.retriaval.retrieve_chebi_vertice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves ChEBI vertice data.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.retriaval.retrieve_kegg_brite">
+<code class="descclassname">marsi.io.retriaval.</code><code class="descname">retrieve_kegg_brite</code><span class="sig-paren">(</span><em>dest='/home/travis/.marsi/data/kegg_brite_08310.keg'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/retriaval.html#retrieve_kegg_brite"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.retriaval.retrieve_kegg_brite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves KEGG Brite 08310 (Target-based Classification of Drugs)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.retriaval.retrieve_pubchem_mol_files">
+<code class="descclassname">marsi.io.retriaval.</code><code class="descname">retrieve_pubchem_mol_files</code><span class="sig-paren">(</span><em>pubchem_ids</em>, <em>dest='/home/travis/.marsi/data'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/retriaval.html#retrieve_pubchem_mol_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.retriaval.retrieve_pubchem_mol_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves SDF Files from PubChem.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.retriaval.retrieve_kegg_mol_files">
+<code class="descclassname">marsi.io.retriaval.</code><code class="descname">retrieve_kegg_mol_files</code><span class="sig-paren">(</span><em>kegg</em>, <em>dest='/home/travis/.marsi/data'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/retriaval.html#retrieve_kegg_mol_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.retriaval.retrieve_kegg_mol_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves KEGG MOL Files using KEGG REST API.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.retriaval.retrieve_zinc_properties">
+<code class="descclassname">marsi.io.retriaval.</code><code class="descname">retrieve_zinc_properties</code><span class="sig-paren">(</span><em>dest='/home/travis/.marsi/data/zinc_16_prop.tsv'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/retriaval.html#retrieve_zinc_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.retriaval.retrieve_zinc_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves ZINC properties file:
+“All Clean
+As Subset #6, but without ‘yuck’ compounds”</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.io.retriaval.retrieve_zinc_structures">
+<code class="descclassname">marsi.io.retriaval.</code><code class="descname">retrieve_zinc_structures</code><span class="sig-paren">(</span><em>dest='/home/travis/.marsi/data/zinc_16.sdf.gz'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io/retriaval.html#retrieve_zinc_structures"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.retriaval.retrieve_zinc_structures" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves ZINC structures file:
+“All Clean
+As Subset #6, but without ‘yuck’ compounds”</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-marsi.io">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-marsi.io" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="marsi.io.write_excel_file">
+<code class="descclassname">marsi.io.</code><code class="descname">write_excel_file</code><span class="sig-paren">(</span><em>data_frame</em>, <em>path</em>, <em>molecules</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/io.html#write_excel_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.io.write_excel_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">marsi.io package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-marsi.io.bigg">marsi.io.bigg module</a></li>
+<li><a class="reference internal" href="#module-marsi.io.build_database">marsi.io.build_database module</a></li>
+<li><a class="reference internal" href="#marsi-io-data-module">marsi.io.data module</a></li>
+<li><a class="reference internal" href="#module-marsi.io.db">marsi.io.db module</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-marsi.io.enrichment">marsi.io.enrichment module</a></li>
+<li><a class="reference internal" href="#module-marsi.io.parsers">marsi.io.parsers module</a></li>
+<li><a class="reference internal" href="#module-marsi.io.plots">marsi.io.plots module</a></li>
+<li><a class="reference internal" href="#module-marsi.io.retriaval">marsi.io.retriaval module</a></li>
+<li><a class="reference internal" href="#module-marsi.io">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../API.html">API Docs</a><ul>
+  <li><a href="marsi.html">marsi package</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/apidoc_output/marsi.io.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/apidoc_output/marsi.io.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

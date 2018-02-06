@@ -1,0 +1,303 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.config &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.config</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2016 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="kn">import</span> <span class="nn">getpass</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">six</span>
+<span class="kn">from</span> <span class="nn">openbabel</span> <span class="k">import</span> <span class="n">obErrorLog</span><span class="p">,</span> <span class="n">obError</span><span class="p">,</span> <span class="n">obWarning</span><span class="p">,</span> <span class="n">obInfo</span><span class="p">,</span> <span class="n">obDebug</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.event</span> <span class="k">import</span> <span class="n">listens_for</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.exc</span> <span class="k">import</span> <span class="n">DisconnectionError</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Level&#39;</span><span class="p">,</span> <span class="s1">&#39;log&#39;</span><span class="p">,</span> <span class="s1">&#39;prj_dir&#39;</span><span class="p">,</span> <span class="s1">&#39;db_url&#39;</span><span class="p">]</span>
+
+<span class="n">TRAVIS</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;TRAVIS&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">APPVEYOR</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;APPVEYOR&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_add_process_guards</span><span class="p">(</span><span class="n">engine</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Add multiprocessing guards.</span>
+
+<span class="sd">    Forces a connection to be reconnected if it is detected</span>
+<span class="sd">    as having been shared to a sub-process.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@listens_for</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="s2">&quot;connect&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">connection_record</span><span class="p">):</span>
+        <span class="n">connection_record</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()</span>
+
+    <span class="nd">@listens_for</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="s2">&quot;checkout&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">checkout</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">connection_record</span><span class="p">,</span> <span class="n">connection_proxy</span><span class="p">):</span>
+        <span class="n">pid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">connection_record</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">pid</span><span class="p">:</span>
+            <span class="n">connection_record</span><span class="o">.</span><span class="n">connection</span> <span class="o">=</span> <span class="n">connection_proxy</span><span class="o">.</span><span class="n">connection</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">raise</span> <span class="n">DisconnectionError</span><span class="p">(</span>
+                <span class="s2">&quot;Connection record belongs to pid </span><span class="si">%s</span><span class="s2">, &quot;</span>
+                <span class="s2">&quot;attempting to check out in pid </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="n">connection_record</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">],</span> <span class="n">pid</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="Level"><a class="viewcode-back" href="../../apidoc_output/marsi.html#marsi.config.Level">[docs]</a><span class="k">class</span> <span class="nc">Level</span><span class="p">:</span>
+    <span class="n">ERROR</span> <span class="o">=</span> <span class="n">obError</span>
+    <span class="n">WARNING</span> <span class="o">=</span> <span class="n">obWarning</span>
+    <span class="n">INFO</span> <span class="o">=</span> <span class="n">obInfo</span>
+    <span class="n">DEBUG</span> <span class="o">=</span> <span class="n">obDebug</span></div>
+
+
+<span class="k">class</span> <span class="nc">LogConf</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">__level_to_logger</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">Level</span><span class="o">.</span><span class="n">ERROR</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span>
+        <span class="n">Level</span><span class="o">.</span><span class="n">WARNING</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span>
+        <span class="n">Level</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span>
+        <span class="n">Level</span><span class="o">.</span><span class="n">INFO</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_app_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;marsi.*&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_level</span> <span class="o">=</span> <span class="n">Level</span><span class="o">.</span><span class="n">WARNING</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">level</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_level</span>
+
+    <span class="nd">@level</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+        <span class="n">obErrorLog</span><span class="o">.</span><span class="n">SetOutputLevel</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_app_logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__level_to_logger</span><span class="p">[</span><span class="n">level</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_level</span> <span class="o">=</span> <span class="n">level</span>
+
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">LogConf</span><span class="p">()</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="n">Level</span><span class="o">.</span><span class="n">INFO</span>
+
+<span class="n">default</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;marsi&#39;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s1">&#39;prj_dir&#39;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/.marsi&quot;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;HOME&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;db_name&#39;</span><span class="p">:</span> <span class="s1">&#39;marsi-db&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;db_engine&#39;</span><span class="p">:</span> <span class="s2">&quot;postgresql&quot;</span><span class="p">,</span>
+    <span class="s1">&#39;db_user&#39;</span><span class="p">:</span> <span class="n">getpass</span><span class="o">.</span><span class="n">getuser</span><span class="p">(),</span>
+    <span class="s1">&#39;db_host&#39;</span><span class="p">:</span> <span class="s2">&quot;localhost&quot;</span><span class="p">,</span>
+    <span class="s1">&#39;db_port&#39;</span><span class="p">:</span> <span class="mi">5432</span><span class="p">,</span>
+    <span class="s1">&#39;db_pass&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">default</span><span class="p">[</span><span class="n">section</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">six</span><span class="o">.</span><span class="n">moves</span><span class="o">.</span><span class="n">configparser</span><span class="o">.</span><span class="n">ConfigParser</span><span class="p">()</span>
+
+<span class="c1"># TODO: specify database connection configuration</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Looking for local setup.cfg&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;setup.cfg&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">readfp</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Found!&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Not available </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">default</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">prj_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;marsi&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;prj_dir&#39;</span><span class="p">))</span>
+        <span class="n">db_name</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;marsi&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">([</span><span class="s1">&#39;db_name&#39;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">prj_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">get_default</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;marsi&#39;</span><span class="p">,</span> <span class="s1">&#39;prj_dir&#39;</span><span class="p">,</span> <span class="n">default</span><span class="p">))</span>
+        <span class="n">db_name</span> <span class="o">=</span> <span class="n">get_default</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;marsi&#39;</span><span class="p">,</span> <span class="s1">&#39;db_name&#39;</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+    <span class="n">prj_dir</span> <span class="o">=</span> <span class="n">default</span><span class="p">[</span><span class="s1">&#39;marsi&#39;</span><span class="p">][</span><span class="s1">&#39;prj_dir&#39;</span><span class="p">]</span>
+    <span class="n">db_name</span> <span class="o">=</span> <span class="n">default</span><span class="p">[</span><span class="s1">&#39;marsi&#39;</span><span class="p">][</span><span class="s1">&#39;db_name&#39;</span><span class="p">]</span>
+
+<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Working dir </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">prj_dir</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">prj_dir</span><span class="p">):</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">prj_dir</span><span class="p">)</span>
+
+
+<span class="n">log</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="n">Level</span><span class="o">.</span><span class="n">ERROR</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">db_engine</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;marsi&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_engine&#39;</span><span class="p">,</span> <span class="s2">&quot;postgresql&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">db_engine</span> <span class="o">=</span> <span class="n">get_default</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;marsi&#39;</span><span class="p">,</span> <span class="s1">&#39;db_engine&#39;</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">APPVEYOR</span><span class="p">:</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="s1">&#39;postgres&#39;</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="s1">&#39;Password12!&#39;</span>
+        <span class="n">host</span> <span class="o">=</span> <span class="s1">&#39;localhost&#39;</span>
+        <span class="n">port</span> <span class="o">=</span> <span class="mi">5432</span>
+        <span class="n">db_name</span> <span class="o">=</span> <span class="s2">&quot;marsitest&quot;</span>
+    <span class="k">elif</span> <span class="n">TRAVIS</span><span class="p">:</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="s1">&#39;postgres&#39;</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">host</span> <span class="o">=</span> <span class="s1">&#39;localhost&#39;</span>
+        <span class="n">port</span> <span class="o">=</span> <span class="mi">5432</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># TODO: needs documentation</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">username</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;marsi&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_user&#39;</span><span class="p">,</span> <span class="n">getpass</span><span class="o">.</span><span class="n">getuser</span><span class="p">())</span>
+            <span class="n">password</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;marsi&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_pass&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">host</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;marsi&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_host&quot;</span><span class="p">,</span> <span class="s2">&quot;localhost&quot;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">port</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;marsi&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_port&quot;</span><span class="p">,</span> <span class="mi">5432</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">port</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">username</span> <span class="o">=</span> <span class="n">get_default</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;marsi&#39;</span><span class="p">,</span> <span class="s1">&#39;db_user&#39;</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+            <span class="n">password</span> <span class="o">=</span> <span class="n">get_default</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;marsi&#39;</span><span class="p">,</span> <span class="s1">&#39;db_pass&#39;</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+            <span class="n">host</span> <span class="o">=</span> <span class="n">get_default</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;marsi&#39;</span><span class="p">,</span> <span class="s2">&quot;db_host&quot;</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">port</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_default</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;marsi&#39;</span><span class="p">,</span> <span class="s2">&quot;db_port&quot;</span><span class="p">,</span> <span class="n">default</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">port</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">db_engine</span> <span class="o">==</span> <span class="s1">&#39;sqlite&#39;</span><span class="p">:</span>
+        <span class="n">db_url</span> <span class="o">=</span> <span class="s2">&quot;sqlite:///</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">db_name</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">password</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">user_access</span> <span class="o">=</span> <span class="n">username</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">user_access</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">:</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">host</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">host_port</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">port</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">host_port</span> <span class="o">=</span> <span class="n">host</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">host_port</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">:</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">host_port</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">db_url</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">://</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">db_engine</span><span class="p">,</span> <span class="n">user_access</span><span class="p">,</span> <span class="n">db_name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">db_url</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">://</span><span class="si">%s</span><span class="s2">@</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">db_engine</span><span class="p">,</span> <span class="n">user_access</span><span class="p">,</span> <span class="n">host_port</span><span class="p">,</span> <span class="n">db_name</span><span class="p">)</span>
+
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="n">default_session</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">engine</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">db_url</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;You are running MARSI without a database connection. </span><span class="se">\n</span><span class="s2">&quot;</span>
+                   <span class="s2">&quot;You will not be able to use many functionalities including: </span><span class="se">\n</span><span class="s2">&quot;</span>
+                   <span class="s2">&quot;1. Query the metabolite database</span><span class="se">\n</span><span class="s2">&quot;</span>
+                   <span class="s2">&quot;2. Search for metabolite analogs&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="k">import</span> <span class="n">create_engine</span>
+    <span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="k">import</span> <span class="n">sessionmaker</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">db_url</span><span class="p">,</span> <span class="n">client_encoding</span><span class="o">=</span><span class="s1">&#39;utf8&#39;</span><span class="p">,</span> <span class="n">pool_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="c1"># The pool_size argument won&#39;t work for the default SQLite setup in SQLAlchemy 0.7, try without</span>
+        <span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">db_url</span><span class="p">)</span>
+
+    <span class="n">_add_process_guards</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+
+    <span class="n">Session</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+    <span class="n">default_session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

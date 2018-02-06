@@ -1,0 +1,832 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.nearest_neighbors package &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="marsi-nearest-neighbors-package">
+<h1>marsi.nearest_neighbors package<a class="headerlink" href="#marsi-nearest-neighbors-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-marsi.nearest_neighbors.model">
+<span id="marsi-nearest-neighbors-model-module"></span><h2>marsi.nearest_neighbors.model module<a class="headerlink" href="#module-marsi.nearest_neighbors.model" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="marsi.nearest_neighbors.model.ClFail">
+<em class="property">class </em><code class="descclassname">marsi.nearest_neighbors.model.</code><code class="descname">ClFail</code><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#ClFail"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.ClFail" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="marsi.nearest_neighbors.model.KNN">
+<em class="property">class </em><code class="descclassname">marsi.nearest_neighbors.model.</code><code class="descname">KNN</code><span class="sig-paren">(</span><em>fingerprint</em>, <em>k</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#KNN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.KNN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>K-Nearest Neighbors runner object.</p>
+<p>It is assigned to a model and runs the <cite>knn</cite> function.</p>
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.KNN.fp">
+<code class="descname">fp</code><a class="headerlink" href="#marsi.nearest_neighbors.model.KNN.fp" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>numpy.array</em> – A numpy.array with the fingerprint values.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.KNN.k">
+<code class="descname">k</code><a class="headerlink" href="#marsi.nearest_neighbors.model.KNN.k" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em> – The maximum number of neighbors to retrieve.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.KNN.mode">
+<code class="descname">mode</code><a class="headerlink" href="#marsi.nearest_neighbors.model.KNN.mode" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – ‘native’ to run python implementation or ‘cl’ to run OpenCL implementation if available.</p>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(nn)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="marsi.nearest_neighbors.model.RNN">
+<em class="property">class </em><code class="descclassname">marsi.nearest_neighbors.model.</code><code class="descname">RNN</code><span class="sig-paren">(</span><em>fingerprint</em>, <em>radius</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#RNN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.RNN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>R-Nearest Neighbors runner object.</p>
+<p>It is assigned to a model and runs the <cite>rnn</cite> function.</p>
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.RNN.fp">
+<code class="descname">fp</code><a class="headerlink" href="#marsi.nearest_neighbors.model.RNN.fp" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>numpy.array</em> – A numpy.array with the fingerprint values.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.RNN.radius">
+<code class="descname">radius</code><a class="headerlink" href="#marsi.nearest_neighbors.model.RNN.radius" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> – A distance radius ]0, 1].</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.RNN.mode">
+<code class="descname">mode</code><a class="headerlink" href="#marsi.nearest_neighbors.model.RNN.mode" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – ‘native’ to run python implementation or ‘cl’ to run OpenCL implementation if available.</p>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(nn)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="marsi.nearest_neighbors.model.Distance">
+<em class="property">class </em><code class="descclassname">marsi.nearest_neighbors.model.</code><code class="descname">Distance</code><span class="sig-paren">(</span><em>fingerprint</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#Distance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.Distance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Distance runner object.</p>
+<p>It is assigned to a model and runs the <cite>distance</cite> function.</p>
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.Distance.fp">
+<code class="descname">fp</code><a class="headerlink" href="#marsi.nearest_neighbors.model.Distance.fp" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>numpy.array</em> – A numpy.array with the fingerprint values.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.Distance.mode">
+<code class="descname">mode</code><a class="headerlink" href="#marsi.nearest_neighbors.model.Distance.mode" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – ‘native’ to run python implementation or ‘cl’ to run OpenCL implementation if available.</p>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(nn)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="marsi.nearest_neighbors.model.DistributedNearestNeighbors">
+<em class="property">class </em><code class="descclassname">marsi.nearest_neighbors.model.</code><code class="descname">DistributedNearestNeighbors</code><span class="sig-paren">(</span><em>nns</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#DistributedNearestNeighbors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.DistributedNearestNeighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Nearest Neighbors distributed implementation.</p>
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.DistributedNearestNeighbors.index">
+<code class="descname">index</code><a class="headerlink" href="#marsi.nearest_neighbors.model.DistributedNearestNeighbors.index" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>numpy.array</em> – The index of all entries across multiple models.</p>
+</dd></dl>
+
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.DistributedNearestNeighbors.index" title="marsi.nearest_neighbors.model.DistributedNearestNeighbors.index"><code class="xref py py-obj docutils literal"><span class="pre">index</span></code></a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.DistributedNearestNeighbors.distance_matrix" title="marsi.nearest_neighbors.model.DistributedNearestNeighbors.distance_matrix"><code class="xref py py-obj docutils literal"><span class="pre">distance_matrix</span></code></a>([mode])</td>
+<td>Generates a distance matrix between all elements in the models.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.DistributedNearestNeighbors.distances" title="marsi.nearest_neighbors.model.DistributedNearestNeighbors.distances"><code class="xref py py-obj docutils literal"><span class="pre">distances</span></code></a>(fingerprint[,&nbsp;mode,&nbsp;view])</td>
+<td>Retrieves the distance a fingerprint and all elements in the model.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.DistributedNearestNeighbors.feature" title="marsi.nearest_neighbors.model.DistributedNearestNeighbors.feature"><code class="xref py py-obj docutils literal"><span class="pre">feature</span></code></a>(index)</td>
+<td>Retrieves the fingerprint at a given index.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.DistributedNearestNeighbors.k_nearest_neighbors" title="marsi.nearest_neighbors.model.DistributedNearestNeighbors.k_nearest_neighbors"><code class="xref py py-obj docutils literal"><span class="pre">k_nearest_neighbors</span></code></a>(fingerprint[,&nbsp;k,&nbsp;mode,&nbsp;view])</td>
+<td>Retrieves the K nearest neighbors to a fingerprint.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.DistributedNearestNeighbors.radius_nearest_neighbors" title="marsi.nearest_neighbors.model.DistributedNearestNeighbors.radius_nearest_neighbors"><code class="xref py py-obj docutils literal"><span class="pre">radius_nearest_neighbors</span></code></a>(fingerprint[,&nbsp;…])</td>
+<td>Retrieves the nearest neighbors to a fingerprint within a distance radius.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.DistributedNearestNeighbors.k_nearest_neighbors">
+<code class="descname">k_nearest_neighbors</code><span class="sig-paren">(</span><em>fingerprint</em>, <em>k=5</em>, <em>mode='native'</em>, <em>view=&lt;cameo.parallel.SequentialView object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#DistributedNearestNeighbors.k_nearest_neighbors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.DistributedNearestNeighbors.k_nearest_neighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the K nearest neighbors to a fingerprint.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fingerprint</strong> (<em>list</em><em>, </em><em>np.array</em><em>, </em><a class="reference external" href="https://docs.python.org/2/library/functions.html#tuple" title="(in Python v2.7)"><em>tuple</em></a>) – A fingerprint to use as query.</li>
+<li><strong>k</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The number of neighbors to retrieve.</li>
+<li><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – ‘native’ to run python implementation or ‘cl’ to run OpenCL implementation if available.</li>
+<li><strong>view</strong> (<em>cameo.parallel.ParallelView</em><em>, </em><em>cameo.parallel.SequentialView</em>) – A parallel mode runner.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A dictionary with the InChI Key as key and the distance as value.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)">dict</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.DistributedNearestNeighbors.radius_nearest_neighbors">
+<code class="descname">radius_nearest_neighbors</code><span class="sig-paren">(</span><em>fingerprint</em>, <em>radius=0.25</em>, <em>mode='native'</em>, <em>view=&lt;cameo.parallel.SequentialView object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#DistributedNearestNeighbors.radius_nearest_neighbors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.DistributedNearestNeighbors.radius_nearest_neighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the nearest neighbors to a fingerprint within a distance radius.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fingerprint</strong> (<em>list</em><em>, </em><em>np.array</em><em>, </em><a class="reference external" href="https://docs.python.org/2/library/functions.html#tuple" title="(in Python v2.7)"><em>tuple</em></a>) – A fingerprint to use as query.</li>
+<li><strong>radius</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – A distance radius ]0, 1].</li>
+<li><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – ‘native’ to run python implementation or ‘cl’ to run OpenCL implementation if available.</li>
+<li><strong>view</strong> (<em>cameo.parallel.ParallelView</em><em>, </em><em>cameo.parallel.SequentialView</em>) – A parallel mode runner.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A dictionary with the InChI Key as key and the distance as value.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)">dict</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.DistributedNearestNeighbors.distances">
+<code class="descname">distances</code><span class="sig-paren">(</span><em>fingerprint</em>, <em>mode='native'</em>, <em>view=&lt;cameo.parallel.SequentialView object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#DistributedNearestNeighbors.distances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.DistributedNearestNeighbors.distances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the distance a fingerprint and all elements in the model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fingerprint</strong> (<em>list</em><em>, </em><em>np.array</em><em>, </em><a class="reference external" href="https://docs.python.org/2/library/functions.html#tuple" title="(in Python v2.7)"><em>tuple</em></a>) – A fingerprint to use as query.</li>
+<li><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – ‘native’ to run python implementation or ‘cl’ to run OpenCL implementation if available.</li>
+<li><strong>view</strong> (<em>cameo.parallel.ParallelView</em><em>, </em><em>cameo.parallel.SequentialView</em>) – A parallel mode runner.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A dictionary with the InChI Key as key and the distance as value.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)">dict</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">index</code></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.DistributedNearestNeighbors.distance_matrix">
+<code class="descname">distance_matrix</code><span class="sig-paren">(</span><em>mode='native'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#DistributedNearestNeighbors.distance_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.DistributedNearestNeighbors.distance_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a distance matrix between all elements in the models.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – ‘native’ to run python implementation or ‘cl’ to run OpenCL implementation if available.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The distance matrix.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">numpy.array</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.DistributedNearestNeighbors.feature">
+<code class="descname">feature</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#DistributedNearestNeighbors.feature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.DistributedNearestNeighbors.feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the fingerprint at a given index. The index is global for the ensemble of models.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The fingerprint.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">numpy.array</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">IndexError</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="marsi.nearest_neighbors.model.NearestNeighbors">
+<em class="property">class </em><code class="descclassname">marsi.nearest_neighbors.model.</code><code class="descname">NearestNeighbors</code><span class="sig-paren">(</span><em>index</em>, <em>features</em>, <em>features_lengths</em>, <em>use_cl=False</em>, <em>opencl_context=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#NearestNeighbors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.NearestNeighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#marsi.nearest_neighbors.model_ext.CNearestNeighbors" title="marsi.nearest_neighbors.model_ext.CNearestNeighbors"><code class="xref py py-class docutils literal"><span class="pre">marsi.nearest_neighbors.model_ext.CNearestNeighbors</span></code></a></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.NearestNeighbors.cl_context" title="marsi.nearest_neighbors.model.NearestNeighbors.cl_context"><code class="xref py py-obj docutils literal"><span class="pre">cl_context</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.NearestNeighbors.data_frame" title="marsi.nearest_neighbors.model.NearestNeighbors.data_frame"><code class="xref py py-obj docutils literal"><span class="pre">data_frame</span></code></a></td>
+<td>Create a DataFrame with this model.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">features</span></code></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">features_lengths</span></code></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.NearestNeighbors.index" title="marsi.nearest_neighbors.model.NearestNeighbors.index"><code class="xref py py-obj docutils literal"><span class="pre">index</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.NearestNeighbors.program" title="marsi.nearest_neighbors.model.NearestNeighbors.program"><code class="xref py py-obj docutils literal"><span class="pre">program</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">start_positions</span></code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.NearestNeighbors.distances" title="marsi.nearest_neighbors.model.NearestNeighbors.distances"><code class="xref py py-obj docutils literal"><span class="pre">distances</span></code></a>(fingerprint[,&nbsp;mode])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.NearestNeighbors.distances_cl" title="marsi.nearest_neighbors.model.NearestNeighbors.distances_cl"><code class="xref py py-obj docutils literal"><span class="pre">distances_cl</span></code></a>(*args,&nbsp;**kwargs)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">distances_py</span></code></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.NearestNeighbors.input_buffer" title="marsi.nearest_neighbors.model.NearestNeighbors.input_buffer"><code class="xref py py-obj docutils literal"><span class="pre">input_buffer</span></code></a>(*args,&nbsp;**kwargs)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.NearestNeighbors.knn" title="marsi.nearest_neighbors.model.NearestNeighbors.knn"><code class="xref py py-obj docutils literal"><span class="pre">knn</span></code></a>(fingerprint,&nbsp;k[,&nbsp;mode])</td>
+<td>K-Nearest Neighbors</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.NearestNeighbors.max_memory_allocation_size" title="marsi.nearest_neighbors.model.NearestNeighbors.max_memory_allocation_size"><code class="xref py py-obj docutils literal"><span class="pre">max_memory_allocation_size</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.NearestNeighbors.output_buffer" title="marsi.nearest_neighbors.model.NearestNeighbors.output_buffer"><code class="xref py py-obj docutils literal"><span class="pre">output_buffer</span></code></a>(*args,&nbsp;**kwargs)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.NearestNeighbors.queue" title="marsi.nearest_neighbors.model.NearestNeighbors.queue"><code class="xref py py-obj docutils literal"><span class="pre">queue</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.NearestNeighbors.rnn" title="marsi.nearest_neighbors.model.NearestNeighbors.rnn"><code class="xref py py-obj docutils literal"><span class="pre">rnn</span></code></a>(fingerprint,&nbsp;radius[,&nbsp;mode])</td>
+<td>Radius-Nearest Neighbors</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.NearestNeighbors.run_kernel" title="marsi.nearest_neighbors.model.NearestNeighbors.run_kernel"><code class="xref py py-obj docutils literal"><span class="pre">run_kernel</span></code></a>(*args,&nbsp;**kwargs)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.NearestNeighbors.cl_context">
+<code class="descname">cl_context</code><a class="headerlink" href="#marsi.nearest_neighbors.model.NearestNeighbors.cl_context" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.NearestNeighbors.queue">
+<code class="descname">queue</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#NearestNeighbors.queue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.NearestNeighbors.queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.NearestNeighbors.program">
+<code class="descname">program</code><a class="headerlink" href="#marsi.nearest_neighbors.model.NearestNeighbors.program" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.NearestNeighbors.knn">
+<code class="descname">knn</code><span class="sig-paren">(</span><em>fingerprint</em>, <em>k</em>, <em>mode='native'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#NearestNeighbors.knn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.NearestNeighbors.knn" title="Permalink to this definition">¶</a></dt>
+<dd><p>K-Nearest Neighbors</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fingerprint</strong> (<em>ndarray</em>) – The fingerprint to search for.</li>
+<li><strong>k</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The number of neighbors to return.</li>
+<li><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – ‘native’ to run python implementation or ‘cl’ to run OpenCL implementation if available.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">(Index –&gt; Distance)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)">dict</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.NearestNeighbors.rnn">
+<code class="descname">rnn</code><span class="sig-paren">(</span><em>fingerprint</em>, <em>radius</em>, <em>mode='native'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#NearestNeighbors.rnn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.NearestNeighbors.rnn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Radius-Nearest Neighbors</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fingerprint</strong> (<em>ndarray</em>) – The fingerprint to search for.</li>
+<li><strong>radius</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The maximum distance of neighbors to return.</li>
+<li><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – ‘native’ to run python implementation or ‘cl’ to run OpenCL implementation if available.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">(Index –&gt; Distance)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)">dict</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.NearestNeighbors.distances">
+<code class="descname">distances</code><span class="sig-paren">(</span><em>fingerprint</em>, <em>mode='native'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#NearestNeighbors.distances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.NearestNeighbors.distances" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.NearestNeighbors.max_memory_allocation_size">
+<code class="descname">max_memory_allocation_size</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#NearestNeighbors.max_memory_allocation_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.NearestNeighbors.max_memory_allocation_size" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.NearestNeighbors.distances_cl">
+<code class="descname">distances_cl</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#marsi.nearest_neighbors.model.NearestNeighbors.distances_cl" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.NearestNeighbors.input_buffer">
+<code class="descname">input_buffer</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#marsi.nearest_neighbors.model.NearestNeighbors.input_buffer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.NearestNeighbors.output_buffer">
+<code class="descname">output_buffer</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#marsi.nearest_neighbors.model.NearestNeighbors.output_buffer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.NearestNeighbors.run_kernel">
+<code class="descname">run_kernel</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#marsi.nearest_neighbors.model.NearestNeighbors.run_kernel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.NearestNeighbors.index">
+<code class="descname">index</code><a class="headerlink" href="#marsi.nearest_neighbors.model.NearestNeighbors.index" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.NearestNeighbors.data_frame">
+<code class="descname">data_frame</code><a class="headerlink" href="#marsi.nearest_neighbors.model.NearestNeighbors.data_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a DataFrame with this model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A data frame.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">pandas.DataFrame</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="marsi.nearest_neighbors.model.DBNearestNeighbors">
+<em class="property">class </em><code class="descclassname">marsi.nearest_neighbors.model.</code><code class="descname">DBNearestNeighbors</code><span class="sig-paren">(</span><em>index</em>, <em>session</em>, <em>fingerprint_format</em>, <em>metric='jaccard'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#DBNearestNeighbors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.DBNearestNeighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.DBNearestNeighbors.data_frame" title="marsi.nearest_neighbors.model.DBNearestNeighbors.data_frame"><code class="xref py py-obj docutils literal"><span class="pre">data_frame</span></code></a></td>
+<td>Create a DataFrame with this model.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.DBNearestNeighbors.features" title="marsi.nearest_neighbors.model.DBNearestNeighbors.features"><code class="xref py py-obj docutils literal"><span class="pre">features</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.DBNearestNeighbors.index" title="marsi.nearest_neighbors.model.DBNearestNeighbors.index"><code class="xref py py-obj docutils literal"><span class="pre">index</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.DBNearestNeighbors.neighbors" title="marsi.nearest_neighbors.model.DBNearestNeighbors.neighbors"><code class="xref py py-obj docutils literal"><span class="pre">neighbors</span></code></a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.DBNearestNeighbors.distances" title="marsi.nearest_neighbors.model.DBNearestNeighbors.distances"><code class="xref py py-obj docutils literal"><span class="pre">distances</span></code></a>(fingerprint[,&nbsp;mode])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.DBNearestNeighbors.knn" title="marsi.nearest_neighbors.model.DBNearestNeighbors.knn"><code class="xref py py-obj docutils literal"><span class="pre">knn</span></code></a>(fingerprint,&nbsp;k[,&nbsp;mode])</td>
+<td>K-Nearest Neighbors</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model.DBNearestNeighbors.rnn" title="marsi.nearest_neighbors.model.DBNearestNeighbors.rnn"><code class="xref py py-obj docutils literal"><span class="pre">rnn</span></code></a>(fingerprint,&nbsp;radius[,&nbsp;mode])</td>
+<td>Radius-Nearest Neighbors</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.DBNearestNeighbors.neighbors">
+<code class="descname">neighbors</code><a class="headerlink" href="#marsi.nearest_neighbors.model.DBNearestNeighbors.neighbors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.DBNearestNeighbors.knn">
+<code class="descname">knn</code><span class="sig-paren">(</span><em>fingerprint</em>, <em>k</em>, <em>mode='native'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#DBNearestNeighbors.knn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.DBNearestNeighbors.knn" title="Permalink to this definition">¶</a></dt>
+<dd><p>K-Nearest Neighbors</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fingerprint</strong> (<em>ndarray</em>) – The fingerprint to search for.</li>
+<li><strong>k</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The number of neighbors to return.</li>
+<li><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – ‘native’ to run python implementation or ‘cl’ to run OpenCL implementation if available.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">(Index –&gt; Distance)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)">dict</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.DBNearestNeighbors.rnn">
+<code class="descname">rnn</code><span class="sig-paren">(</span><em>fingerprint</em>, <em>radius</em>, <em>mode='native'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#DBNearestNeighbors.rnn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.DBNearestNeighbors.rnn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Radius-Nearest Neighbors</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fingerprint</strong> (<em>ndarray</em>) – The fingerprint to search for.</li>
+<li><strong>radius</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The maximum distance of neighbors to return.</li>
+<li><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – ‘native’ to run python implementation or ‘cl’ to run OpenCL implementation if available.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">(Index –&gt; Distance)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)">dict</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model.DBNearestNeighbors.distances">
+<code class="descname">distances</code><span class="sig-paren">(</span><em>fingerprint</em>, <em>mode='native'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors/model.html#DBNearestNeighbors.distances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.model.DBNearestNeighbors.distances" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.DBNearestNeighbors.index">
+<code class="descname">index</code><a class="headerlink" href="#marsi.nearest_neighbors.model.DBNearestNeighbors.index" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.DBNearestNeighbors.features">
+<code class="descname">features</code><a class="headerlink" href="#marsi.nearest_neighbors.model.DBNearestNeighbors.features" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model.DBNearestNeighbors.data_frame">
+<code class="descname">data_frame</code><a class="headerlink" href="#marsi.nearest_neighbors.model.DBNearestNeighbors.data_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a DataFrame with this model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A data frame.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">pandas.DataFrame</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-marsi.nearest_neighbors.model_ext">
+<span id="marsi-nearest-neighbors-model-ext-module"></span><h2>marsi.nearest_neighbors.model_ext module<a class="headerlink" href="#module-marsi.nearest_neighbors.model_ext" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="marsi.nearest_neighbors.model_ext.CNearestNeighbors">
+<em class="property">class </em><code class="descclassname">marsi.nearest_neighbors.model_ext.</code><code class="descname">CNearestNeighbors</code><a class="headerlink" href="#marsi.nearest_neighbors.model_ext.CNearestNeighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model_ext.CNearestNeighbors.features" title="marsi.nearest_neighbors.model_ext.CNearestNeighbors.features"><code class="xref py py-obj docutils literal"><span class="pre">features</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.nearest_neighbors.model_ext.CNearestNeighbors.features_lengths" title="marsi.nearest_neighbors.model_ext.CNearestNeighbors.features_lengths"><code class="xref py py-obj docutils literal"><span class="pre">features_lengths</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model_ext.CNearestNeighbors.start_positions" title="marsi.nearest_neighbors.model_ext.CNearestNeighbors.start_positions"><code class="xref py py-obj docutils literal"><span class="pre">start_positions</span></code></a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.nearest_neighbors.model_ext.CNearestNeighbors.distances_py" title="marsi.nearest_neighbors.model_ext.CNearestNeighbors.distances_py"><code class="xref py py-obj docutils literal"><span class="pre">distances_py</span></code></a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="marsi.nearest_neighbors.model_ext.CNearestNeighbors.distances_py">
+<code class="descname">distances_py</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#marsi.nearest_neighbors.model_ext.CNearestNeighbors.distances_py" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model_ext.CNearestNeighbors.features">
+<code class="descname">features</code><a class="headerlink" href="#marsi.nearest_neighbors.model_ext.CNearestNeighbors.features" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model_ext.CNearestNeighbors.features_lengths">
+<code class="descname">features_lengths</code><a class="headerlink" href="#marsi.nearest_neighbors.model_ext.CNearestNeighbors.features_lengths" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.nearest_neighbors.model_ext.CNearestNeighbors.start_positions">
+<code class="descname">start_positions</code><a class="headerlink" href="#marsi.nearest_neighbors.model_ext.CNearestNeighbors.start_positions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-marsi.nearest_neighbors">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-marsi.nearest_neighbors" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="marsi.nearest_neighbors.build_nearest_neighbors_model">
+<code class="descclassname">marsi.nearest_neighbors.</code><code class="descname">build_nearest_neighbors_model</code><span class="sig-paren">(</span><em>database</em>, <em>fpformat='fp4'</em>, <em>solubility='high'</em>, <em>n_models=5</em>, <em>chunk_size=1000000.0</em>, <em>view=&lt;class 'cameo.parallel.SequentialView'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors.html#build_nearest_neighbors_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.build_nearest_neighbors_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads a NN model.</p>
+<p>If a ‘default_model.pickle’ exists in data it will load the model. Otherwise it will build a model from the
+Database. This can take several hours depending on the size of the database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>database</strong> (<em>marsi.io.mongodb.CollectionWrapper</em>) – A Database interface to the metabolites.</li>
+<li><strong>chunk_size</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Maximum number of entries per chunk.</li>
+<li><strong>fpformat</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The format of the fingerprint (see pybel.fps)</li>
+<li><strong>solubility</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – One of high, medium, low or all.</li>
+<li><strong>view</strong> (<em>cameo.parallel.SequentialView</em><em>, </em><em>cameo.parallel.MultiprocesingView</em>) – A view to control parallelization.</li>
+<li><strong>n_models</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The number of NearestNeighbors models.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.nearest_neighbors.load_nearest_neighbors_model">
+<code class="descclassname">marsi.nearest_neighbors.</code><code class="descname">load_nearest_neighbors_model</code><span class="sig-paren">(</span><em>chunk_size=1000000.0</em>, <em>fpformat='fp4'</em>, <em>solubility='all'</em>, <em>session=&lt;sqlalchemy.orm.session.Session object&gt;</em>, <em>view=&lt;cameo.parallel.SequentialView object&gt;</em>, <em>model_size=100000</em>, <em>source='db'</em>, <em>costum_query=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/nearest_neighbors.html#load_nearest_neighbors_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.nearest_neighbors.load_nearest_neighbors_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads a NN model.</p>
+<p>If a ‘default_model.pickle’ exists in data it will load the model. Otherwise it will build a model from the
+Database. This can take several hours depending on the size of the database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>chunk_size</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Maximum number of entries per chunk.</li>
+<li><strong>fpformat</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The format of the fingerprint (see pybel.fps)</li>
+<li><strong>solubility</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – One of high, medium, low or all.</li>
+<li><strong>view</strong> (<em>cameo.parallel.SequentialView</em><em>, </em><em>cameo.parallel.MultiprocesingView</em>) – A view to control parallelization.</li>
+<li><strong>model_size</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The size of each NearestNeighbor in the ensemble.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">marsi.nearest_neighbors package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-marsi.nearest_neighbors.model">marsi.nearest_neighbors.model module</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-marsi.nearest_neighbors.model_ext">marsi.nearest_neighbors.model_ext module</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-marsi.nearest_neighbors">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../API.html">API Docs</a><ul>
+  <li><a href="marsi.html">marsi package</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/apidoc_output/marsi.nearest_neighbors.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/apidoc_output/marsi.nearest_neighbors.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

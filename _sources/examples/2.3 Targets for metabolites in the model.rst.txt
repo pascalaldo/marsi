@@ -1,0 +1,445 @@
+2.3 Targets for metabolites in the model
+============================================
+
+Load a model from the BiGG database
+-----------------------------------
+
+.. code:: ipython3
+
+    from cameo import models
+
+
+
+.. raw:: html
+
+    
+
+
+
+
+
+.. raw:: html
+
+    
+
+
+
+
+.. code:: ipython3
+
+    model = models.bigg.iJO1366
+
+Annotate the model with metabolite information
+----------------------------------------------
+
+.. code:: ipython3
+
+    from marsi.cobra.utils import annotate_model
+
+
+.. parsed-literal::
+
+    Looking for local setup.cfg
+    Not available [Errno 2] No such file or directory: 'setup.cfg'
+
+
+.. parsed-literal::
+
+    /Users/joaca/Documents/repositories/marsi/marsi/io/bigg.py:23 [1;31mFutureWarning[0m: from_csv is deprecated. Please use read_csv(...) instead. Note that some of the default arguments are different, so please refer to the documentation for from_csv when changing your function calls
+
+
+.. code:: ipython3
+
+    annotate_model(model)
+
+
+
+.. raw:: html
+
+    <p>Failed to display Jupyter Widget of type <code>HBox</code>.</p>
+    <p>
+      If you're reading this message in Jupyter Notebook or JupyterLab, it may mean
+      that the widgets JavaScript is still loading. If this message persists, it
+      likely means that the widgets JavaScript library is either not installed or
+      not enabled. See the <a href="https://ipywidgets.readthedocs.io/en/stable/user_install.html">Jupyter
+      Widgets Documentation</a> for setup instructions.
+    </p>
+    <p>
+      If you're reading this message in another notebook frontend (for example, a static
+      rendering on GitHub or <a href="https://nbviewer.jupyter.org/">NBViewer</a>),
+      it may mean that your frontend doesn't currently support widgets.
+    </p>
+
+
+
+.. code:: ipython3
+
+    model.metabolites.aacald_c.annotation
+
+
+
+
+.. parsed-literal::
+
+    {'inchi': 'InChI=1S/C2H5NO/c3-1-2-4/h2H,1,3H2'}
+
+
+
+.. code:: ipython3
+
+    from cameo.flux_analysis.analysis import find_essential_metabolites
+
+.. code:: ipython3
+
+    essential_metabolites = find_essential_metabolites(model)
+
+.. code:: ipython3
+
+    non_essential_metabolites = [met for met in model.metabolites 
+                                 if met not in essential_metabolites and met.id.endswith("_c")]
+
+.. code:: ipython3
+
+    analogues = {}
+
+.. code:: ipython3
+
+    from marsi.chemistry.molecule import Molecule
+    from marsi.chemistry.common import dynamic_fingerprint_cut
+    from marsi.nearest_neighbors import search_closest_compounds
+
+
+.. parsed-literal::
+
+    /Users/joaca/Documents/repositories/marsi/marsi/chemistry/rdkit.py:25 DeprecationWarning: The rdkit.Chem.MCS module is deprecated; please use rdkit.Chem.rdFMCS instead.
+
+
+.. code:: ipython3
+
+    import os
+    from pandas import DataFrame
+
+.. code:: ipython3
+
+    for met in non_essential_metabolites:
+        if met.id in ["23dhb_c", "3dhguln_c", "3hpp_c"] or met.id.endswith("coa_c"):  # These chemicals are currently
+                                                                                      # breaking the software when 
+                                                                                      # running in a loop like this.
+                                                                          
+            continue
+        if 'inchi' in met.annotation and met.id not in analogues:
+            name = "%s_analogues.csv" % met.id
+            if os.path.exists(name):
+                analogues[met.id] = DataFrame.from_csv(name, sep="\t")
+            else:
+                molecule = Molecule.from_inchi(met.annotation['inchi'])
+                fp_cut = dynamic_fingerprint_cut(molecule.num_atoms)
+                analogues[met.id] = search_closest_compounds(molecule, fp_cut=fp_cut)
+                analogues[met.id].to_csv(name, sep='\t')
+
+.. code:: ipython3
+
+    len(analogues), len([m for m in non_essential_metabolites if 'inchi' in m.annotation])
+
+
+
+
+.. parsed-literal::
+
+    (47, 479)
+
+
+
+.. code:: ipython3
+
+    from pandas import DataFrame
+
+.. code:: ipython3
+
+    df = DataFrame(columns=["metabolite name", "number of hits", "number of hits (50% similarity)"])
+
+.. code:: ipython3
+
+    for met_id, hits in analogues.items():
+        if len(hits) > 0:
+            name = model.metabolites.query(met_id)[0].name
+            df.loc[met_id] = [name, len(hits), len(hits[hits.structural_score > 0.5])]
+
+.. code:: ipython3
+
+    df
+
+
+
+
+.. raw:: html
+
+    <div>
+    <style scoped>
+        .dataframe tbody tr th:only-of-type {
+            vertical-align: middle;
+        }
+    
+        .dataframe tbody tr th {
+            vertical-align: top;
+        }
+    
+        .dataframe thead th {
+            text-align: right;
+        }
+    </style>
+    <table border="1" class="dataframe">
+      <thead>
+        <tr style="text-align: right;">
+          <th></th>
+          <th>metabolite name</th>
+          <th>number of hits</th>
+          <th>number of hits (50% similarity)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>3hpppn_c</th>
+          <td>3-(3-hydroxy-phenyl)propionate</td>
+          <td>6298</td>
+          <td>4129</td>
+        </tr>
+        <tr>
+          <th>23ddhb_c</th>
+          <td>2,3-Dihydro-2,3-dihydroxybenzoate</td>
+          <td>2296</td>
+          <td>1519</td>
+        </tr>
+        <tr>
+          <th>3hddcoa_c</th>
+          <td>(S)-3-Hydroxydodecanoyl-CoA</td>
+          <td>6</td>
+          <td>0</td>
+        </tr>
+        <tr>
+          <th>2dr5p_c</th>
+          <td>2-Deoxy-D-ribose 5-phosphate</td>
+          <td>226</td>
+          <td>155</td>
+        </tr>
+        <tr>
+          <th>35cgmp_c</th>
+          <td>3',5'-Cyclic GMP</td>
+          <td>1254</td>
+          <td>428</td>
+        </tr>
+        <tr>
+          <th>2amsa_c</th>
+          <td>2-Aminomalonate semialdehyde</td>
+          <td>1785</td>
+          <td>449</td>
+        </tr>
+        <tr>
+          <th>13dpg_c</th>
+          <td>3-Phospho-D-glyceroyl phosphate</td>
+          <td>346</td>
+          <td>200</td>
+        </tr>
+        <tr>
+          <th>23dhba_c</th>
+          <td>(2,3-Dihydroxybenzoyl)adenylate</td>
+          <td>159</td>
+          <td>4</td>
+        </tr>
+        <tr>
+          <th>3ohcoa_c</th>
+          <td>3-Oxohexanoyl-CoA</td>
+          <td>5</td>
+          <td>0</td>
+        </tr>
+        <tr>
+          <th>3dhgulnp_c</th>
+          <td>3-keto-L-gulonate-6-phosphate</td>
+          <td>65</td>
+          <td>48</td>
+        </tr>
+        <tr>
+          <th>2dr1p_c</th>
+          <td>2-Deoxy-D-ribose 1-phosphate</td>
+          <td>1149</td>
+          <td>508</td>
+        </tr>
+        <tr>
+          <th>2pg_c</th>
+          <td>D-Glycerate 2-phosphate</td>
+          <td>1056</td>
+          <td>472</td>
+        </tr>
+        <tr>
+          <th>15dap_c</th>
+          <td>1,5-Diaminopentane</td>
+          <td>3181</td>
+          <td>925</td>
+        </tr>
+        <tr>
+          <th>2mcacn_c</th>
+          <td>Cis-2-Methylaconitate</td>
+          <td>902</td>
+          <td>566</td>
+        </tr>
+        <tr>
+          <th>12ppd__R_c</th>
+          <td>(R)-Propane-1,2-diol</td>
+          <td>244</td>
+          <td>193</td>
+        </tr>
+        <tr>
+          <th>2h3oppan_c</th>
+          <td>2-Hydroxy-3-oxopropanoate</td>
+          <td>964</td>
+          <td>361</td>
+        </tr>
+        <tr>
+          <th>2dh3dgal_c</th>
+          <td>2-Dehydro-3-deoxy-D-galactonate</td>
+          <td>1902</td>
+          <td>890</td>
+        </tr>
+        <tr>
+          <th>3hcinnm_c</th>
+          <td>3-hydroxycinnamic acid</td>
+          <td>6608</td>
+          <td>4684</td>
+        </tr>
+        <tr>
+          <th>1ddecg3p_c</th>
+          <td>1-dodecanoyl-sn-glycerol 3-phosphate</td>
+          <td>1308</td>
+          <td>41</td>
+        </tr>
+        <tr>
+          <th>3hhcoa_c</th>
+          <td>(S)-3-Hydroxyhexanoyl-CoA</td>
+          <td>4</td>
+          <td>0</td>
+        </tr>
+        <tr>
+          <th>2mcit_c</th>
+          <td>2-Methylcitrate</td>
+          <td>1061</td>
+          <td>517</td>
+        </tr>
+        <tr>
+          <th>23doguln_c</th>
+          <td>2,3-Dioxo-L-gulonate</td>
+          <td>1951</td>
+          <td>905</td>
+        </tr>
+        <tr>
+          <th>3oddcoa_c</th>
+          <td>3-Oxododecanoyl-CoA</td>
+          <td>9</td>
+          <td>4</td>
+        </tr>
+        <tr>
+          <th>1tdecg3p_c</th>
+          <td>1-tetradecanoyl-sn-glycerol 3-phosphate</td>
+          <td>918</td>
+          <td>26</td>
+        </tr>
+        <tr>
+          <th>3odcoa_c</th>
+          <td>3-Oxodecanoyl-CoA</td>
+          <td>12</td>
+          <td>4</td>
+        </tr>
+        <tr>
+          <th>23dappa_c</th>
+          <td>2,3-diaminopropionate</td>
+          <td>3025</td>
+          <td>851</td>
+        </tr>
+        <tr>
+          <th>12ppd__S_c</th>
+          <td>(S)-Propane-1,2-diol</td>
+          <td>1207</td>
+          <td>575</td>
+        </tr>
+        <tr>
+          <th>2ddg6p_c</th>
+          <td>2-Dehydro-3-deoxy-D-gluconate 6-phosphate</td>
+          <td>102</td>
+          <td>73</td>
+        </tr>
+        <tr>
+          <th>2tpr3dpcoa_c</th>
+          <td>2'-(5''-triphosphoribosyl)-3'-dephospho-CoA</td>
+          <td>10</td>
+          <td>1</td>
+        </tr>
+        <tr>
+          <th>3hadpcoa_c</th>
+          <td>(3S)-3-Hydroxyadipyl-CoA</td>
+          <td>2</td>
+          <td>0</td>
+        </tr>
+        <tr>
+          <th>3ohdcoa_c</th>
+          <td>3-Oxohexadecanoyl-CoA</td>
+          <td>3</td>
+          <td>0</td>
+        </tr>
+        <tr>
+          <th>2aobut_c</th>
+          <td>L-2-Amino-3-oxobutanoate</td>
+          <td>2856</td>
+          <td>818</td>
+        </tr>
+        <tr>
+          <th>2shchc_c</th>
+          <td>2-Succinyl-6-hydroxy-2,4-cyclohexadiene-1-carb...</td>
+          <td>319</td>
+          <td>182</td>
+        </tr>
+        <tr>
+          <th>2dh3dgal6p_c</th>
+          <td>2-Dehydro-3-deoxy-D-galactonate 6-phosphate</td>
+          <td>102</td>
+          <td>73</td>
+        </tr>
+        <tr>
+          <th>2ddglcn_c</th>
+          <td>2-Dehydro-3-deoxy-D-gluconate</td>
+          <td>1902</td>
+          <td>890</td>
+        </tr>
+        <tr>
+          <th>3hocoa_c</th>
+          <td>(S)-3-Hydroxyoctanoyl-CoA</td>
+          <td>6</td>
+          <td>1</td>
+        </tr>
+        <tr>
+          <th>3ohodcoa_c</th>
+          <td>3-Oxooctadecanoyl-CoA</td>
+          <td>2</td>
+          <td>0</td>
+        </tr>
+        <tr>
+          <th>25dkglcn_c</th>
+          <td>2,5-diketo-D-gluconate</td>
+          <td>1833</td>
+          <td>779</td>
+        </tr>
+        <tr>
+          <th>3hdcoa_c</th>
+          <td>(S)-3-Hydroxydecanoyl-CoA</td>
+          <td>12</td>
+          <td>2</td>
+        </tr>
+        <tr>
+          <th>2pglyc_c</th>
+          <td>2-Phosphoglycolate</td>
+          <td>1121</td>
+          <td>564</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+

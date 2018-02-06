@@ -1,0 +1,1008 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.cobra.strain_design package &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="marsi.cobra.flux_analysis package" href="marsi.cobra.flux_analysis.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="marsi-cobra-strain-design-package">
+<h1>marsi.cobra.strain_design package<a class="headerlink" href="#marsi-cobra-strain-design-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-marsi.cobra.strain_design.design_methods">
+<span id="marsi-cobra-strain-design-design-methods-module"></span><h2>marsi.cobra.strain_design.design_methods module<a class="headerlink" href="#module-marsi.cobra.strain_design.design_methods" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod">
+<em class="property">class </em><code class="descclassname">marsi.cobra.strain_design.design_methods.</code><code class="descname">GenericMARSIDesignMethod</code><span class="sig-paren">(</span><em>model=None</em>, <em>nearest_neighbors_model=None</em>, <em>min_tanimoto=0.75</em>, <em>currency_metabolites=None</em>, <em>essential_metabolites=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/design_methods.html#GenericMARSIDesignMethod"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Generic wrapper for Metabolite Analog design method.</p>
+<p>This one just runs a optimization method</p>
+<p class="rubric">Example</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">marsi.cobra</span> <span class="k">import</span> <span class="n">strain_design</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cameo</span> <span class="k">import</span> <span class="n">models</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cameo.strain_design</span> <span class="k">import</span> <span class="n">OptGene</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">designer</span> <span class="o">=</span> <span class="n">strain_design</span><span class="o">.</span><span class="n">GenericMARSIDesignMethod</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">bigg</span><span class="o">.</span><span class="n">iJO1366</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">designer</span><span class="o">.</span><span class="n">optimize_with_reaction</span><span class="p">(</span><span class="s2">&quot;succ_e&quot;</span><span class="p">,</span> <span class="n">max_interventions</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">substrate</span><span class="o">=</span><span class="s2">&quot;EX_glc__D_e&quot;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">biomass</span><span class="o">=</span><span class="s2">&quot;BIOMASS_Ec_iJO1366_core_53p95M&quot;</span><span class="p">,</span> <span class="n">max_results</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">design_method</span><span class="o">=</span><span class="n">OptGene</span><span class="p">,</span> <span class="n">manipulation_type</span><span class="o">=</span><span class="s2">&quot;reactions&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod.essential_metabolites_reactions" title="marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod.essential_metabolites_reactions"><code class="xref py py-obj docutils literal"><span class="pre">essential_metabolites_reactions</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod.optimize_with_metabolites" title="marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod.optimize_with_metabolites"><code class="xref py py-obj docutils literal"><span class="pre">optimize_with_metabolites</span></code></a>(target[,&nbsp;…])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod.optimize_with_reaction" title="marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod.optimize_with_reaction"><code class="xref py py-obj docutils literal"><span class="pre">optimize_with_reaction</span></code></a>(target[,&nbsp;…])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod.optimize_with_reaction">
+<code class="descname">optimize_with_reaction</code><span class="sig-paren">(</span><em>target</em>, <em>max_interventions=1</em>, <em>substrate=None</em>, <em>biomass=None</em>, <em>design_method=&lt;class 'cameo.strain_design.deterministic.linear_programming.OptKnock'&gt;</em>, <em>max_results=100</em>, <em>non_essential_metabolites=False</em>, <em>max_evaluations=20000</em>, <em>**design_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/design_methods.html#GenericMARSIDesignMethod.optimize_with_reaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod.optimize_with_reaction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod.optimize_with_metabolites">
+<code class="descname">optimize_with_metabolites</code><span class="sig-paren">(</span><em>target</em>, <em>max_interventions=1</em>, <em>substrate=None</em>, <em>biomass=None</em>, <em>max_results=100</em>, <em>non_essential_metabolites=False</em>, <em>max_evaluations=20000</em>, <em>**design_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/design_methods.html#GenericMARSIDesignMethod.optimize_with_metabolites"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod.optimize_with_metabolites" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod.essential_metabolites_reactions">
+<code class="descname">essential_metabolites_reactions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/design_methods.html#GenericMARSIDesignMethod.essential_metabolites_reactions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod.essential_metabolites_reactions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="marsi.cobra.strain_design.design_methods.RandomMutagenesisDesign">
+<em class="property">class </em><code class="descclassname">marsi.cobra.strain_design.design_methods.</code><code class="descname">RandomMutagenesisDesign</code><span class="sig-paren">(</span><em>model=None</em>, <em>nearest_neighbors_model=None</em>, <em>min_tanimoto=0.75</em>, <em>currency_metabolites=None</em>, <em>essential_metabolites=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/design_methods.html#RandomMutagenesisDesign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.design_methods.RandomMutagenesisDesign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod" title="marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod"><code class="xref py py-class docutils literal"><span class="pre">marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod</span></code></a></p>
+<p>Apply only knockout like designs where total loss of functions are expected.</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">essential_metabolites_reactions</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cobra.strain_design.design_methods.RandomMutagenesisDesign.optimize_with_metabolites" title="marsi.cobra.strain_design.design_methods.RandomMutagenesisDesign.optimize_with_metabolites"><code class="xref py py-obj docutils literal"><span class="pre">optimize_with_metabolites</span></code></a>(target[,&nbsp;…])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cobra.strain_design.design_methods.RandomMutagenesisDesign.optimize_with_reaction" title="marsi.cobra.strain_design.design_methods.RandomMutagenesisDesign.optimize_with_reaction"><code class="xref py py-obj docutils literal"><span class="pre">optimize_with_reaction</span></code></a>(target[,&nbsp;…])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="marsi.cobra.strain_design.design_methods.RandomMutagenesisDesign.optimize_with_reaction">
+<code class="descname">optimize_with_reaction</code><span class="sig-paren">(</span><em>target</em>, <em>max_interventions=1</em>, <em>substrate=None</em>, <em>biomass=None</em>, <em>design_method='optgene'</em>, <em>max_results=100</em>, <em>non_essential_metabolites=False</em>, <em>max_evaluations=20000</em>, <em>**designer_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/design_methods.html#RandomMutagenesisDesign.optimize_with_reaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.design_methods.RandomMutagenesisDesign.optimize_with_reaction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cobra.strain_design.design_methods.RandomMutagenesisDesign.optimize_with_metabolites">
+<code class="descname">optimize_with_metabolites</code><span class="sig-paren">(</span><em>target</em>, <em>max_interventions=1</em>, <em>substrate=None</em>, <em>biomass=None</em>, <em>max_results=100</em>, <em>max_evaluations=20000</em>, <em>**design_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/design_methods.html#RandomMutagenesisDesign.optimize_with_metabolites"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.design_methods.RandomMutagenesisDesign.optimize_with_metabolites" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="marsi.cobra.strain_design.design_methods.ALEDesign">
+<em class="property">class </em><code class="descclassname">marsi.cobra.strain_design.design_methods.</code><code class="descname">ALEDesign</code><span class="sig-paren">(</span><em>model=None</em>, <em>nearest_neighbors_model=None</em>, <em>min_tanimoto=0.75</em>, <em>currency_metabolites=None</em>, <em>essential_metabolites=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/design_methods.html#ALEDesign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.design_methods.ALEDesign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod" title="marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod"><code class="xref py py-class docutils literal"><span class="pre">marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod</span></code></a></p>
+<p>Apply both knockout and flux modulation. The strains will be selected via growth rate proxy.</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">essential_metabolites_reactions</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cobra.strain_design.design_methods.ALEDesign.optimize_with_metabolites" title="marsi.cobra.strain_design.design_methods.ALEDesign.optimize_with_metabolites"><code class="xref py py-obj docutils literal"><span class="pre">optimize_with_metabolites</span></code></a>(target[,&nbsp;…])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cobra.strain_design.design_methods.ALEDesign.optimize_with_reaction" title="marsi.cobra.strain_design.design_methods.ALEDesign.optimize_with_reaction"><code class="xref py py-obj docutils literal"><span class="pre">optimize_with_reaction</span></code></a>(target[,&nbsp;…])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="marsi.cobra.strain_design.design_methods.ALEDesign.optimize_with_reaction">
+<code class="descname">optimize_with_reaction</code><span class="sig-paren">(</span><em>target</em>, <em>max_interventions=1</em>, <em>substrate=None</em>, <em>biomass=None</em>, <em>design_method='differential_fva'</em>, <em>max_results=100</em>, <em>non_essential_metabolites=False</em>, <em>**designer_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/design_methods.html#ALEDesign.optimize_with_reaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.design_methods.ALEDesign.optimize_with_reaction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cobra.strain_design.design_methods.ALEDesign.optimize_with_metabolites">
+<code class="descname">optimize_with_metabolites</code><span class="sig-paren">(</span><em>target</em>, <em>max_interventions=1</em>, <em>substrate=None</em>, <em>biomass=None</em>, <em>max_results=100</em>, <em>max_evaluations=20000</em>, <em>**design_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/design_methods.html#ALEDesign.optimize_with_metabolites"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.design_methods.ALEDesign.optimize_with_metabolites" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-marsi.cobra.strain_design.evolutionary">
+<span id="marsi-cobra-strain-design-evolutionary-module"></span><h2>marsi.cobra.strain_design.evolutionary module<a class="headerlink" href="#module-marsi.cobra.strain_design.evolutionary" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="marsi.cobra.strain_design.evolutionary.OptMet">
+<em class="property">class </em><code class="descclassname">marsi.cobra.strain_design.evolutionary.</code><code class="descname">OptMet</code><span class="sig-paren">(</span><em>model</em>, <em>evolutionary_algorithm=&lt;class 'inspyred.ec.ec.GA'&gt;</em>, <em>essential_metabolites=None</em>, <em>plot=True</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/evolutionary.html#OptMet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.evolutionary.OptMet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">cameo.core.strain_design.StrainDesignMethod</span></code></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cobra.strain_design.evolutionary.OptMet.manipulation_type" title="marsi.cobra.strain_design.evolutionary.OptMet.manipulation_type"><code class="xref py py-obj docutils literal"><span class="pre">manipulation_type</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cobra.strain_design.evolutionary.OptMet.plot" title="marsi.cobra.strain_design.evolutionary.OptMet.plot"><code class="xref py py-obj docutils literal"><span class="pre">plot</span></code></a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(*args,&nbsp;**kwargs)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cobra.strain_design.evolutionary.OptMet.run" title="marsi.cobra.strain_design.evolutionary.OptMet.run"><code class="xref py py-obj docutils literal"><span class="pre">run</span></code></a>([target,&nbsp;biomass,&nbsp;substrate,&nbsp;…])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">param target:</th><td class="field-body">The design target</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="marsi.cobra.strain_design.evolutionary.OptMet.manipulation_type">
+<code class="descname">manipulation_type</code><a class="headerlink" href="#marsi.cobra.strain_design.evolutionary.OptMet.manipulation_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cobra.strain_design.evolutionary.OptMet.plot">
+<code class="descname">plot</code><a class="headerlink" href="#marsi.cobra.strain_design.evolutionary.OptMet.plot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cobra.strain_design.evolutionary.OptMet.run">
+<code class="descname">run</code><span class="sig-paren">(</span><em>target=None</em>, <em>biomass=None</em>, <em>substrate=None</em>, <em>max_knockouts=5</em>, <em>variable_size=True</em>, <em>simulation_method=&lt;function fba&gt;</em>, <em>growth_coupled=False</em>, <em>max_evaluations=20000</em>, <em>population_size=200</em>, <em>max_results=50</em>, <em>seed=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/evolutionary.html#OptMet.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.evolutionary.OptMet.run" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>target</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a><em>, </em><a class="reference internal" href="marsi.io.html#marsi.io.db.Metabolite" title="marsi.io.db.Metabolite"><em>Metabolite</em></a><em> or </em><em>Reaction</em>) – The design target</li>
+<li><strong>biomass</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a><em>, </em><a class="reference internal" href="marsi.io.html#marsi.io.db.Metabolite" title="marsi.io.db.Metabolite"><em>Metabolite</em></a><em> or </em><em>Reaction</em>) – The biomass definition in the model</li>
+<li><strong>substrate</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a><em>, </em><a class="reference internal" href="marsi.io.html#marsi.io.db.Metabolite" title="marsi.io.db.Metabolite"><em>Metabolite</em></a><em> or </em><em>Reaction</em>) – The main carbon source</li>
+<li><strong>max_knockouts</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Max number of knockouts allowed</li>
+<li><strong>variable_size</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If true, all candidates have the same size. Otherwise the candidate size can be from 1 to max_knockouts.</li>
+<li><strong>simulation_method</strong> (<em>function</em>) – Any method from cameo.flux_analysis.simulation or equivalent</li>
+<li><strong>growth_coupled</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If true will use the minimum flux rate to compute the fitness</li>
+<li><strong>max_evaluations</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Number of evaluations before stop</li>
+<li><strong>population_size</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Number of individuals in each generation</li>
+<li><strong>max_results</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Max number of different designs to return if found.</li>
+<li><strong>kwargs</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – Arguments for the simulation method.</li>
+<li><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – A seed for random.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">OptMetResult</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-marsi.cobra.strain_design.metaheuristic">
+<span id="marsi-cobra-strain-design-metaheuristic-module"></span><h2>marsi.cobra.strain_design.metaheuristic module<a class="headerlink" href="#module-marsi.cobra.strain_design.metaheuristic" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization">
+<em class="property">class </em><code class="descclassname">marsi.cobra.strain_design.metaheuristic.</code><code class="descname">MetaboliteKnockoutOptimization</code><span class="sig-paren">(</span><em>metabolites=None</em>, <em>essential_metabolites=None</em>, <em>n_carbons=2</em>, <em>compartments='c'</em>, <em>skip_essential_metabolites=False</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/metaheuristic.html#MetaboliteKnockoutOptimization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">cameo.strain_design.heuristic.evolutionary.optimization.TargetOptimization</span></code></p>
+<p>Knockout optimization using metabolites.</p>
+<dl class="attribute">
+<dt id="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.model">
+<code class="descname">model</code><a class="headerlink" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.model" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>SolverBasedModel</em> – A constraint-based model.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.heuristic_method">
+<code class="descname">heuristic_method</code><a class="headerlink" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.heuristic_method" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>inspyred.ec.EvolutionaryComputation</em> – An evolutionary algorithm.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.objective_function">
+<code class="descname">objective_function</code><a class="headerlink" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.objective_function" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>objective function or list(objective function)</em> – The objectives for the algorithm to maximize.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.seed">
+<code class="descname">seed</code><a class="headerlink" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.seed" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em> – A seed for random. It is auto-generated if None is given.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.termination">
+<code class="descname">termination</code><a class="headerlink" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.termination" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>inspyred.ec.terminators</em> – A termination criteria for the algorithm. The default is inspyred.ec.terminators.evaluation_termination.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.simulation_method">
+<code class="descname">simulation_method</code><a class="headerlink" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.simulation_method" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>flux_analysis.simulation</em> – The method used to simulate the model.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.wt_reference">
+<code class="descname">wt_reference</code><a class="headerlink" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.wt_reference" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>dict</em> – A reference initial state for the optimization. It is required for flux_analysis.simulation.lmoma and
+flux_analysis.simulation.room. If not given, it will be computed using flux_analysis.simulation.pfba</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.metabolites">
+<code class="descname">metabolites</code><a class="headerlink" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.metabolites" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list</em> – A list of valid metabolites to knockout. If None, then all metabolites in the model will be knockout candidates
+except the ones defined in essential_metabolites</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.essential_metabolites">
+<code class="descname">essential_metabolites</code><a class="headerlink" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.essential_metabolites" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list</em> – A list of metabolites that cannot be knocked out. If None, then all essential genes will be removed from the
+valid genes set.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.run">
+<code class="descname">run</code><span class="sig-paren">(</span><em>view=config.default_view</em>, <em>maximize=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-class docutils literal"><span class="pre">inspyred</span></code>, <code class="xref py py-class docutils literal"><span class="pre">cameo.config.default_view</span></code></p>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cameo</span> <span class="k">import</span> <span class="n">models</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">bigg</span><span class="o">.</span><span class="n">iJO1366</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cameo.strain_design.heuristic.evolutionary.objective_functions</span> <span class="k">import</span> <span class="n">biomass_product_coupled_yield</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bpcy</span> <span class="o">=</span> <span class="n">biomass_product_coupled_yield</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">reactions</span><span class="o">.</span><span class="n">Ec_biomass_iJO1366_core_53p95</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>                                     <span class="n">model</span><span class="o">.</span><span class="n">reactions</span><span class="o">.</span><span class="n">EX_succ_e</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>                                     <span class="n">model</span><span class="o">.</span><span class="n">reactions</span><span class="o">.</span><span class="n">EX_glc__D_e</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">knockout_optimization</span> <span class="o">=</span> <span class="n">MetaboliteKnockoutOptimization</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">objective_function</span><span class="o">=</span><span class="n">bpcy</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">knockout_optimization</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">max_evaluations</span><span class="o">=</span><span class="mi">50000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">archiver</span></code></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.heuristic_method" title="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.heuristic_method"><code class="xref py py-obj docutils literal"><span class="pre">heuristic_method</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">metadata</span></code></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.objective_function" title="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.objective_function"><code class="xref py py-obj docutils literal"><span class="pre">objective_function</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">random</span></code></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.simulation_kwargs" title="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.simulation_kwargs"><code class="xref py py-obj docutils literal"><span class="pre">simulation_kwargs</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.simulation_method" title="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.simulation_method"><code class="xref py py-obj docutils literal"><span class="pre">simulation_method</span></code></a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.run" title="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.run"><code class="xref py py-obj docutils literal"><span class="pre">run</span></code></a>([max_size,&nbsp;variable_size,&nbsp;diversify,&nbsp;view])</td>
+<td>Runs the evolutionary algorithm.</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt>
+<code class="descname">simulation_method</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.simulation_kwargs">
+<code class="descname">simulation_kwargs</code><a class="headerlink" href="#marsi.cobra.strain_design.metaheuristic.MetaboliteKnockoutOptimization.simulation_kwargs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-marsi.cobra.strain_design.post_processing">
+<span id="marsi-cobra-strain-design-post-processing-module"></span><h2>marsi.cobra.strain_design.post_processing module<a class="headerlink" href="#module-marsi.cobra.strain_design.post_processing" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="marsi.cobra.strain_design.post_processing.find_anti_metabolite_knockouts">
+<code class="descclassname">marsi.cobra.strain_design.post_processing.</code><code class="descname">find_anti_metabolite_knockouts</code><span class="sig-paren">(</span><em>reaction</em>, <em>ref_flux=0</em>, <em>ignore_metabolites=None</em>, <em>ignore_transport=True</em>, <em>allow_accumulation=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/post_processing.html#find_anti_metabolite_knockouts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.post_processing.find_anti_metabolite_knockouts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a dictionary {species_id -&gt; MetaboliteKnockoutTarget}.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>reaction</strong> (<em>cobra.Reaction</em>) – A COBRA reaction</li>
+<li><strong>ref_flux</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The flux from the reference state (0 if unknown)</li>
+<li><strong>ignore_metabolites</strong> (<em>list</em>) – A list of metabolites that should not be targeted (currency metabolites, etc.)</li>
+<li><strong>ignore_transport</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If False, also knockout the transport reactions.</li>
+<li><strong>allow_accumulation</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)">dict</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.cobra.strain_design.post_processing.find_anti_metabolite_modulation">
+<code class="descclassname">marsi.cobra.strain_design.post_processing.</code><code class="descname">find_anti_metabolite_modulation</code><span class="sig-paren">(</span><em>reaction</em>, <em>fold_change</em>, <em>essential_metabolites</em>, <em>ref_flux=0</em>, <em>ignore_metabolites=None</em>, <em>ignore_transport=True</em>, <em>allow_accumulation=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/post_processing.html#find_anti_metabolite_modulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.post_processing.find_anti_metabolite_modulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a dictionary {species_id -&gt; AntiMetaboliteManipulationTarget}.</p>
+<dl class="docutils">
+<dt>If the fold change &gt; 0:</dt>
+<dd><ol class="first last arabic simple">
+<li>Search for metabolites that are essential.</li>
+<li>Calculate fraction using a link function.</li>
+</ol>
+</dd>
+<dt>If fold change &lt; 0:</dt>
+<dd><ol class="first last arabic simple">
+<li>Search for metabolites that are not essential</li>
+<li>Calculated fraction is 1 - fold change</li>
+</ol>
+</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>reaction</strong> (<em>cobra.Reaction</em>) – A COBRA reaction.</li>
+<li><strong>fold_change</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The fold change of the reaction flux.</li>
+<li><strong>essential_metabolites</strong> (<em>list</em>) – A list of essential metabolites.</li>
+<li><strong>ref_flux</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The flux from the reference state (0 if unknown)</li>
+<li><strong>ignore_metabolites</strong> (<em>list</em>) – A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc.).</li>
+<li><strong>ignore_transport</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If False, also knockout the transport reactions.</li>
+<li><strong>allow_accumulation</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">{MetaboliteID -&gt; AntiMetaboliteManipulationTarget}</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)">dict</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.cobra.strain_design.post_processing.convert_strain_design_results">
+<code class="descclassname">marsi.cobra.strain_design.post_processing.</code><code class="descname">convert_strain_design_results</code><span class="sig-paren">(</span><em>model</em>, <em>results</em>, <em>objective_function</em>, <em>simulation_method</em>, <em>simulation_kwargs=None</em>, <em>ignore_metabolites=None</em>, <em>ignore_transport=True</em>, <em>allow_accumulation=True</em>, <em>nullspace_matrix=None</em>, <em>essential_metabolites=None</em>, <em>max_loss=0.2</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/post_processing.html#convert_strain_design_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.post_processing.convert_strain_design_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a StrainDesignMethodResult into a DataFrame of possible substitutions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>model</strong> (<em>cobra.Model</em>) – A COBRA model.</li>
+<li><strong>results</strong> (<em>cameo.core.strain_design.StrainDesignMethodResult</em>) – The results of a strain design method.</li>
+<li><strong>objective_function</strong> (<em>cameo.strain_design.heuristic.evolutionary.objective_functions.ObjectiveFunction</em>) – The cellular objective to evaluate.</li>
+<li><strong>simulation_method</strong> (<em>cameo.flux_analysis.simulation.fba</em><em> or </em><em>equivalent</em>) – The method to compute a flux distribution using a COBRA model.</li>
+<li><strong>simulation_kwargs</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – The arguments for the simulation_method.</li>
+<li><strong>ignore_metabolites</strong> (<em>list</em>) – A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc).</li>
+<li><strong>ignore_transport</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If False, also knockout the transport reactions.</li>
+<li><strong>allow_accumulation</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.</li>
+<li><strong>nullspace_matrix</strong> (<em>numpy.ndarray</em>) – The nullspace of the model.</li>
+<li><strong>essential_metabolites</strong> (<em>list</em>) – A list of essential metabolites.</li>
+<li><strong>max_loss</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – A number between 0 and 1 for how much the fitness is allowed to drop with the metabolite target.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A data frame with the possible replacements.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pandas.DataFrame</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.cobra.strain_design.post_processing.convert_design">
+<code class="descclassname">marsi.cobra.strain_design.post_processing.</code><code class="descname">convert_design</code><span class="sig-paren">(</span><em>model</em>, <em>strain_design</em>, <em>fitness</em>, <em>objective_function</em>, <em>simulation_method</em>, <em>simulation_kwargs=None</em>, <em>ignore_metabolites=None</em>, <em>ignore_transport=True</em>, <em>allow_accumulation=True</em>, <em>nullspace_matrix=None</em>, <em>essential_metabolites=None</em>, <em>max_loss=0.2</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/post_processing.html#convert_design"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.post_processing.convert_design" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a StrainDesign into a DataFrame of possible substitutions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>model</strong> (<em>cobra.Model</em>) – A COBRA model.</li>
+<li><strong>strain_design</strong> (<em>cameo.core.strain_design.StrainDesign</em>) – The results of a strain design method.</li>
+<li><strong>objective_function</strong> (<em>cameo.strain_design.heuristic.evolutionary.objective_functions.ObjectiveFunction</em>) – The cellular objective to evaluate.</li>
+<li><strong>simulation_method</strong> (<em>cameo.flux_analysis.simulation.fba</em><em> or </em><em>equivalent</em>) – The method to compute a flux distribution using a COBRA model.</li>
+<li><strong>simulation_kwargs</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – The arguments for the simulation_method.</li>
+<li><strong>ignore_metabolites</strong> (<em>list</em>) – A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc).</li>
+<li><strong>ignore_transport</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If False, also knockout the transport reactions.</li>
+<li><strong>allow_accumulation</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.</li>
+<li><strong>nullspace_matrix</strong> (<em>numpy.ndarray</em>) – The nullspace of the model.</li>
+<li><strong>essential_metabolites</strong> (<em>list</em>) – A list of essential metabolites.</li>
+<li><strong>max_loss</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – A number between 0 and 1 for how much the fitness is allowed to drop with the metabolite target.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A data frame with the possible replacements.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pandas.DataFrame</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.cobra.strain_design.post_processing.test_target_substitutions">
+<code class="descclassname">marsi.cobra.strain_design.post_processing.</code><code class="descname">test_target_substitutions</code><span class="sig-paren">(</span><em>model</em>, <em>all_targets</em>, <em>target</em>, <em>replacement_targets</em>, <em>objective_function</em>, <em>fitness</em>, <em>base_fitness</em>, <em>simulation_method</em>, <em>simulation_kwargs</em>, <em>reference</em>, <em>loss_validation</em>, <em>results</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/post_processing.html#test_target_substitutions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.post_processing.test_target_substitutions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="marsi.cobra.strain_design.post_processing.replace_strain_design_results">
+<code class="descclassname">marsi.cobra.strain_design.post_processing.</code><code class="descname">replace_strain_design_results</code><span class="sig-paren">(</span><em>model</em>, <em>results</em>, <em>objective_function</em>, <em>simulation_method</em>, <em>simulation_kwargs=None</em>, <em>ignore_metabolites=None</em>, <em>ignore_transport=True</em>, <em>allow_accumulation=True</em>, <em>essential_metabolites=None</em>, <em>max_loss=0.2</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/post_processing.html#replace_strain_design_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.post_processing.replace_strain_design_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a StrainDesignMethodResult into a DataFrame of possible substitutions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>model</strong> (<em>cobra.Model</em>) – A COBRA model.</li>
+<li><strong>results</strong> (<em>cameo.core.strain_design.StrainDesignMethodResult</em>) – The results of a strain design method.</li>
+<li><strong>objective_function</strong> (<em>cameo.strain_design.heuristic.evolutionary.objective_functions.ObjectiveFunction</em>) – The cellular objective to evaluate.</li>
+<li><strong>simulation_method</strong> (<em>cameo.flux_analysis.simulation.fba</em><em> or </em><em>equivalent</em>) – The method to compute a flux distribution using a COBRA model.</li>
+<li><strong>simulation_kwargs</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – The arguments for the simulation_method.</li>
+<li><strong>ignore_metabolites</strong> (<em>list</em>) – A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc).</li>
+<li><strong>ignore_transport</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If False, also knockout the transport reactions.</li>
+<li><strong>allow_accumulation</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.</li>
+<li><strong>essential_metabolites</strong> (<em>list</em>) – A list of essential metabolites.</li>
+<li><strong>max_loss</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – A number between 0 and 1 for how much the fitness is allowed to drop with the metabolite target.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A data frame with the possible replacements.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pandas.DataFrame</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.cobra.strain_design.post_processing.replace_design">
+<code class="descclassname">marsi.cobra.strain_design.post_processing.</code><code class="descname">replace_design</code><span class="sig-paren">(</span><em>model</em>, <em>strain_design</em>, <em>fitness</em>, <em>objective_function</em>, <em>simulation_method</em>, <em>simulation_kwargs=None</em>, <em>ignore_metabolites=None</em>, <em>ignore_transport=True</em>, <em>allow_accumulation=True</em>, <em>essential_metabolites=None</em>, <em>max_loss=0.2</em>, <em>allow_modulation=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/post_processing.html#replace_design"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.post_processing.replace_design" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a StrainDesign into a DataFrame of possible substitutions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>model</strong> (<em>cobra.Model</em>) – A COBRA model.</li>
+<li><strong>strain_design</strong> (<em>cameo.core.strain_design.StrainDesign</em>) – The results of a strain design method.</li>
+<li><strong>objective_function</strong> (<em>cameo.strain_design.heuristic.evolutionary.objective_functions.ObjectiveFunction</em>) – The cellular objective to evaluate.</li>
+<li><strong>simulation_method</strong> (<em>cameo.flux_analysis.simulation.fba</em><em> or </em><em>equivalent</em>) – The method to compute a flux distribution using a COBRA model.</li>
+<li><strong>simulation_kwargs</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – The arguments for the simulation_method.</li>
+<li><strong>ignore_metabolites</strong> (<em>list</em>) – A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc).</li>
+<li><strong>ignore_transport</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If False, also knockout the transport reactions.</li>
+<li><strong>allow_accumulation</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.</li>
+<li><strong>essential_metabolites</strong> (<em>list</em>) – A list of essential metabolites.</li>
+<li><strong>max_loss</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – A number between 0 and 1 for how much the fitness is allowed to drop with the metabolite target.</li>
+<li><strong>allow_modulation</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If False does not allow modulation targets (MILP and QP are not compatible)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A data frame with the possible replacements.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pandas.DataFrame</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.cobra.strain_design.post_processing.convert_target">
+<code class="descclassname">marsi.cobra.strain_design.post_processing.</code><code class="descname">convert_target</code><span class="sig-paren">(</span><em>model</em>, <em>target</em>, <em>essential_metabolites</em>, <em>ignore_transport=True</em>, <em>ignore_metabolites=None</em>, <em>allow_accumulation=True</em>, <em>reference=None</em>, <em>allow_modulation=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/post_processing.html#convert_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.post_processing.convert_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a dictionary {species_id -&gt; (MetaboliteKnockoutTarget, MetaboliteModulationTarget)}.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>model</strong> (<em>cobra.Model</em>) – A COBRA model</li>
+<li><strong>target</strong> (<em>ReactionModulationTarget</em><em>, </em><em>ReactionKnockoutTarget</em>) – The flux from the reference state (0 if unknown)</li>
+<li><strong>ignore_metabolites</strong> (<em>list</em>) – A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc.)</li>
+<li><strong>ignore_transport</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If False, also knockout the transport reactions.</li>
+<li><strong>allow_accumulation</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.</li>
+<li><strong>reference</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – A dictionary containing the flux values of a reference flux distribution.</li>
+<li><strong>essential_metabolites</strong> (<em>list</em>) – A list of essential metabolites</li>
+<li><strong>allow_modulation</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If False does not allow modulation targets (MILP and QP are not compatible).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)">dict</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.cobra.strain_design.post_processing.convert_target_group">
+<code class="descclassname">marsi.cobra.strain_design.post_processing.</code><code class="descname">convert_target_group</code><span class="sig-paren">(</span><em>model</em>, <em>target_group</em>, <em>essential_metabolites</em>, <em>ignore_transport=True</em>, <em>ignore_metabolites=None</em>, <em>allow_accumulation=True</em>, <em>reference=None</em>, <em>allow_modulation=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/post_processing.html#convert_target_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.post_processing.convert_target_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a dictionary {species_id -&gt; MetaboliteKnockoutTarget}.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>model</strong> (<em>cobra.Model</em>) – A COBRA model</li>
+<li><strong>target_group</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – A dictionary of (target: relative coefficient)</li>
+<li><strong>ignore_metabolites</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#set" title="(in Python v2.7)"><em>set</em></a>) – A list of metabolites that should not be targeted (essential metabolites, currency metabolites, etc.)</li>
+<li><strong>ignore_transport</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If False, also knockout the transport reactions.</li>
+<li><strong>allow_accumulation</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If True, create an exchange reaction (unless already exists) to simulate accumulation of the metabolites.</li>
+<li><strong>reference</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – A dictionary containing the flux values of a reference flux distribution.</li>
+<li><strong>essential_metabolites</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#set" title="(in Python v2.7)"><em>set</em></a>) – A list of essential metabolites.</li>
+<li><strong>allow_modulation</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If False does not allow modulation targets (MILP and QP are not compatible).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A dictionary with the antimetabolites to test and another dictionary with the reaction where those metabolites
+belong.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/2/library/functions.html#tuple" title="(in Python v2.7)">tuple</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-marsi.cobra.strain_design.target">
+<span id="marsi-cobra-strain-design-target-module"></span><h2>marsi.cobra.strain_design.target module<a class="headerlink" href="#module-marsi.cobra.strain_design.target" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget">
+<em class="property">class </em><code class="descclassname">marsi.cobra.strain_design.target.</code><code class="descname">AntiMetaboliteManipulationTarget</code><span class="sig-paren">(</span><em>species_id</em>, <em>fraction=0.5</em>, <em>ignore_transport=True</em>, <em>allow_accumulation=True</em>, <em>accession_id=None</em>, <em>accession_db=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/target.html#AntiMetaboliteManipulationTarget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">cameo.core.target.Target</span></code></p>
+<p>Metabolite target used to manipulate fluxes.
+There are three modes of action:
+1. Inhibition
+2. Competition
+3. Knockout (see Metabolite Knockout Target)</p>
+<p>If the metabolite is essential, the fluxes around the metabolite will be increased for the cells to survive. If the
+metabolite is not essential, the fluxes will be decreased as a consequence of the metabolite presence.</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget.apply" title="marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget.apply"><code class="xref py py-obj docutils literal"><span class="pre">apply</span></code></a>(model[,&nbsp;reference])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget.get_model_target" title="marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget.get_model_target"><code class="xref py py-obj docutils literal"><span class="pre">get_model_target</span></code></a>(model)</td>
+<td>Finds the metabolites in the model across compartments.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget.to_gnomic" title="marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget.to_gnomic"><code class="xref py py-obj docutils literal"><span class="pre">to_gnomic</span></code></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget.get_model_target">
+<code class="descname">get_model_target</code><span class="sig-paren">(</span><em>model</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/target.html#AntiMetaboliteManipulationTarget.get_model_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget.get_model_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the metabolites in the model across compartments.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model</strong> (<em>cameo.SolverBasedModel</em>) – A constraint-based model.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A list of cobra.core.metabolite.Metabolite.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget.apply">
+<code class="descname">apply</code><span class="sig-paren">(</span><em>model</em>, <em>reference=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/target.html#AntiMetaboliteManipulationTarget.apply"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget.apply" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget.to_gnomic">
+<code class="descname">to_gnomic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/target.html#AntiMetaboliteManipulationTarget.to_gnomic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget.to_gnomic" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="marsi.cobra.strain_design.target.MetaboliteKnockoutTarget">
+<em class="property">class </em><code class="descclassname">marsi.cobra.strain_design.target.</code><code class="descname">MetaboliteKnockoutTarget</code><span class="sig-paren">(</span><em>species_id</em>, <em>ignore_transport=True</em>, <em>allow_accumulation=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/target.html#MetaboliteKnockoutTarget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.target.MetaboliteKnockoutTarget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget" title="marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget"><code class="xref py py-class docutils literal"><span class="pre">marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget</span></code></a></p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cobra.strain_design.target.MetaboliteKnockoutTarget.apply" title="marsi.cobra.strain_design.target.MetaboliteKnockoutTarget.apply"><code class="xref py py-obj docutils literal"><span class="pre">apply</span></code></a>(model[,&nbsp;reference])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">get_model_target</span></code>(model)</td>
+<td>Finds the metabolites in the model across compartments.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cobra.strain_design.target.MetaboliteKnockoutTarget.to_gnomic" title="marsi.cobra.strain_design.target.MetaboliteKnockoutTarget.to_gnomic"><code class="xref py py-obj docutils literal"><span class="pre">to_gnomic</span></code></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="marsi.cobra.strain_design.target.MetaboliteKnockoutTarget.apply">
+<code class="descname">apply</code><span class="sig-paren">(</span><em>model</em>, <em>reference=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/target.html#MetaboliteKnockoutTarget.apply"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.target.MetaboliteKnockoutTarget.apply" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cobra.strain_design.target.MetaboliteKnockoutTarget.to_gnomic">
+<code class="descname">to_gnomic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/target.html#MetaboliteKnockoutTarget.to_gnomic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.target.MetaboliteKnockoutTarget.to_gnomic" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-marsi.cobra.strain_design">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-marsi.cobra.strain_design" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="marsi.cobra.strain_design.OptMet">
+<em class="property">class </em><code class="descclassname">marsi.cobra.strain_design.</code><code class="descname">OptMet</code><span class="sig-paren">(</span><em>model</em>, <em>evolutionary_algorithm=&lt;class 'inspyred.ec.ec.GA'&gt;</em>, <em>essential_metabolites=None</em>, <em>plot=True</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/evolutionary.html#OptMet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.OptMet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">cameo.core.strain_design.StrainDesignMethod</span></code></p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cobra.strain_design.OptMet.manipulation_type" title="marsi.cobra.strain_design.OptMet.manipulation_type"><code class="xref py py-obj docutils literal"><span class="pre">manipulation_type</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cobra.strain_design.OptMet.plot" title="marsi.cobra.strain_design.OptMet.plot"><code class="xref py py-obj docutils literal"><span class="pre">plot</span></code></a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">__call__</span></code>(*args,&nbsp;**kwargs)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cobra.strain_design.OptMet.run" title="marsi.cobra.strain_design.OptMet.run"><code class="xref py py-obj docutils literal"><span class="pre">run</span></code></a>([target,&nbsp;biomass,&nbsp;substrate,&nbsp;…])</td>
+<td><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">param target:</th><td class="field-body">The design target</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="marsi.cobra.strain_design.OptMet.manipulation_type">
+<code class="descname">manipulation_type</code><a class="headerlink" href="#marsi.cobra.strain_design.OptMet.manipulation_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.cobra.strain_design.OptMet.plot">
+<code class="descname">plot</code><a class="headerlink" href="#marsi.cobra.strain_design.OptMet.plot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cobra.strain_design.OptMet.run">
+<code class="descname">run</code><span class="sig-paren">(</span><em>target=None</em>, <em>biomass=None</em>, <em>substrate=None</em>, <em>max_knockouts=5</em>, <em>variable_size=True</em>, <em>simulation_method=&lt;function fba&gt;</em>, <em>growth_coupled=False</em>, <em>max_evaluations=20000</em>, <em>population_size=200</em>, <em>max_results=50</em>, <em>seed=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/evolutionary.html#OptMet.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.OptMet.run" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>target</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a><em>, </em><a class="reference internal" href="marsi.io.html#marsi.io.db.Metabolite" title="marsi.io.db.Metabolite"><em>Metabolite</em></a><em> or </em><em>Reaction</em>) – The design target</li>
+<li><strong>biomass</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a><em>, </em><a class="reference internal" href="marsi.io.html#marsi.io.db.Metabolite" title="marsi.io.db.Metabolite"><em>Metabolite</em></a><em> or </em><em>Reaction</em>) – The biomass definition in the model</li>
+<li><strong>substrate</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a><em>, </em><a class="reference internal" href="marsi.io.html#marsi.io.db.Metabolite" title="marsi.io.db.Metabolite"><em>Metabolite</em></a><em> or </em><em>Reaction</em>) – The main carbon source</li>
+<li><strong>max_knockouts</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Max number of knockouts allowed</li>
+<li><strong>variable_size</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If true, all candidates have the same size. Otherwise the candidate size can be from 1 to max_knockouts.</li>
+<li><strong>simulation_method</strong> (<em>function</em>) – Any method from cameo.flux_analysis.simulation or equivalent</li>
+<li><strong>growth_coupled</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If true will use the minimum flux rate to compute the fitness</li>
+<li><strong>max_evaluations</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Number of evaluations before stop</li>
+<li><strong>population_size</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Number of individuals in each generation</li>
+<li><strong>max_results</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Max number of different designs to return if found.</li>
+<li><strong>kwargs</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – Arguments for the simulation method.</li>
+<li><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – A seed for random.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">OptMetResult</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="marsi.cobra.strain_design.RandomMutagenesisDesign">
+<em class="property">class </em><code class="descclassname">marsi.cobra.strain_design.</code><code class="descname">RandomMutagenesisDesign</code><span class="sig-paren">(</span><em>model=None</em>, <em>nearest_neighbors_model=None</em>, <em>min_tanimoto=0.75</em>, <em>currency_metabolites=None</em>, <em>essential_metabolites=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/design_methods.html#RandomMutagenesisDesign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.RandomMutagenesisDesign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod" title="marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod"><code class="xref py py-class docutils literal"><span class="pre">marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod</span></code></a></p>
+<p>Apply only knockout like designs where total loss of functions are expected.</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">essential_metabolites_reactions</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cobra.strain_design.RandomMutagenesisDesign.optimize_with_metabolites" title="marsi.cobra.strain_design.RandomMutagenesisDesign.optimize_with_metabolites"><code class="xref py py-obj docutils literal"><span class="pre">optimize_with_metabolites</span></code></a>(target[,&nbsp;…])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cobra.strain_design.RandomMutagenesisDesign.optimize_with_reaction" title="marsi.cobra.strain_design.RandomMutagenesisDesign.optimize_with_reaction"><code class="xref py py-obj docutils literal"><span class="pre">optimize_with_reaction</span></code></a>(target[,&nbsp;…])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="marsi.cobra.strain_design.RandomMutagenesisDesign.optimize_with_reaction">
+<code class="descname">optimize_with_reaction</code><span class="sig-paren">(</span><em>target</em>, <em>max_interventions=1</em>, <em>substrate=None</em>, <em>biomass=None</em>, <em>design_method='optgene'</em>, <em>max_results=100</em>, <em>non_essential_metabolites=False</em>, <em>max_evaluations=20000</em>, <em>**designer_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/design_methods.html#RandomMutagenesisDesign.optimize_with_reaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.RandomMutagenesisDesign.optimize_with_reaction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cobra.strain_design.RandomMutagenesisDesign.optimize_with_metabolites">
+<code class="descname">optimize_with_metabolites</code><span class="sig-paren">(</span><em>target</em>, <em>max_interventions=1</em>, <em>substrate=None</em>, <em>biomass=None</em>, <em>max_results=100</em>, <em>max_evaluations=20000</em>, <em>**design_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/design_methods.html#RandomMutagenesisDesign.optimize_with_metabolites"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.RandomMutagenesisDesign.optimize_with_metabolites" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="marsi.cobra.strain_design.ALEDesign">
+<em class="property">class </em><code class="descclassname">marsi.cobra.strain_design.</code><code class="descname">ALEDesign</code><span class="sig-paren">(</span><em>model=None</em>, <em>nearest_neighbors_model=None</em>, <em>min_tanimoto=0.75</em>, <em>currency_metabolites=None</em>, <em>essential_metabolites=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/design_methods.html#ALEDesign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.ALEDesign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod" title="marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod"><code class="xref py py-class docutils literal"><span class="pre">marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod</span></code></a></p>
+<p>Apply both knockout and flux modulation. The strains will be selected via growth rate proxy.</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">essential_metabolites_reactions</span></code>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#marsi.cobra.strain_design.ALEDesign.optimize_with_metabolites" title="marsi.cobra.strain_design.ALEDesign.optimize_with_metabolites"><code class="xref py py-obj docutils literal"><span class="pre">optimize_with_metabolites</span></code></a>(target[,&nbsp;…])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#marsi.cobra.strain_design.ALEDesign.optimize_with_reaction" title="marsi.cobra.strain_design.ALEDesign.optimize_with_reaction"><code class="xref py py-obj docutils literal"><span class="pre">optimize_with_reaction</span></code></a>(target[,&nbsp;…])</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="marsi.cobra.strain_design.ALEDesign.optimize_with_reaction">
+<code class="descname">optimize_with_reaction</code><span class="sig-paren">(</span><em>target</em>, <em>max_interventions=1</em>, <em>substrate=None</em>, <em>biomass=None</em>, <em>design_method='differential_fva'</em>, <em>max_results=100</em>, <em>non_essential_metabolites=False</em>, <em>**designer_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/design_methods.html#ALEDesign.optimize_with_reaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.ALEDesign.optimize_with_reaction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="marsi.cobra.strain_design.ALEDesign.optimize_with_metabolites">
+<code class="descname">optimize_with_metabolites</code><span class="sig-paren">(</span><em>target</em>, <em>max_interventions=1</em>, <em>substrate=None</em>, <em>biomass=None</em>, <em>max_results=100</em>, <em>max_evaluations=20000</em>, <em>**design_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/cobra/strain_design/design_methods.html#ALEDesign.optimize_with_metabolites"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.cobra.strain_design.ALEDesign.optimize_with_metabolites" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">marsi.cobra.strain_design package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-marsi.cobra.strain_design.design_methods">marsi.cobra.strain_design.design_methods module</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-marsi.cobra.strain_design.evolutionary">marsi.cobra.strain_design.evolutionary module</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-marsi.cobra.strain_design.metaheuristic">marsi.cobra.strain_design.metaheuristic module</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-marsi.cobra.strain_design.post_processing">marsi.cobra.strain_design.post_processing module</a></li>
+<li><a class="reference internal" href="#module-marsi.cobra.strain_design.target">marsi.cobra.strain_design.target module</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-marsi.cobra.strain_design">Module contents</a><ul>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../API.html">API Docs</a><ul>
+  <li><a href="marsi.html">marsi package</a><ul>
+  <li><a href="marsi.cobra.html">marsi.cobra package</a><ul>
+      <li>Previous: <a href="marsi.cobra.flux_analysis.html" title="previous chapter">marsi.cobra.flux_analysis package</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/apidoc_output/marsi.cobra.strain_design.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/apidoc_output/marsi.cobra.strain_design.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

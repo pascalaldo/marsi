@@ -1,0 +1,325 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.cli.controllers.database &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.cli.controllers.database</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2017 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">with_statement</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+
+<span class="kn">import</span> <span class="nn">pubchempy</span>
+<span class="kn">from</span> <span class="nn">IProgress</span> <span class="k">import</span> <span class="n">ProgressBar</span><span class="p">,</span> <span class="n">Bar</span><span class="p">,</span> <span class="n">ETA</span>
+<span class="kn">from</span> <span class="nn">alembic</span> <span class="k">import</span> <span class="n">command</span>
+<span class="kn">from</span> <span class="nn">alembic.config</span> <span class="k">import</span> <span class="n">Config</span>
+<span class="kn">from</span> <span class="nn">bioservices</span> <span class="k">import</span> <span class="n">ChEBI</span>
+<span class="kn">from</span> <span class="nn">cement.core.controller</span> <span class="k">import</span> <span class="n">CementBaseController</span><span class="p">,</span> <span class="n">expose</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="k">import</span> <span class="n">read_excel</span>
+
+<span class="kn">from</span> <span class="nn">marsi.chemistry</span> <span class="k">import</span> <span class="n">openbabel</span>
+<span class="kn">from</span> <span class="nn">marsi.config</span> <span class="k">import</span> <span class="n">db_url</span>
+<span class="kn">from</span> <span class="nn">marsi.io.build_database</span> <span class="k">import</span> <span class="n">build_database</span>
+<span class="kn">from</span> <span class="nn">marsi.io.db</span> <span class="k">import</span> <span class="n">Reference</span><span class="p">,</span> <span class="n">Synonym</span><span class="p">,</span> <span class="n">Metabolite</span>
+<span class="kn">from</span> <span class="nn">marsi.io.enrichment</span> <span class="k">import</span> <span class="n">find_best_chebi_structure</span>
+<span class="kn">from</span> <span class="nn">marsi.io.parsers</span> <span class="k">import</span> <span class="n">parse_chebi_data</span><span class="p">,</span> <span class="n">parse_pubchem</span><span class="p">,</span> <span class="n">parse_kegg_brite</span>
+<span class="kn">from</span> <span class="nn">marsi.io.retriaval</span> <span class="k">import</span> <span class="n">retrieve_chebi_names</span><span class="p">,</span> <span class="n">retrieve_chebi_relation</span><span class="p">,</span> <span class="n">retrieve_chebi_vertice</span><span class="p">,</span> \
+    <span class="n">retrieve_chebi_structures</span><span class="p">,</span> <span class="n">retrieve_drugbank_open_structures</span><span class="p">,</span> <span class="n">retrieve_drugbank_open_vocabulary</span><span class="p">,</span> \
+    <span class="n">retrieve_bigg_reactions</span><span class="p">,</span> <span class="n">retrieve_bigg_metabolites</span><span class="p">,</span> <span class="n">retrieve_kegg_brite</span><span class="p">,</span> <span class="n">retrieve_pubchem_mol_files</span><span class="p">,</span> \
+    <span class="n">retrieve_kegg_mol_files</span><span class="p">,</span> <span class="n">retrieve_zinc_structures</span>
+<span class="kn">from</span> <span class="nn">marsi.utils</span> <span class="k">import</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">src_dir</span><span class="p">,</span> <span class="n">internal_data_dir</span>
+
+
+<span class="n">PUBCHEM_COMPOUND</span> <span class="o">=</span> <span class="s2">&quot;PubChem Compound&quot;</span>
+<span class="n">CHEBI</span> <span class="o">=</span> <span class="s2">&quot;ChEBI&quot;</span>
+
+
+<div class="viewcode-block" id="DatabaseController"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.database.DatabaseController">[docs]</a><span class="k">class</span> <span class="nc">DatabaseController</span><span class="p">(</span><span class="n">CementBaseController</span><span class="p">):</span>
+    <span class="c1"># TODO: migrate database</span>
+<div class="viewcode-block" id="DatabaseController.Meta"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.database.DatabaseController.Meta">[docs]</a>    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;db&#39;</span>
+        <span class="n">stacked_on</span> <span class="o">=</span> <span class="s1">&#39;base&#39;</span>
+        <span class="n">stacked_type</span> <span class="o">=</span> <span class="s1">&#39;nested&#39;</span>
+        <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;Initialise MARSI (download data and build initial database)&quot;</span>
+        <span class="n">arguments</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">([</span><span class="s1">&#39;--drugbank-version&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;DrugBank version (5.0.3)&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--with-zinc&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Include Zinc&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">))</span>
+        <span class="p">]</span></div>
+
+<div class="viewcode-block" id="DatabaseController.default"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.database.DatabaseController.default">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">hide</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;MARSI database commands. If it is the first time run &#39;marsi db init&#39; For details run marsi init --help&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DatabaseController.init"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.database.DatabaseController.init">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">hide</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Build and populate database&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">migrate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_data</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_database</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DatabaseController.migrate"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.database.DatabaseController.migrate">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">hide</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">migrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run database migration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">alembic_cfg</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">src_dir</span><span class="p">,</span> <span class="s2">&quot;alembic.ini&quot;</span><span class="p">))</span>
+        <span class="n">alembic_cfg</span><span class="o">.</span><span class="n">set_section_option</span><span class="p">(</span><span class="s2">&quot;alembic&quot;</span><span class="p">,</span> <span class="s2">&quot;sqlalchemy.url&quot;</span><span class="p">,</span> <span class="n">db_url</span><span class="p">)</span>
+        <span class="n">script_location</span> <span class="o">=</span> <span class="n">alembic_cfg</span><span class="o">.</span><span class="n">get_section_option</span><span class="p">(</span><span class="s2">&quot;alembic&quot;</span><span class="p">,</span> <span class="s2">&quot;script_location&quot;</span><span class="p">)</span>
+        <span class="n">alembic_cfg</span><span class="o">.</span><span class="n">set_section_option</span><span class="p">(</span><span class="s2">&quot;alembic&quot;</span><span class="p">,</span> <span class="s2">&quot;script_location&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">src_dir</span><span class="p">,</span> <span class="n">script_location</span><span class="p">))</span>
+        <span class="n">command</span><span class="o">.</span><span class="n">upgrade</span><span class="p">(</span><span class="n">alembic_cfg</span><span class="p">,</span> <span class="s2">&quot;head&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DatabaseController.download"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.database.DatabaseController.download">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">hide</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Download all files&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">download_chebi</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">download_drug_bank</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">download_kegg</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">download_pubchem</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">download_bigg</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">with_zinc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">download_zinc</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DatabaseController.download_chebi"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.database.DatabaseController.download_chebi">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Retrieve ChEBI files (part of download)&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">download_chebi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">ProgressBar</span><span class="p">(</span><span class="n">maxval</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">widgets</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Downloading ChEBI files&quot;</span><span class="p">,</span> <span class="n">Bar</span><span class="p">(),</span> <span class="n">ETA</span><span class="p">()])</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="n">retrieve_chebi_names</span><span class="p">()</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">retrieve_chebi_relation</span><span class="p">()</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">retrieve_chebi_vertice</span><span class="p">()</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">retrieve_chebi_structures</span><span class="p">()</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DatabaseController.download_drug_bank"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.database.DatabaseController.download_drug_bank">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Retrieve DrugBank files (part of download)&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">download_drug_bank</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">ProgressBar</span><span class="p">(</span><span class="n">maxval</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">widgets</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Downloading DrugBank files&quot;</span><span class="p">,</span> <span class="n">Bar</span><span class="p">(),</span> <span class="n">ETA</span><span class="p">()])</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="n">retrieve_drugbank_open_structures</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">drugbank_version</span> <span class="ow">or</span> <span class="s2">&quot;5.0.3&quot;</span><span class="p">)</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">retrieve_drugbank_open_vocabulary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">drugbank_version</span> <span class="ow">or</span> <span class="s2">&quot;5.0.3&quot;</span><span class="p">)</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DatabaseController.download_bigg"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.database.DatabaseController.download_bigg">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Retrieve BIGG files (part of download)&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">download_bigg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">ProgressBar</span><span class="p">(</span><span class="n">maxval</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">widgets</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Downloading BIGG files&quot;</span><span class="p">,</span> <span class="n">Bar</span><span class="p">(),</span> <span class="n">ETA</span><span class="p">()])</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="n">retrieve_bigg_reactions</span><span class="p">()</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">retrieve_bigg_metabolites</span><span class="p">()</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DatabaseController.download_pubchem"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.database.DatabaseController.download_pubchem">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Retrieve PubChem files (part of download)&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">download_pubchem</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">pubchem</span> <span class="o">=</span> <span class="n">parse_pubchem</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">internal_data_dir</span><span class="p">,</span> <span class="s2">&quot;pubchem_compound_analogs_antimetabolites.txt&quot;</span><span class="p">))</span>
+        <span class="n">pubchem_ids</span> <span class="o">=</span> <span class="n">pubchem</span><span class="o">.</span><span class="n">compound_id</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">ProgressBar</span><span class="p">(</span><span class="n">maxval</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">pubchem_ids</span><span class="p">),</span> <span class="n">widgets</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Downloading PubChem files&quot;</span><span class="p">,</span>
+                                                                              <span class="n">Bar</span><span class="p">(),</span> <span class="n">ETA</span><span class="p">()])</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">retrieve_pubchem_mol_files</span><span class="p">(</span><span class="n">pubchem_ids</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="n">data_dir</span><span class="p">):</span>
+            <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DatabaseController.download_zinc"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.database.DatabaseController.download_zinc">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Retrieve Zinc files (part of download)&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">download_zinc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># retrieve_zinc_properties()</span>
+        <span class="n">retrieve_zinc_structures</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DatabaseController.download_kegg"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.database.DatabaseController.download_kegg">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Retrieve KEGG files (part of download)&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">download_kegg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">retrieve_kegg_brite</span><span class="p">()</span>
+        <span class="n">kegg</span> <span class="o">=</span> <span class="n">parse_kegg_brite</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;kegg_brite_08310.keg&quot;</span><span class="p">))</span>
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">ProgressBar</span><span class="p">(</span><span class="n">maxval</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">kegg</span><span class="o">.</span><span class="n">kegg_drug_id</span><span class="o">.</span><span class="n">unique</span><span class="p">()),</span> <span class="n">widgets</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Downloading KEGG files&quot;</span><span class="p">,</span> <span class="n">Bar</span><span class="p">(),</span> <span class="n">ETA</span><span class="p">()])</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">retrieve_kegg_mol_files</span><span class="p">(</span><span class="n">kegg</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="n">data_dir</span><span class="p">):</span>
+            <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DatabaseController.status"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.database.DatabaseController.status">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Status of init&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">necessary_files</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;chebi_names_3star.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;chebi_vertice_3star.tsv&quot;</span><span class="p">,</span> <span class="s2">&quot;chebi_relation_3star.tsv&quot;</span><span class="p">,</span>
+                           <span class="s2">&quot;chebi_lite_3star.sdf&quot;</span><span class="p">,</span> <span class="s2">&quot;kegg_brite_08310.keg&quot;</span><span class="p">,</span> <span class="s2">&quot;drugbank_open_vocabulary.csv&quot;</span><span class="p">,</span>
+                           <span class="s2">&quot;drugbank_open_structures.sdf&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">with_zinc</span><span class="p">:</span>
+            <span class="n">necessary_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;zinc_16.sdf.gz&quot;</span><span class="p">,)</span>
+
+        <span class="n">missing</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">file_name</span> <span class="ow">in</span> <span class="n">necessary_files</span><span class="p">:</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+                <span class="n">missing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">file_name</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">45</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;| FAIL: File does not exist&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">file_size</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">file_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">missing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">file_name</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">45</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;| (</span><span class="si">%.1f</span><span class="s2"> MB) FAIL: File is too small&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">file_size</span> <span class="o">/</span> <span class="mi">1048576</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">file_name</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">45</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;| (</span><span class="si">%.1f</span><span class="s2"> MB) OK&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">file_size</span> <span class="o">/</span> <span class="mi">1048576</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">missing</span></div>
+
+<div class="viewcode-block" id="DatabaseController.build_data"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.database.DatabaseController.build_data">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Build data (part of download)&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">build_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">missing</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cannot continue without the missing files&quot;</span><span class="p">)</span>
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Start building data:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------------------------------------------</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Building ChEBI:&quot;</span><span class="p">)</span>
+        <span class="n">chebi_names_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;chebi_names_3star.txt&quot;</span><span class="p">)</span>
+        <span class="n">chebi_vertice_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;chebi_vertice_3star.tsv&quot;</span><span class="p">)</span>
+        <span class="n">chebi_relation_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;chebi_relation_3star.tsv&quot;</span><span class="p">)</span>
+        <span class="n">chebi_data</span> <span class="o">=</span> <span class="n">parse_chebi_data</span><span class="p">(</span><span class="n">chebi_names_file</span><span class="p">,</span> <span class="n">chebi_vertice_file</span><span class="p">,</span> <span class="n">chebi_relation_file</span><span class="p">)</span>
+        <span class="n">chebi_data</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;chebi_analogues_filtered.csv&quot;</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Complete!&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------------------------------------------&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Building PubChem:&quot;</span><span class="p">)</span>
+        <span class="n">pubchem</span> <span class="o">=</span> <span class="n">parse_pubchem</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">internal_data_dir</span><span class="p">,</span> <span class="s2">&quot;pubchem_compound_analogs_antimetabolites.txt&quot;</span><span class="p">))</span>
+        <span class="n">pubchem</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;pubchem_data.csv&quot;</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Complete!&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------------------------------------------&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Building KEGG:&quot;</span><span class="p">)</span>
+        <span class="n">kegg</span> <span class="o">=</span> <span class="n">parse_kegg_brite</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;kegg_brite_08310.keg&quot;</span><span class="p">))</span>
+        <span class="n">kegg</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s2">&quot;kegg_data.csv&quot;</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Complete!&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DatabaseController.build_database"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.database.DatabaseController.build_database">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Build database&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">build_database</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">marsi.io</span> <span class="k">import</span> <span class="n">data</span>
+        <span class="n">build_database</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">with_zinc</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DatabaseController.add_known_analogs"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.database.DatabaseController.add_known_analogs">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Add known analogs&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">add_known_analogs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">chebi_client</span> <span class="o">=</span> <span class="n">ChEBI</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Updating data from &#39;antimetabolites.xlsx&#39;&quot;</span><span class="p">)</span>
+
+        <span class="n">anti_metabolites</span> <span class="o">=</span> <span class="n">read_excel</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">internal_data_dir</span><span class="p">,</span> <span class="s2">&quot;antimetabolites.xlsx&quot;</span><span class="p">),</span> <span class="n">sheetname</span><span class="o">=</span><span class="s2">&quot;Sheet1&quot;</span><span class="p">)</span>
+        <span class="n">anti_metabolites</span> <span class="o">=</span> <span class="n">anti_metabolites</span><span class="p">[</span><span class="n">anti_metabolites</span><span class="o">.</span><span class="n">Identifier</span> <span class="o">!=</span> <span class="s2">&quot;?&quot;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">anti_metabolites</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">Database</span> <span class="o">==</span> <span class="n">PUBCHEM_COMPOUND</span><span class="p">:</span>
+                <span class="n">temp_file</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mktemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;sdf&quot;</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">Identifier</span><span class="p">))</span>
+                <span class="n">pubchempy</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s2">&quot;SDF&quot;</span><span class="p">,</span> <span class="n">temp_file</span><span class="p">,</span> <span class="n">row</span><span class="o">.</span><span class="n">Identifier</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">molecule</span> <span class="o">=</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">sdf_to_molecule</span><span class="p">(</span><span class="n">temp_file</span><span class="p">)</span>
+                <span class="n">reference</span> <span class="o">=</span> <span class="n">Reference</span><span class="o">.</span><span class="n">add_reference</span><span class="p">(</span><span class="s2">&quot;pubchem&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">Identifier</span><span class="p">))</span>
+
+            <span class="k">elif</span> <span class="n">row</span><span class="o">.</span><span class="n">Database</span> <span class="o">==</span> <span class="n">CHEBI</span><span class="p">:</span>
+                <span class="n">entity</span> <span class="o">=</span> <span class="n">chebi_client</span><span class="o">.</span><span class="n">getCompleteEntity</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">Identifier</span><span class="p">)</span>
+                <span class="n">molecule</span> <span class="o">=</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">mol_to_molecule</span><span class="p">(</span><span class="n">find_best_chebi_structure</span><span class="p">(</span><span class="n">entity</span><span class="p">),</span> <span class="kc">False</span><span class="p">)</span>
+                <span class="n">reference</span> <span class="o">=</span> <span class="n">Reference</span><span class="o">.</span><span class="n">add_reference</span><span class="p">(</span><span class="s2">&quot;chebi&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">Identifier</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:16s}</span><span class="se">\t</span><span class="si">{:12s}</span><span class="se">\t</span><span class="si">{:25s}</span><span class="se">\t</span><span class="s1">- Skip&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">Database</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">Identifier</span><span class="p">),</span> <span class="n">row</span><span class="o">.</span><span class="n">Target</span><span class="p">))</span>
+                <span class="k">continue</span>
+
+            <span class="n">synonym</span> <span class="o">=</span> <span class="n">Synonym</span><span class="o">.</span><span class="n">add_synonym</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">Metabolite</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">inchi_key</span><span class="o">=</span><span class="n">openbabel</span><span class="o">.</span><span class="n">mol_to_inchi_key</span><span class="p">(</span><span class="n">molecule</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:16s}</span><span class="se">\t</span><span class="si">{:12s}</span><span class="se">\t</span><span class="si">{:25s}</span><span class="se">\t</span><span class="s1">- OK&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">Database</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">Identifier</span><span class="p">),</span> <span class="n">row</span><span class="o">.</span><span class="n">Target</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">Metabolite</span><span class="o">.</span><span class="n">from_molecule</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="p">[</span><span class="n">reference</span><span class="p">],</span> <span class="p">[</span><span class="n">synonym</span><span class="p">],</span> <span class="n">analog</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">first_time</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:16s}</span><span class="se">\t</span><span class="si">{:12s}</span><span class="se">\t</span><span class="si">{:25s}</span><span class="se">\t</span><span class="s1">- Added&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">Database</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">Identifier</span><span class="p">),</span> <span class="n">row</span><span class="o">.</span><span class="n">Target</span><span class="p">))</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  <li><a href="../controllers.html">marsi.cli.controllers</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,30 @@
+marsi\.alembic\.versions package
+================================
+
+Submodules
+----------
+
+marsi\.alembic\.versions\.c1b678211e9d\_baseline module
+-------------------------------------------------------
+
+.. automodule:: marsi.alembic.versions.c1b678211e9d_baseline
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.alembic\.versions\.ef39a4ae2c8c\_add\_solubility module
+--------------------------------------------------------------
+
+.. automodule:: marsi.alembic.versions.ef39a4ae2c8c_add_solubility
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: marsi.alembic.versions
+    :members:
+    :undoc-members:
+    :show-inheritance:

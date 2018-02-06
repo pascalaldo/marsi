@@ -1,0 +1,365 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.cli.controllers.modeling &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.cli.controllers.modeling</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2017 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span> <span class="nn">cameo.core.utils</span> <span class="k">import</span> <span class="n">get_reaction_for</span>
+<span class="kn">from</span> <span class="nn">cameo.flux_analysis.simulation</span> <span class="k">import</span> <span class="n">pfba</span>
+<span class="kn">from</span> <span class="nn">cameo.io</span> <span class="k">import</span> <span class="n">load_model</span>
+<span class="kn">from</span> <span class="nn">cameo.strain_design.heuristic.evolutionary.objective_functions</span> <span class="k">import</span> <span class="n">biomass_product_coupled_yield</span>
+<span class="kn">from</span> <span class="nn">cement.core.controller</span> <span class="k">import</span> <span class="n">CementBaseController</span><span class="p">,</span> <span class="n">expose</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="k">import</span> <span class="n">DataFrame</span>
+
+<span class="kn">from</span> <span class="nn">marsi.cobra.strain_design</span> <span class="k">import</span> <span class="n">RandomMutagenesisDesign</span><span class="p">,</span> <span class="n">ALEDesign</span>
+<span class="kn">from</span> <span class="nn">marsi.cobra.strain_design.post_processing</span> <span class="k">import</span> <span class="n">replace_design</span>
+<span class="kn">from</span> <span class="nn">marsi.cobra.utils</span> <span class="k">import</span> <span class="n">CURRENCY_METABOLITES</span>
+<span class="kn">from</span> <span class="nn">marsi.utils</span> <span class="k">import</span> <span class="n">BIOMASS_RE</span>
+<span class="kn">from</span> <span class="nn">marsi.utils</span> <span class="k">import</span> <span class="n">default_carbon_sources</span><span class="p">,</span> <span class="n">unique</span>
+
+
+<div class="viewcode-block" id="OptimizationController"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.modeling.OptimizationController">[docs]</a><span class="k">class</span> <span class="nc">OptimizationController</span><span class="p">(</span><span class="n">CementBaseController</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is the Optimization Controller. It allows to run optimizations from the command line.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">exclude_reactions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ATPM&quot;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="OptimizationController.Meta"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.modeling.OptimizationController.Meta">[docs]</a>    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;optimize&#39;</span>
+        <span class="n">stacked_on</span> <span class="o">=</span> <span class="s1">&#39;base&#39;</span>
+        <span class="n">stacked_type</span> <span class="o">=</span> <span class="s1">&#39;nested&#39;</span>
+        <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;Optimize a host phenotype using Metabolites as targets&quot;</span>
+        <span class="n">arguments</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">([</span><span class="s1">&#39;--model&#39;</span><span class="p">,</span> <span class="s1">&#39;-m&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;path or identifier of the model to be used&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--carbon-source&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;(optional) the carbon source exchange reaction. &quot;</span>
+                                            <span class="s2">&quot;It will be auto-detected if not defined&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--target&#39;</span><span class="p">,</span> <span class="s1">&#39;-t&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;The exchange reaction of the target phenotype or &quot;</span>
+                                           <span class="s2">&quot;the metabolite to accumulate&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--approach&#39;</span><span class="p">,</span> <span class="s1">&#39;-a&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;classic: use reaction search; metabolites: search for &quot;</span>
+                                             <span class="s2">&quot;metabolite targets directly. (default: classic)&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--biomass&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;(optional) the biomass reaction (needed if there is none or many reactions &quot;</span>
+                                      <span class="s2">&quot;containing biomass on their ids or names&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--max-interventions&#39;</span><span class="p">,</span> <span class="s1">&#39;-mi&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;(optional) maximum number of interventions (default: 2)&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--max-evaluations&#39;</span><span class="p">,</span> <span class="s1">&#39;-me&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s1">&#39;(optional) maximum number of evaluations (default: 20000)&#39;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--output-file&#39;</span><span class="p">,</span> <span class="s1">&#39;-o&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;output file&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--input-file&#39;</span><span class="p">,</span> <span class="s1">&#39;-i&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;input file&quot;</span><span class="p">)),</span>
+            <span class="p">([</span><span class="s1">&#39;--transporters&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Include transporters knockout&quot;</span><span class="p">))</span>
+        <span class="p">]</span></div>
+
+<div class="viewcode-block" id="OptimizationController.default"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.modeling.OptimizationController.default">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">hide</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="OptimizationController.mutagenesis"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.modeling.OptimizationController.mutagenesis">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="s2">&quot;Run optimization assuming Chemical Mutagenesis scenario&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">mutagenesis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        1. Load model specified by --model.</span>
+<span class="sd">        2. Detect carbon source if not defined, otherwise change the carbon source.</span>
+<span class="sd">        3. Detect biomass if not defined</span>
+<span class="sd">        4. Run the optimization.</span>
+<span class="sd">        5. Return the results.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">model</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">carbon_source</span><span class="p">,</span> <span class="n">biomass</span><span class="p">,</span> <span class="n">output_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_optimization_args</span><span class="p">()</span>
+
+        <span class="n">designer</span> <span class="o">=</span> <span class="n">RandomMutagenesisDesign</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>
+
+        <span class="n">max_interventions</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">max_evaluations</span> <span class="o">=</span> <span class="mi">20000</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">max_interventions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">max_interventions</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">max_interventions</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">max_evaluations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">max_evaluations</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">max_evaluations</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">transporters</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">transporters</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">reactions</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">compartment</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">metabolites</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">exclude_reactions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exclude_reactions</span>
+            <span class="n">exclude_reactions</span> <span class="o">+=</span> <span class="n">transporters</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exclude_reactions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exclude_reactions</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---------------------------------------------------&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Chemical Mutagenesis Optimization setup:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;- Search method: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">approach</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;- Target: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">target</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;- Biomass: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">biomass</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;- Carbon source: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">carbon_source</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;- Max evaluations: </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">max_evaluations</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;- Max interventions: </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">max_interventions</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">approach</span> <span class="o">==</span> <span class="s1">&#39;classic&#39;</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">designer</span><span class="o">.</span><span class="n">optimize_with_reaction</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">substrate</span><span class="o">=</span><span class="n">carbon_source</span><span class="p">,</span> <span class="n">biomass</span><span class="o">=</span><span class="n">biomass</span><span class="p">,</span>
+                                                     <span class="n">design_method</span><span class="o">=</span><span class="s2">&quot;optgene&quot;</span><span class="p">,</span> <span class="n">manipulation_type</span><span class="o">=</span><span class="s2">&quot;reactions&quot;</span><span class="p">,</span>
+                                                     <span class="n">max_interventions</span><span class="o">=</span><span class="n">max_interventions</span><span class="p">,</span>
+                                                     <span class="n">essential_reactions</span><span class="o">=</span><span class="n">exclude_reactions</span><span class="p">,</span>
+                                                     <span class="n">max_evaluations</span><span class="o">=</span><span class="n">max_evaluations</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">designer</span><span class="o">.</span><span class="n">optimize_with_metabolites</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">substrate</span><span class="o">=</span><span class="n">carbon_source</span><span class="p">,</span> <span class="n">biomass</span><span class="o">=</span><span class="n">biomass</span><span class="p">,</span>
+                                                        <span class="n">max_interventions</span><span class="o">=</span><span class="n">max_interventions</span><span class="p">,</span>
+                                                        <span class="n">max_evaluations</span><span class="o">=</span><span class="n">max_evaluations</span><span class="p">)</span>
+
+        <span class="n">result</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finished&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="OptimizationController.ale"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.modeling.OptimizationController.ale">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Run optimization assuming Adaptive Laboratory Evolution scenario&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">ale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">                1. Load model specified by --model.</span>
+<span class="sd">                2. Detect carbon source if not defined, otherwise change the carbon source.</span>
+<span class="sd">                3. Detect biomass if not defined</span>
+<span class="sd">                4. Run the optimization.</span>
+<span class="sd">                5. Return the results.</span>
+<span class="sd">                &quot;&quot;&quot;</span>
+
+        <span class="n">model</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">carbon_source</span><span class="p">,</span> <span class="n">biomass</span><span class="p">,</span> <span class="n">output_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_optimization_args</span><span class="p">()</span>
+
+        <span class="n">designer</span> <span class="o">=</span> <span class="n">ALEDesign</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>
+
+        <span class="n">max_interventions</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">max_evaluations</span> <span class="o">=</span> <span class="mi">20000</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">max_interventions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">max_interventions</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">max_interventions</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">max_evaluations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">max_evaluations</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">max_evaluations</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">transporters</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">transporters</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">reactions</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">compartment</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">metabolites</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">exclude_reactions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exclude_reactions</span>
+            <span class="n">exclude_reactions</span> <span class="o">+=</span> <span class="n">transporters</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exclude_reactions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exclude_reactions</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---------------------------------------------------&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ALE Optimization setup:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;- Search method: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">approach</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;- Target: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">target</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;- Biomass: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">biomass</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;- Carbon source: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">carbon_source</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;- Max evaluations: </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">max_evaluations</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;- Max interventions: </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">max_interventions</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">approach</span> <span class="o">==</span> <span class="s1">&#39;classic&#39;</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">designer</span><span class="o">.</span><span class="n">optimize_with_reaction</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">substrate</span><span class="o">=</span><span class="n">carbon_source</span><span class="p">,</span> <span class="n">biomass</span><span class="o">=</span><span class="n">biomass</span><span class="p">,</span>
+                                                     <span class="n">design_method</span><span class="o">=</span><span class="s2">&quot;differential_fva&quot;</span><span class="p">,</span> <span class="n">manipulation_type</span><span class="o">=</span><span class="s2">&quot;reactions&quot;</span><span class="p">,</span>
+                                                     <span class="n">max_interventions</span><span class="o">=</span><span class="n">max_interventions</span><span class="p">,</span>
+                                                     <span class="n">essential_reactions</span><span class="o">=</span><span class="n">exclude_reactions</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">designer</span><span class="o">.</span><span class="n">optimize_with_metabolites</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">substrate</span><span class="o">=</span><span class="n">carbon_source</span><span class="p">,</span> <span class="n">biomass</span><span class="o">=</span><span class="n">biomass</span><span class="p">,</span>
+                                                        <span class="n">max_interventions</span><span class="o">=</span><span class="n">max_interventions</span><span class="p">,</span>
+                                                        <span class="n">max_evaluations</span><span class="o">=</span><span class="n">max_evaluations</span><span class="p">)</span>
+
+        <span class="n">result</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finished&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="OptimizationController.convert"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cli.controllers.html#marsi.cli.controllers.modeling.OptimizationController.convert">[docs]</a>    <span class="nd">@expose</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Convert output from OptGene or OptKnock to Anti-metabolite approach&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">convert</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        1. Load model specified by --model.</span>
+<span class="sd">        2. Detect carbon source if not defined, otherwise change the carbon source.</span>
+<span class="sd">        3. Detect biomass if not defined</span>
+<span class="sd">        4. Convert the results.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">input_file</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">input_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--input-file is required&quot;</span><span class="p">)</span>
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">input_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">input_file</span>
+
+        <span class="n">knockouts</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="o">.</span><span class="n">from_csv</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+        <span class="n">model</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">carbon_source</span><span class="p">,</span> <span class="n">biomass</span><span class="p">,</span> <span class="n">output_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_optimization_args</span><span class="p">()</span>
+
+        <span class="n">objective_function</span> <span class="o">=</span> <span class="n">biomass_product_coupled_yield</span><span class="p">(</span><span class="n">biomass</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">carbon_source</span><span class="p">)</span>
+
+        <span class="n">knockouts</span><span class="p">[</span><span class="s1">&#39;designs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">knockouts</span><span class="o">.</span><span class="n">reactions</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">replace_design</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">knockouts</span><span class="p">,</span> <span class="n">objective_function</span><span class="p">,</span> <span class="n">pfba</span><span class="p">,</span> <span class="p">{},</span> <span class="n">CURRENCY_METABOLITES</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finished&quot;</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_parse_optimization_args</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">carbon_source</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">output_file</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">output_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--output-file is required&quot;</span><span class="p">)</span>
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">output_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">output_file</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--model is required&quot;</span><span class="p">)</span>
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">model</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid model </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+                <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--target is required&quot;</span><span class="p">)</span>
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="n">get_reaction_for</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid target </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+                <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">approach</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">approach</span> <span class="o">=</span> <span class="s1">&#39;classic&#39;</span>
+
+        <span class="n">model_carbon_source</span> <span class="o">=</span> <span class="n">default_carbon_sources</span><span class="p">(</span><span class="n">model</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">carbon_source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">carbon_source</span> <span class="o">=</span> <span class="n">get_reaction_for</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">carbon_source</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid carbon source </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">carbon_source</span><span class="p">)</span>
+                <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">carbon_source</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">=</span> <span class="n">model_carbon_source</span><span class="o">.</span><span class="n">lower_bound</span>
+            <span class="n">model_carbon_source</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">carbon_source</span> <span class="o">=</span> <span class="n">model_carbon_source</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">biomass</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">biomass</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">reactions</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">pargs</span><span class="o">.</span><span class="n">biomass</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">is_biomass</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">BIOMASS_RE</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">name</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+
+            <span class="n">biomass</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">reactions</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">is_biomass</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">))</span>
+            <span class="n">biomass</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">reactions</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">is_biomass</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">))</span>
+            <span class="n">unique</span><span class="p">(</span><span class="n">biomass</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">biomass</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cannot find biomass reaction&quot;</span><span class="p">)</span>
+                <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">biomass</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Multiple biomass reactions found!&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%i</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">biomass</span><span class="p">)))</span>
+                <span class="n">choice</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Please chose: &quot;</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">choice</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">choice</span><span class="p">)</span>
+                    <span class="n">biomass</span> <span class="o">=</span> <span class="n">biomass</span><span class="p">[</span><span class="n">choice</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">IndexError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid choice </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">choice</span><span class="p">)</span>
+                    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">biomass</span> <span class="o">=</span> <span class="n">biomass</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">carbon_source</span><span class="p">,</span> <span class="n">biomass</span><span class="p">,</span> <span class="n">output_file</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  <li><a href="../controllers.html">marsi.cli.controllers</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

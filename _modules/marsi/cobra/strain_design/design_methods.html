@@ -1,0 +1,273 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.cobra.strain_design.design_methods &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.cobra.strain_design.design_methods</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2016 Chr. Hansen A/S</span>
+<span class="c1"># Copyright 2016 The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">from</span> <span class="nn">cameo.core.utils</span> <span class="k">import</span> <span class="n">get_reaction_for</span>
+<span class="kn">from</span> <span class="nn">cameo.flux_analysis.analysis</span> <span class="k">import</span> <span class="n">find_essential_metabolites</span>
+<span class="kn">from</span> <span class="nn">cameo.flux_analysis.simulation</span> <span class="k">import</span> <span class="n">fba</span>
+<span class="kn">from</span> <span class="nn">cameo.strain_design</span> <span class="k">import</span> <span class="n">OptKnock</span><span class="p">,</span> <span class="n">OptGene</span><span class="p">,</span> <span class="n">DifferentialFVA</span>
+<span class="kn">from</span> <span class="nn">cameo.strain_design.heuristic.evolutionary.objective_functions</span> <span class="k">import</span> <span class="n">biomass_product_coupled_yield</span>
+<span class="kn">from</span> <span class="nn">cobra.core.model</span> <span class="k">import</span> <span class="n">Model</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="k">import</span> <span class="n">DataFrame</span>
+
+<span class="kn">from</span> <span class="nn">marsi.cobra.strain_design.evolutionary</span> <span class="k">import</span> <span class="n">OptMet</span>
+<span class="kn">from</span> <span class="nn">marsi.cobra.strain_design.post_processing</span> <span class="k">import</span> <span class="n">replace_design</span>
+<span class="kn">from</span> <span class="nn">marsi.cobra.utils</span> <span class="k">import</span> <span class="n">CURRENCY_METABOLITES</span>
+
+
+<div class="viewcode-block" id="GenericMARSIDesignMethod"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod">[docs]</a><span class="k">class</span> <span class="nc">GenericMARSIDesignMethod</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generic wrapper for Metabolite Analog design method.</span>
+
+<span class="sd">    This one just runs a optimization method</span>
+
+<span class="sd">    Example</span>
+<span class="sd">    -------</span>
+<span class="sd">    &gt;&gt;&gt; from marsi.cobra import strain_design</span>
+<span class="sd">    &gt;&gt;&gt; from cameo import models</span>
+<span class="sd">    &gt;&gt;&gt; from cameo.strain_design import OptGene</span>
+<span class="sd">    &gt;&gt;&gt; designer = strain_design.GenericMARSIDesignMethod(model=models.bigg.iJO1366)</span>
+<span class="sd">    &gt;&gt;&gt; designer.optimize_with_reaction(&quot;succ_e&quot;, max_interventions=5, substrate=&quot;EX_glc__D_e&quot;,</span>
+<span class="sd">    &gt;&gt;&gt; biomass=&quot;BIOMASS_Ec_iJO1366_core_53p95M&quot;, max_results=25, design_method=OptGene, manipulation_type=&quot;reactions&quot;)</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nearest_neighbors_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_tanimoto</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">currency_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">essential_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nearest_neighbors_model</span> <span class="o">=</span> <span class="n">nearest_neighbors_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_tanimoto</span> <span class="o">=</span> <span class="n">min_tanimoto</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">currency_metabolites</span> <span class="o">=</span> <span class="n">currency_metabolites</span> <span class="ow">or</span> <span class="n">CURRENCY_METABOLITES</span>
+        <span class="k">if</span> <span class="n">essential_metabolites</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">essential_metabolites</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">essential_metabolites</span> <span class="o">=</span> <span class="n">find_essential_metabolites</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> <span class="o">+</span> <span class="n">essential_metabolites</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">essential_metabolites</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">essential_metabolites</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">metabolites</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GenericMARSIDesignMethod.optimize_with_reaction"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod.optimize_with_reaction">[docs]</a>    <span class="k">def</span> <span class="nf">optimize_with_reaction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">max_interventions</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">substrate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">biomass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">design_method</span><span class="o">=</span><span class="n">OptKnock</span><span class="p">,</span> <span class="n">max_results</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                               <span class="n">non_essential_metabolites</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">max_evaluations</span><span class="o">=</span><span class="mi">20000</span><span class="p">,</span> <span class="o">**</span><span class="n">design_kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="GenericMARSIDesignMethod.optimize_with_metabolites"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod.optimize_with_metabolites">[docs]</a>    <span class="k">def</span> <span class="nf">optimize_with_metabolites</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">max_interventions</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">substrate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">biomass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                  <span class="n">max_results</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">non_essential_metabolites</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">max_evaluations</span><span class="o">=</span><span class="mi">20000</span><span class="p">,</span>
+                                  <span class="o">**</span><span class="n">design_kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="GenericMARSIDesignMethod.essential_metabolites_reactions"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.design_methods.GenericMARSIDesignMethod.essential_metabolites_reactions">[docs]</a>    <span class="k">def</span> <span class="nf">essential_metabolites_reactions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">essential_metabolites</span> <span class="o">=</span> <span class="n">find_essential_metabolites</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">reactions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">metabolite</span> <span class="ow">in</span> <span class="n">essential_metabolites</span><span class="p">:</span>
+            <span class="n">reactions</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">metabolite</span><span class="o">.</span><span class="n">reactions</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">reactions</span></div>
+
+    <span class="k">def</span> <span class="nf">_evaluate_designs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strain_designs</span><span class="p">,</span> <span class="n">objective_function</span><span class="p">):</span>
+        <span class="n">evaluated_designs</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;design&quot;</span><span class="p">,</span> <span class="s2">&quot;fitness&quot;</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">design</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">strain_designs</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">:</span>
+                <span class="n">design</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+                <span class="n">solution</span> <span class="o">=</span> <span class="n">fba</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+                <span class="n">fitness</span> <span class="o">=</span> <span class="n">objective_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="n">design</span><span class="o">.</span><span class="n">targets</span><span class="p">)</span>
+                <span class="n">evaluated_designs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">design</span><span class="p">,</span> <span class="n">fitness</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">evaluated_designs</span></div>
+
+
+<div class="viewcode-block" id="RandomMutagenesisDesign"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.design_methods.RandomMutagenesisDesign">[docs]</a><span class="k">class</span> <span class="nc">RandomMutagenesisDesign</span><span class="p">(</span><span class="n">GenericMARSIDesignMethod</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply only knockout like designs where total loss of functions are expected.</span>
+
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="RandomMutagenesisDesign.optimize_with_reaction"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.design_methods.RandomMutagenesisDesign.optimize_with_reaction">[docs]</a>    <span class="k">def</span> <span class="nf">optimize_with_reaction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">max_interventions</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">substrate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">biomass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">design_method</span><span class="o">=</span><span class="s2">&quot;optgene&quot;</span><span class="p">,</span> <span class="n">max_results</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                               <span class="n">non_essential_metabolites</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">max_evaluations</span><span class="o">=</span><span class="mi">20000</span><span class="p">,</span> <span class="o">**</span><span class="n">designer_kwargs</span><span class="p">):</span>
+
+        <span class="n">target_flux</span> <span class="o">=</span> <span class="n">get_reaction_for</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+
+        <span class="n">exclude_reactions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">non_essential_metabolites</span><span class="p">:</span>
+            <span class="n">exclude_reactions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">essential_metabolites_reactions</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="s1">&#39;essential_reactions&#39;</span> <span class="ow">in</span> <span class="n">designer_kwargs</span><span class="p">:</span>
+            <span class="n">designer_kwargs</span><span class="p">[</span><span class="s1">&#39;essential_reactions&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">exclude_reactions</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">designer_kwargs</span><span class="p">[</span><span class="s1">&#39;essential_reactions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">exclude_reactions</span>
+
+        <span class="n">bpcy</span> <span class="o">=</span> <span class="n">biomass_product_coupled_yield</span><span class="p">(</span><span class="n">biomass</span><span class="p">,</span> <span class="n">target_flux</span><span class="p">,</span> <span class="n">substrate</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">design_method</span> <span class="o">==</span> <span class="s2">&quot;optgene&quot;</span><span class="p">:</span>
+            <span class="n">designer</span> <span class="o">=</span> <span class="n">OptGene</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">designer_kwargs</span><span class="p">)</span>
+            <span class="n">knockouts</span> <span class="o">=</span> <span class="n">designer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">max_knockouts</span><span class="o">=</span><span class="n">max_interventions</span><span class="p">,</span> <span class="n">biomass</span><span class="o">=</span><span class="n">biomass</span><span class="p">,</span> <span class="n">substrate</span><span class="o">=</span><span class="n">substrate</span><span class="p">,</span>
+                                     <span class="n">target</span><span class="o">=</span><span class="n">target_flux</span><span class="p">,</span> <span class="n">max_results</span><span class="o">=</span><span class="n">max_results</span><span class="p">,</span> <span class="n">max_evaluations</span><span class="o">=</span><span class="n">max_evaluations</span><span class="p">,</span>
+                                     <span class="n">use_nullspace_simplification</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">design_method</span> <span class="o">==</span> <span class="s2">&quot;optknock&quot;</span><span class="p">:</span>
+            <span class="n">designer</span> <span class="o">=</span> <span class="n">OptKnock</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">designer_kwargs</span><span class="p">)</span>
+            <span class="n">knockouts</span> <span class="o">=</span> <span class="n">designer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">max_knockouts</span><span class="o">=</span><span class="n">max_interventions</span><span class="p">,</span> <span class="n">biomass</span><span class="o">=</span><span class="n">biomass</span><span class="p">,</span> <span class="n">substrate</span><span class="o">=</span><span class="n">substrate</span><span class="p">,</span>
+                                     <span class="n">target</span><span class="o">=</span><span class="n">target_flux</span><span class="p">,</span> <span class="n">max_results</span><span class="o">=</span><span class="n">max_results</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;design_method&#39; can be one of &#39;optgene&#39; or &#39;optknock&#39;&quot;</span><span class="p">)</span>
+
+        <span class="n">designs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate_designs</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">knockouts</span><span class="p">),</span> <span class="n">bpcy</span><span class="p">)</span>
+
+        <span class="n">anti_metabolites_design</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">designs</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="n">_anti_metabolites_design</span> <span class="o">=</span> <span class="n">replace_design</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">row</span><span class="o">.</span><span class="n">design</span><span class="p">,</span> <span class="n">row</span><span class="o">.</span><span class="n">fitness</span><span class="p">,</span> <span class="n">bpcy</span><span class="p">,</span> <span class="n">fba</span><span class="p">,</span> <span class="p">{},</span>
+                                                      <span class="n">ignore_metabolites</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">currency_metabolites</span><span class="p">,</span>
+                                                      <span class="n">essential_metabolites</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">essential_metabolites</span><span class="p">)</span>
+            <span class="n">anti_metabolites_design</span> <span class="o">=</span> <span class="n">anti_metabolites_design</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_anti_metabolites_design</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">anti_metabolites_design</span></div>
+
+<div class="viewcode-block" id="RandomMutagenesisDesign.optimize_with_metabolites"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.design_methods.RandomMutagenesisDesign.optimize_with_metabolites">[docs]</a>    <span class="k">def</span> <span class="nf">optimize_with_metabolites</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">max_interventions</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">substrate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">biomass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                  <span class="n">max_results</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">max_evaluations</span><span class="o">=</span><span class="mi">20000</span><span class="p">,</span> <span class="o">**</span><span class="n">design_kwargs</span><span class="p">):</span>
+
+        <span class="n">target_flux</span> <span class="o">=</span> <span class="n">get_reaction_for</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+
+        <span class="n">designer</span> <span class="o">=</span> <span class="n">OptMet</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">essential_metabolites</span><span class="o">=</span><span class="n">CURRENCY_METABOLITES</span><span class="p">,</span> <span class="o">**</span><span class="n">design_kwargs</span><span class="p">)</span>
+        <span class="n">knockouts</span> <span class="o">=</span> <span class="n">designer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">max_knockouts</span><span class="o">=</span><span class="n">max_interventions</span><span class="p">,</span> <span class="n">biomass</span><span class="o">=</span><span class="n">biomass</span><span class="p">,</span> <span class="n">substrate</span><span class="o">=</span><span class="n">substrate</span><span class="p">,</span>
+                                 <span class="n">target</span><span class="o">=</span><span class="n">target_flux</span><span class="p">,</span> <span class="n">max_results</span><span class="o">=</span><span class="n">max_results</span><span class="p">,</span> <span class="n">max_evaluations</span><span class="o">=</span><span class="n">max_evaluations</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">knockouts</span><span class="o">.</span><span class="n">data_frame</span></div></div>
+
+
+<div class="viewcode-block" id="ALEDesign"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.design_methods.ALEDesign">[docs]</a><span class="k">class</span> <span class="nc">ALEDesign</span><span class="p">(</span><span class="n">GenericMARSIDesignMethod</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply both knockout and flux modulation. The strains will be selected via growth rate proxy.</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ALEDesign.optimize_with_reaction"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.design_methods.ALEDesign.optimize_with_reaction">[docs]</a>    <span class="k">def</span> <span class="nf">optimize_with_reaction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">max_interventions</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">substrate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">biomass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">design_method</span><span class="o">=</span><span class="s2">&quot;differential_fva&quot;</span><span class="p">,</span> <span class="n">max_results</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                               <span class="n">non_essential_metabolites</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">designer_kwargs</span><span class="p">):</span>
+
+        <span class="n">target_flux</span> <span class="o">=</span> <span class="n">get_reaction_for</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+        <span class="n">bpcy</span> <span class="o">=</span> <span class="n">biomass_product_coupled_yield</span><span class="p">(</span><span class="n">biomass</span><span class="p">,</span> <span class="n">target_flux</span><span class="p">,</span> <span class="n">substrate</span><span class="p">)</span>
+
+        <span class="n">designer</span> <span class="o">=</span> <span class="n">DifferentialFVA</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">objective</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="n">biomass</span><span class="p">],</span>
+                                   <span class="n">points</span><span class="o">=</span><span class="n">max_results</span><span class="p">,</span> <span class="o">**</span><span class="n">designer_kwargs</span><span class="p">)</span>
+
+        <span class="n">evaluated_designs</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;strain_designs&quot;</span><span class="p">,</span> <span class="s2">&quot;fitness&quot;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">design</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">designer</span><span class="o">.</span><span class="n">run</span><span class="p">()):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">:</span>
+                <span class="n">design</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+                <span class="n">solution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">optimize</span><span class="p">()</span>
+                <span class="n">fitness</span> <span class="o">=</span> <span class="n">bpcy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="n">design</span><span class="o">.</span><span class="n">targets</span><span class="p">)</span>
+                <span class="n">evaluated_designs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">design</span><span class="p">,</span> <span class="n">fitness</span><span class="p">]</span>
+
+        <span class="n">anti_metabolites_design</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">evaluated_designs</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="n">_anti_metabolites_design</span> <span class="o">=</span> <span class="n">replace_design</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">row</span><span class="o">.</span><span class="n">design</span><span class="p">,</span> <span class="n">row</span><span class="o">.</span><span class="n">fitness</span><span class="p">,</span> <span class="n">bpcy</span><span class="p">,</span> <span class="n">fba</span><span class="p">,</span> <span class="p">{},</span>
+                                                      <span class="n">ignore_metabolites</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">currency_metabolites</span><span class="p">,</span>
+                                                      <span class="n">essential_metabolites</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">essential_metabolites</span><span class="p">)</span>
+            <span class="n">anti_metabolites_design</span> <span class="o">=</span> <span class="n">anti_metabolites_design</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_anti_metabolites_design</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">anti_metabolites_design</span></div>
+
+<div class="viewcode-block" id="ALEDesign.optimize_with_metabolites"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.design_methods.ALEDesign.optimize_with_metabolites">[docs]</a>    <span class="k">def</span> <span class="nf">optimize_with_metabolites</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">max_interventions</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">substrate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">biomass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                  <span class="n">max_results</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">max_evaluations</span><span class="o">=</span><span class="mi">20000</span><span class="p">,</span> <span class="o">**</span><span class="n">design_kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

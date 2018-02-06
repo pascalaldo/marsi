@@ -1,0 +1,30 @@
+marsi\.cobra package
+====================
+
+Subpackages
+-----------
+
+.. toctree::
+
+    marsi.cobra.flux_analysis
+    marsi.cobra.strain_design
+
+Submodules
+----------
+
+marsi\.cobra\.utils module
+--------------------------
+
+.. automodule:: marsi.cobra.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: marsi.cobra
+    :members:
+    :undoc-members:
+    :show-inheritance:

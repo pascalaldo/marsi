@@ -1,0 +1,482 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>2.3 Targets for metabolites in the model &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CLI Docs" href="../cli.html" />
+    <link rel="prev" title="2.2 Find analogs for target" href="2.2 Find analogs for target.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="targets-for-metabolites-in-the-model">
+<h1>2.3 Targets for metabolites in the model<a class="headerlink" href="#targets-for-metabolites-in-the-model" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="load-a-model-from-the-bigg-database">
+<h2>Load a model from the BiGG database<a class="headerlink" href="#load-a-model-from-the-bigg-database" title="Permalink to this headline">¶</a></h2>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">cameo</span> <span class="k">import</span> <span class="n">models</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">bigg</span><span class="o">.</span><span class="n">iJO1366</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="annotate-the-model-with-metabolite-information">
+<h2>Annotate the model with metabolite information<a class="headerlink" href="#annotate-the-model-with-metabolite-information" title="Permalink to this headline">¶</a></h2>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">marsi.cobra.utils</span> <span class="k">import</span> <span class="n">annotate_model</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Looking</span> <span class="k">for</span> <span class="n">local</span> <span class="n">setup</span><span class="o">.</span><span class="n">cfg</span>
+<span class="n">Not</span> <span class="n">available</span> <span class="p">[</span><span class="n">Errno</span> <span class="mi">2</span><span class="p">]</span> <span class="n">No</span> <span class="n">such</span> <span class="n">file</span> <span class="ow">or</span> <span class="n">directory</span><span class="p">:</span> <span class="s1">&#39;setup.cfg&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span>/Users/joaca/Documents/repositories/marsi/marsi/io/bigg.py:23 [1;31mFutureWarning[0m: from_csv is deprecated. Please use read_csv(...) instead. Note that some of the default arguments are different, so please refer to the documentation for from_csv when changing your function calls
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="n">annotate_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Failed to display Jupyter Widget of type <code>HBox</code>.</p>
+<p>
+  If you're reading this message in Jupyter Notebook or JupyterLab, it may mean
+  that the widgets JavaScript is still loading. If this message persists, it
+  likely means that the widgets JavaScript library is either not installed or
+  not enabled. See the <a href="https://ipywidgets.readthedocs.io/en/stable/user_install.html">Jupyter
+  Widgets Documentation</a> for setup instructions.
+</p>
+<p>
+  If you're reading this message in another notebook frontend (for example, a static
+  rendering on GitHub or <a href="https://nbviewer.jupyter.org/">NBViewer</a>),
+  it may mean that your frontend doesn't currently support widgets.
+</p><div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">metabolites</span><span class="o">.</span><span class="n">aacald_c</span><span class="o">.</span><span class="n">annotation</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;inchi&#39;</span><span class="p">:</span> <span class="s1">&#39;InChI=1S/C2H5NO/c3-1-2-4/h2H,1,3H2&#39;</span><span class="p">}</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">cameo.flux_analysis.analysis</span> <span class="k">import</span> <span class="n">find_essential_metabolites</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="n">essential_metabolites</span> <span class="o">=</span> <span class="n">find_essential_metabolites</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="n">non_essential_metabolites</span> <span class="o">=</span> <span class="p">[</span><span class="n">met</span> <span class="k">for</span> <span class="n">met</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">metabolites</span>
+                             <span class="k">if</span> <span class="n">met</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">essential_metabolites</span> <span class="ow">and</span> <span class="n">met</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;_c&quot;</span><span class="p">)]</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="n">analogues</span> <span class="o">=</span> <span class="p">{}</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">marsi.chemistry.molecule</span> <span class="k">import</span> <span class="n">Molecule</span>
+<span class="kn">from</span> <span class="nn">marsi.chemistry.common</span> <span class="k">import</span> <span class="n">dynamic_fingerprint_cut</span>
+<span class="kn">from</span> <span class="nn">marsi.nearest_neighbors</span> <span class="k">import</span> <span class="n">search_closest_compounds</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">joaca</span><span class="o">/</span><span class="n">Documents</span><span class="o">/</span><span class="n">repositories</span><span class="o">/</span><span class="n">marsi</span><span class="o">/</span><span class="n">marsi</span><span class="o">/</span><span class="n">chemistry</span><span class="o">/</span><span class="n">rdkit</span><span class="o">.</span><span class="n">py</span><span class="p">:</span><span class="mi">25</span> <span class="ne">DeprecationWarning</span><span class="p">:</span> <span class="n">The</span> <span class="n">rdkit</span><span class="o">.</span><span class="n">Chem</span><span class="o">.</span><span class="n">MCS</span> <span class="n">module</span> <span class="ow">is</span> <span class="n">deprecated</span><span class="p">;</span> <span class="n">please</span> <span class="n">use</span> <span class="n">rdkit</span><span class="o">.</span><span class="n">Chem</span><span class="o">.</span><span class="n">rdFMCS</span> <span class="n">instead</span><span class="o">.</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="k">import</span> <span class="n">DataFrame</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">met</span> <span class="ow">in</span> <span class="n">non_essential_metabolites</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">met</span><span class="o">.</span><span class="n">id</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;23dhb_c&quot;</span><span class="p">,</span> <span class="s2">&quot;3dhguln_c&quot;</span><span class="p">,</span> <span class="s2">&quot;3hpp_c&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">met</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;coa_c&quot;</span><span class="p">):</span>  <span class="c1"># These chemicals are currently</span>
+                                                                                  <span class="c1"># breaking the software when</span>
+                                                                                  <span class="c1"># running in a loop like this.</span>
+
+        <span class="k">continue</span>
+    <span class="k">if</span> <span class="s1">&#39;inchi&#39;</span> <span class="ow">in</span> <span class="n">met</span><span class="o">.</span><span class="n">annotation</span> <span class="ow">and</span> <span class="n">met</span><span class="o">.</span><span class="n">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">analogues</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">_analogues.csv&quot;</span> <span class="o">%</span> <span class="n">met</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="n">analogues</span><span class="p">[</span><span class="n">met</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="o">.</span><span class="n">from_csv</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">molecule</span> <span class="o">=</span> <span class="n">Molecule</span><span class="o">.</span><span class="n">from_inchi</span><span class="p">(</span><span class="n">met</span><span class="o">.</span><span class="n">annotation</span><span class="p">[</span><span class="s1">&#39;inchi&#39;</span><span class="p">])</span>
+            <span class="n">fp_cut</span> <span class="o">=</span> <span class="n">dynamic_fingerprint_cut</span><span class="p">(</span><span class="n">molecule</span><span class="o">.</span><span class="n">num_atoms</span><span class="p">)</span>
+            <span class="n">analogues</span><span class="p">[</span><span class="n">met</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">search_closest_compounds</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="n">fp_cut</span><span class="o">=</span><span class="n">fp_cut</span><span class="p">)</span>
+            <span class="n">analogues</span><span class="p">[</span><span class="n">met</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="nb">len</span><span class="p">(</span><span class="n">analogues</span><span class="p">),</span> <span class="nb">len</span><span class="p">([</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">non_essential_metabolites</span> <span class="k">if</span> <span class="s1">&#39;inchi&#39;</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">annotation</span><span class="p">])</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">(</span><span class="mi">47</span><span class="p">,</span> <span class="mi">479</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pandas</span> <span class="k">import</span> <span class="n">DataFrame</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;metabolite name&quot;</span><span class="p">,</span> <span class="s2">&quot;number of hits&quot;</span><span class="p">,</span> <span class="s2">&quot;number of hits (50</span><span class="si">% s</span><span class="s2">imilarity)&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">met_id</span><span class="p">,</span> <span class="n">hits</span> <span class="ow">in</span> <span class="n">analogues</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">metabolites</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">met_id</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">met_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="n">hits</span><span class="o">.</span><span class="n">structural_score</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">])]</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="n">df</span>
+</pre></div>
+</div>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>metabolite name</th>
+      <th>number of hits</th>
+      <th>number of hits (50% similarity)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>3hpppn_c</th>
+      <td>3-(3-hydroxy-phenyl)propionate</td>
+      <td>6298</td>
+      <td>4129</td>
+    </tr>
+    <tr>
+      <th>23ddhb_c</th>
+      <td>2,3-Dihydro-2,3-dihydroxybenzoate</td>
+      <td>2296</td>
+      <td>1519</td>
+    </tr>
+    <tr>
+      <th>3hddcoa_c</th>
+      <td>(S)-3-Hydroxydodecanoyl-CoA</td>
+      <td>6</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2dr5p_c</th>
+      <td>2-Deoxy-D-ribose 5-phosphate</td>
+      <td>226</td>
+      <td>155</td>
+    </tr>
+    <tr>
+      <th>35cgmp_c</th>
+      <td>3',5'-Cyclic GMP</td>
+      <td>1254</td>
+      <td>428</td>
+    </tr>
+    <tr>
+      <th>2amsa_c</th>
+      <td>2-Aminomalonate semialdehyde</td>
+      <td>1785</td>
+      <td>449</td>
+    </tr>
+    <tr>
+      <th>13dpg_c</th>
+      <td>3-Phospho-D-glyceroyl phosphate</td>
+      <td>346</td>
+      <td>200</td>
+    </tr>
+    <tr>
+      <th>23dhba_c</th>
+      <td>(2,3-Dihydroxybenzoyl)adenylate</td>
+      <td>159</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>3ohcoa_c</th>
+      <td>3-Oxohexanoyl-CoA</td>
+      <td>5</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3dhgulnp_c</th>
+      <td>3-keto-L-gulonate-6-phosphate</td>
+      <td>65</td>
+      <td>48</td>
+    </tr>
+    <tr>
+      <th>2dr1p_c</th>
+      <td>2-Deoxy-D-ribose 1-phosphate</td>
+      <td>1149</td>
+      <td>508</td>
+    </tr>
+    <tr>
+      <th>2pg_c</th>
+      <td>D-Glycerate 2-phosphate</td>
+      <td>1056</td>
+      <td>472</td>
+    </tr>
+    <tr>
+      <th>15dap_c</th>
+      <td>1,5-Diaminopentane</td>
+      <td>3181</td>
+      <td>925</td>
+    </tr>
+    <tr>
+      <th>2mcacn_c</th>
+      <td>Cis-2-Methylaconitate</td>
+      <td>902</td>
+      <td>566</td>
+    </tr>
+    <tr>
+      <th>12ppd__R_c</th>
+      <td>(R)-Propane-1,2-diol</td>
+      <td>244</td>
+      <td>193</td>
+    </tr>
+    <tr>
+      <th>2h3oppan_c</th>
+      <td>2-Hydroxy-3-oxopropanoate</td>
+      <td>964</td>
+      <td>361</td>
+    </tr>
+    <tr>
+      <th>2dh3dgal_c</th>
+      <td>2-Dehydro-3-deoxy-D-galactonate</td>
+      <td>1902</td>
+      <td>890</td>
+    </tr>
+    <tr>
+      <th>3hcinnm_c</th>
+      <td>3-hydroxycinnamic acid</td>
+      <td>6608</td>
+      <td>4684</td>
+    </tr>
+    <tr>
+      <th>1ddecg3p_c</th>
+      <td>1-dodecanoyl-sn-glycerol 3-phosphate</td>
+      <td>1308</td>
+      <td>41</td>
+    </tr>
+    <tr>
+      <th>3hhcoa_c</th>
+      <td>(S)-3-Hydroxyhexanoyl-CoA</td>
+      <td>4</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2mcit_c</th>
+      <td>2-Methylcitrate</td>
+      <td>1061</td>
+      <td>517</td>
+    </tr>
+    <tr>
+      <th>23doguln_c</th>
+      <td>2,3-Dioxo-L-gulonate</td>
+      <td>1951</td>
+      <td>905</td>
+    </tr>
+    <tr>
+      <th>3oddcoa_c</th>
+      <td>3-Oxododecanoyl-CoA</td>
+      <td>9</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>1tdecg3p_c</th>
+      <td>1-tetradecanoyl-sn-glycerol 3-phosphate</td>
+      <td>918</td>
+      <td>26</td>
+    </tr>
+    <tr>
+      <th>3odcoa_c</th>
+      <td>3-Oxodecanoyl-CoA</td>
+      <td>12</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>23dappa_c</th>
+      <td>2,3-diaminopropionate</td>
+      <td>3025</td>
+      <td>851</td>
+    </tr>
+    <tr>
+      <th>12ppd__S_c</th>
+      <td>(S)-Propane-1,2-diol</td>
+      <td>1207</td>
+      <td>575</td>
+    </tr>
+    <tr>
+      <th>2ddg6p_c</th>
+      <td>2-Dehydro-3-deoxy-D-gluconate 6-phosphate</td>
+      <td>102</td>
+      <td>73</td>
+    </tr>
+    <tr>
+      <th>2tpr3dpcoa_c</th>
+      <td>2'-(5''-triphosphoribosyl)-3'-dephospho-CoA</td>
+      <td>10</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>3hadpcoa_c</th>
+      <td>(3S)-3-Hydroxyadipyl-CoA</td>
+      <td>2</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3ohdcoa_c</th>
+      <td>3-Oxohexadecanoyl-CoA</td>
+      <td>3</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2aobut_c</th>
+      <td>L-2-Amino-3-oxobutanoate</td>
+      <td>2856</td>
+      <td>818</td>
+    </tr>
+    <tr>
+      <th>2shchc_c</th>
+      <td>2-Succinyl-6-hydroxy-2,4-cyclohexadiene-1-carb...</td>
+      <td>319</td>
+      <td>182</td>
+    </tr>
+    <tr>
+      <th>2dh3dgal6p_c</th>
+      <td>2-Dehydro-3-deoxy-D-galactonate 6-phosphate</td>
+      <td>102</td>
+      <td>73</td>
+    </tr>
+    <tr>
+      <th>2ddglcn_c</th>
+      <td>2-Dehydro-3-deoxy-D-gluconate</td>
+      <td>1902</td>
+      <td>890</td>
+    </tr>
+    <tr>
+      <th>3hocoa_c</th>
+      <td>(S)-3-Hydroxyoctanoyl-CoA</td>
+      <td>6</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>3ohodcoa_c</th>
+      <td>3-Oxooctadecanoyl-CoA</td>
+      <td>2</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>25dkglcn_c</th>
+      <td>2,5-diketo-D-gluconate</td>
+      <td>1833</td>
+      <td>779</td>
+    </tr>
+    <tr>
+      <th>3hdcoa_c</th>
+      <td>(S)-3-Hydroxydecanoyl-CoA</td>
+      <td>12</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>2pglyc_c</th>
+      <td>2-Phosphoglycolate</td>
+      <td>1121</td>
+      <td>564</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">2.3 Targets for metabolites in the model</a><ul>
+<li><a class="reference internal" href="#load-a-model-from-the-bigg-database">Load a model from the BiGG database</a></li>
+<li><a class="reference internal" href="#annotate-the-model-with-metabolite-information">Annotate the model with metabolite information</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="examples.html">Examples</a><ul>
+      <li>Previous: <a href="2.2 Find analogs for target.html" title="previous chapter">2.2 Find analogs for target</a></li>
+      <li>Next: <a href="../cli.html" title="next chapter">CLI Docs</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/examples/2.3 Targets for metabolites in the model.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/examples/2.3 Targets for metabolites in the model.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

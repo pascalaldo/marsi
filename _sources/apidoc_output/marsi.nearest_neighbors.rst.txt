@@ -1,0 +1,30 @@
+marsi\.nearest\_neighbors package
+=================================
+
+Submodules
+----------
+
+marsi\.nearest\_neighbors\.model module
+---------------------------------------
+
+.. automodule:: marsi.nearest_neighbors.model
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+marsi\.nearest\_neighbors\.model\_ext module
+--------------------------------------------
+
+.. automodule:: marsi.nearest_neighbors.model_ext
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: marsi.nearest_neighbors
+    :members:
+    :undoc-members:
+    :show-inheritance:

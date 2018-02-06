@@ -1,0 +1,194 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.cobra.strain_design.target &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.cobra.strain_design.target</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2017 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span> <span class="nn">cameo.core.target</span> <span class="k">import</span> <span class="n">Target</span>
+<span class="kn">from</span> <span class="nn">cameo.flux_analysis.analysis</span> <span class="k">import</span> <span class="n">find_essential_metabolites</span>
+<span class="kn">from</span> <span class="nn">gnomic.genotype</span> <span class="k">import</span> <span class="n">Genotype</span>
+<span class="kn">from</span> <span class="nn">gnomic.types</span> <span class="k">import</span> <span class="n">Feature</span><span class="p">,</span> <span class="n">Change</span>
+<span class="kn">from</span> <span class="nn">gnomic.utils</span> <span class="k">import</span> <span class="n">genotype_to_string</span>
+
+<span class="kn">from</span> <span class="nn">marsi.cobra.flux_analysis.manipulation</span> <span class="k">import</span> <span class="n">knockout_metabolite</span><span class="p">,</span> <span class="n">apply_anti_metabolite</span>
+<span class="kn">from</span> <span class="nn">marsi.utils</span> <span class="k">import</span> <span class="n">search_metabolites</span>
+
+
+<div class="viewcode-block" id="AntiMetaboliteManipulationTarget"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget">[docs]</a><span class="k">class</span> <span class="nc">AntiMetaboliteManipulationTarget</span><span class="p">(</span><span class="n">Target</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Metabolite target used to manipulate fluxes.</span>
+<span class="sd">    There are three modes of action:</span>
+<span class="sd">    1. Inhibition</span>
+<span class="sd">    2. Competition</span>
+<span class="sd">    3. Knockout (see Metabolite Knockout Target)</span>
+
+<span class="sd">    If the metabolite is essential, the fluxes around the metabolite will be increased for the cells to survive. If the</span>
+<span class="sd">    metabolite is not essential, the fluxes will be decreased as a consequence of the metabolite presence.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">__gnomic_feature_type__</span> <span class="o">=</span> <span class="s2">&quot;antimetabolite&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_id</span><span class="p">,</span> <span class="n">fraction</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">ignore_transport</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">allow_accumulation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">accession_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">accession_db</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AntiMetaboliteManipulationTarget</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">species_id</span><span class="p">,</span>
+                                                               <span class="n">accession_id</span><span class="o">=</span><span class="n">accession_id</span><span class="p">,</span>
+                                                               <span class="n">accession_db</span><span class="o">=</span><span class="n">accession_db</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fraction</span> <span class="o">=</span> <span class="n">fraction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignore_transport</span> <span class="o">=</span> <span class="n">ignore_transport</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allow_accumulation</span> <span class="o">=</span> <span class="n">allow_accumulation</span>
+
+<div class="viewcode-block" id="AntiMetaboliteManipulationTarget.get_model_target"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget.get_model_target">[docs]</a>    <span class="k">def</span> <span class="nf">get_model_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Finds the metabolites in the model across compartments.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model: cameo.SolverBasedModel</span>
+<span class="sd">            A constraint-based model.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list</span>
+<span class="sd">            A list of cobra.core.metabolite.Metabolite.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">search_metabolites</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AntiMetaboliteManipulationTarget.apply"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">reference</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">essential_metabolites</span> <span class="o">=</span> <span class="n">find_essential_metabolites</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">target_metabolites</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_model_target</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+        <span class="n">apply_anti_metabolite</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">target_metabolites</span><span class="p">,</span> <span class="n">essential_metabolites</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span>
+                              <span class="n">allow_accumulation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">allow_accumulation</span><span class="p">,</span>
+                              <span class="n">competition_fraction</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fraction</span><span class="p">,</span>
+                              <span class="n">inhibition_fraction</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fraction</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+        <span class="k">return</span> <span class="s2">&quot;&amp;#x2623;(</span><span class="si">%.3f</span><span class="s2">)-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fraction</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">genotype_to_string</span><span class="p">(</span><span class="n">Genotype</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">to_gnomic</span><span class="p">()]))</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;&lt;AntiMetaboliteManipulation </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%.3f</span><span class="s2">)&gt;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fraction</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AntiMetaboliteManipulationTarget.to_gnomic"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.target.AntiMetaboliteManipulationTarget.to_gnomic">[docs]</a>    <span class="k">def</span> <span class="nf">to_gnomic</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">accession</span> <span class="o">=</span> <span class="n">Target</span><span class="o">.</span><span class="n">to_gnomic</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">feature</span> <span class="o">=</span> <span class="n">Feature</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">accession</span><span class="o">=</span><span class="n">accession</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__gnomic_feature_type__</span><span class="p">,</span>
+                          <span class="n">variant</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;value=</span><span class="si">%.5f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">fraction</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">Change</span><span class="p">(</span><span class="n">after</span><span class="o">=</span><span class="n">feature</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="MetaboliteKnockoutTarget"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.target.MetaboliteKnockoutTarget">[docs]</a><span class="k">class</span> <span class="nc">MetaboliteKnockoutTarget</span><span class="p">(</span><span class="n">AntiMetaboliteManipulationTarget</span><span class="p">):</span>
+
+    <span class="n">__gnomic_feature_type__</span> <span class="o">=</span> <span class="s2">&quot;antimetabolite&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_id</span><span class="p">,</span> <span class="n">ignore_transport</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">allow_accumulation</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MetaboliteKnockoutTarget</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">species_id</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">ignore_transport</span><span class="p">,</span> <span class="n">allow_accumulation</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MetaboliteKnockoutTarget.apply"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.target.MetaboliteKnockoutTarget.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">reference</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">metabolite</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_model_target</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+            <span class="n">knockout_metabolite</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">metabolite</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_transport</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">allow_accumulation</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+        <span class="k">return</span> <span class="s2">&quot;&amp;#x2623;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;&lt;MetaboliteKnockout </span><span class="si">%s</span><span class="s2">&gt;&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span>
+
+<div class="viewcode-block" id="MetaboliteKnockoutTarget.to_gnomic"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.target.MetaboliteKnockoutTarget.to_gnomic">[docs]</a>    <span class="k">def</span> <span class="nf">to_gnomic</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">accession</span> <span class="o">=</span> <span class="n">Target</span><span class="o">.</span><span class="n">to_gnomic</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">feature</span> <span class="o">=</span> <span class="n">Feature</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">accession</span><span class="o">=</span><span class="n">accession</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__gnomic_feature_type__</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Change</span><span class="p">(</span><span class="n">after</span><span class="o">=</span><span class="n">feature</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

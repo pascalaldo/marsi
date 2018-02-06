@@ -1,0 +1,556 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi package &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="marsi.alembic package" href="marsi.alembic.html" />
+    <link rel="prev" title="API Docs" href="../API.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="marsi-package">
+<h1>marsi package<a class="headerlink" href="#marsi-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="marsi.alembic.html">marsi.alembic package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="marsi.alembic.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="marsi.alembic.versions.html">marsi.alembic.versions package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="marsi.alembic.versions.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="marsi.alembic.versions.html#module-marsi.alembic.versions.c1b678211e9d_baseline">marsi.alembic.versions.c1b678211e9d_baseline module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="marsi.alembic.versions.html#module-marsi.alembic.versions.ef39a4ae2c8c_add_solubility">marsi.alembic.versions.ef39a4ae2c8c_add_solubility module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="marsi.alembic.versions.html#module-marsi.alembic.versions">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.alembic.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.alembic.html#marsi-alembic-env-module">marsi.alembic.env module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.alembic.html#module-marsi.alembic">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="marsi.chemistry.html">marsi.chemistry package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="marsi.chemistry.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.chemistry.html#module-marsi.chemistry.common">marsi.chemistry.common module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.chemistry.html#module-marsi.chemistry.common_ext">marsi.chemistry.common_ext module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.chemistry.html#module-marsi.chemistry.molecule">marsi.chemistry.molecule module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.chemistry.html#module-marsi.chemistry.openbabel">marsi.chemistry.openbabel module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.chemistry.html#marsi-chemistry-qsar-module">marsi.chemistry.qsar module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.chemistry.html#module-marsi.chemistry.rdkit">marsi.chemistry.rdkit module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.chemistry.html#marsi-chemistry-solubility-module">marsi.chemistry.solubility module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.chemistry.html#module-marsi.chemistry">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="marsi.cli.html">marsi.cli package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="marsi.cli.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="marsi.cli.controllers.html">marsi.cli.controllers package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="marsi.cli.controllers.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="marsi.cli.controllers.html#module-marsi.cli.controllers.chemistry">marsi.cli.controllers.chemistry module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="marsi.cli.controllers.html#module-marsi.cli.controllers.database">marsi.cli.controllers.database module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="marsi.cli.controllers.html#module-marsi.cli.controllers.modeling">marsi.cli.controllers.modeling module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="marsi.cli.controllers.html#module-marsi.cli.controllers">Module contents</a><ul class="simple">
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.cli.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.cli.html#module-marsi.cli.app">marsi.cli.app module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.cli.html#module-marsi.cli">Module contents</a><ul class="simple">
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="marsi.cobra.html">marsi.cobra package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="marsi.cobra.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="marsi.cobra.flux_analysis.html">marsi.cobra.flux_analysis package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="marsi.cobra.flux_analysis.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="marsi.cobra.flux_analysis.html#module-marsi.cobra.flux_analysis.analysis">marsi.cobra.flux_analysis.analysis module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="marsi.cobra.flux_analysis.html#module-marsi.cobra.flux_analysis.manipulation">marsi.cobra.flux_analysis.manipulation module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="marsi.cobra.flux_analysis.html#module-marsi.cobra.flux_analysis">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="marsi.cobra.strain_design.html">marsi.cobra.strain_design package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="marsi.cobra.strain_design.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="marsi.cobra.strain_design.html#module-marsi.cobra.strain_design.design_methods">marsi.cobra.strain_design.design_methods module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="marsi.cobra.strain_design.html#module-marsi.cobra.strain_design.evolutionary">marsi.cobra.strain_design.evolutionary module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="marsi.cobra.strain_design.html#module-marsi.cobra.strain_design.metaheuristic">marsi.cobra.strain_design.metaheuristic module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="marsi.cobra.strain_design.html#module-marsi.cobra.strain_design.post_processing">marsi.cobra.strain_design.post_processing module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="marsi.cobra.strain_design.html#module-marsi.cobra.strain_design.target">marsi.cobra.strain_design.target module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="marsi.cobra.strain_design.html#module-marsi.cobra.strain_design">Module contents</a><ul class="simple">
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.cobra.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.cobra.html#module-marsi.cobra.utils">marsi.cobra.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.cobra.html#module-marsi.cobra">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="marsi.io.html">marsi.io package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="marsi.io.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.io.html#module-marsi.io.bigg">marsi.io.bigg module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.io.html#module-marsi.io.build_database">marsi.io.build_database module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.io.html#marsi-io-data-module">marsi.io.data module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.io.html#module-marsi.io.db">marsi.io.db module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.io.html#module-marsi.io.enrichment">marsi.io.enrichment module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.io.html#module-marsi.io.parsers">marsi.io.parsers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.io.html#module-marsi.io.plots">marsi.io.plots module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.io.html#module-marsi.io.retriaval">marsi.io.retriaval module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.io.html#module-marsi.io">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="marsi.nearest_neighbors.html">marsi.nearest_neighbors package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="marsi.nearest_neighbors.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.nearest_neighbors.html#module-marsi.nearest_neighbors.model">marsi.nearest_neighbors.model module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.nearest_neighbors.html#module-marsi.nearest_neighbors.model_ext">marsi.nearest_neighbors.model_ext module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="marsi.nearest_neighbors.html#module-marsi.nearest_neighbors">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-marsi.bigg_api">
+<span id="marsi-bigg-api-module"></span><h2>marsi.bigg_api module<a class="headerlink" href="#module-marsi.bigg_api" title="Permalink to this headline">¶</a></h2>
+<p>BiGG database API v2</p>
+<dl class="class">
+<dt id="marsi.bigg_api.DBVersion">
+<em class="property">class </em><code class="descclassname">marsi.bigg_api.</code><code class="descname">DBVersion</code><span class="sig-paren">(</span><em>version</em>, <em>api_version</em>, <em>last_update</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/bigg_api.html#DBVersion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.bigg_api.DBVersion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Version container.</p>
+<dl class="attribute">
+<dt id="marsi.bigg_api.DBVersion.version">
+<code class="descname">version</code><a class="headerlink" href="#marsi.bigg_api.DBVersion.version" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – Database version.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.bigg_api.DBVersion.api_version">
+<code class="descname">api_version</code><a class="headerlink" href="#marsi.bigg_api.DBVersion.api_version" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – Version of the API used.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.bigg_api.DBVersion.last_update">
+<code class="descname">last_update</code><a class="headerlink" href="#marsi.bigg_api.DBVersion.last_update" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – Last update timestamp.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.bigg_api.database_version">
+<code class="descclassname">marsi.bigg_api.</code><code class="descname">database_version</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/bigg_api.html#database_version"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.bigg_api.database_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the current version of BiGG database</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.bigg_api.download_model">
+<code class="descclassname">marsi.bigg_api.</code><code class="descname">download_model</code><span class="sig-paren">(</span><em>model_id</em>, <em>file_format='json'</em>, <em>save=True</em>, <em>path='.'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/bigg_api.html#download_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.bigg_api.download_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download models from BiGG. You can chose to save the file or to return the JSON data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model_id</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A valid id for a model in BiGG.</li>
+<li><strong>file_format</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – <dl class="docutils">
+<dt>If you want to save the file, you can import the model in the following formats:</dt>
+<dd><ol class="first last arabic">
+<li>json (JSON format)</li>
+<li>xml (SBML)</li>
+<li>xml.gz (SBML compressed)</li>
+<li>mat (MATLAB)</li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><strong>save</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If True, writes the model to a file with the model name (the path can be specified).</li>
+<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Specifies in which folder the model should be written if <em>save</em> is True.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.bigg_api.model_details">
+<code class="descclassname">marsi.bigg_api.</code><code class="descname">model_details</code><span class="sig-paren">(</span><em>model_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/bigg_api.html#model_details"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.bigg_api.model_details" title="Permalink to this definition">¶</a></dt>
+<dd><p>Summarize the model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model_id</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A valid id for a model in BiGG.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.bigg_api.list_models">
+<code class="descclassname">marsi.bigg_api.</code><code class="descname">list_models</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/bigg_api.html#list_models"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.bigg_api.list_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lists all models available in BiGG.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.bigg_api.list_reactions">
+<code class="descclassname">marsi.bigg_api.</code><code class="descname">list_reactions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/bigg_api.html#list_reactions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.bigg_api.list_reactions" title="Permalink to this definition">¶</a></dt>
+<dd><p>List all reactions available in BiGG.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.bigg_api.list_model_reactions">
+<code class="descclassname">marsi.bigg_api.</code><code class="descname">list_model_reactions</code><span class="sig-paren">(</span><em>model_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/bigg_api.html#list_model_reactions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.bigg_api.list_model_reactions" title="Permalink to this definition">¶</a></dt>
+<dd><p>List all reactions in a model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model_id</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A valid id for a model in BiGG.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.bigg_api.get_reaction">
+<code class="descclassname">marsi.bigg_api.</code><code class="descname">get_reaction</code><span class="sig-paren">(</span><em>reaction_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/bigg_api.html#get_reaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.bigg_api.get_reaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a reaction from BiGG.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>reaction_id</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A valid id for a reaction in BiGG.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.bigg_api.get_model_reaction">
+<code class="descclassname">marsi.bigg_api.</code><code class="descname">get_model_reaction</code><span class="sig-paren">(</span><em>model_id</em>, <em>reaction_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/bigg_api.html#get_model_reaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.bigg_api.get_model_reaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a reaction in the context of a model from BiGG.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model_id</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A valid id for a model in BiGG.</li>
+<li><strong>reaction_id</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A valid id for a reaction in BiGG.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.bigg_api.list_metabolites">
+<code class="descclassname">marsi.bigg_api.</code><code class="descname">list_metabolites</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/bigg_api.html#list_metabolites"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.bigg_api.list_metabolites" title="Permalink to this definition">¶</a></dt>
+<dd><p>List all metabolites in BiGG.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.bigg_api.list_model_metabolites">
+<code class="descclassname">marsi.bigg_api.</code><code class="descname">list_model_metabolites</code><span class="sig-paren">(</span><em>model_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/bigg_api.html#list_model_metabolites"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.bigg_api.list_model_metabolites" title="Permalink to this definition">¶</a></dt>
+<dd><p>List all metabolites in a model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model_id</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A valid id for a model in BiGG.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.bigg_api.get_metabolite">
+<code class="descclassname">marsi.bigg_api.</code><code class="descname">get_metabolite</code><span class="sig-paren">(</span><em>metabolite_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/bigg_api.html#get_metabolite"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.bigg_api.get_metabolite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a metabolite from BiGG.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>metabolite_id</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A valid id for a reaction in BiGG.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.bigg_api.get_model_metabolite">
+<code class="descclassname">marsi.bigg_api.</code><code class="descname">get_model_metabolite</code><span class="sig-paren">(</span><em>model_id</em>, <em>metabolite_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/bigg_api.html#get_model_metabolite"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.bigg_api.get_model_metabolite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a metabolite in the context of a model from BiGG.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>metabolite_id</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A valid id for a reaction in BiGG.</li>
+<li><strong>model_id</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A valid id for a model in BiGG.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.bigg_api.list_model_genes">
+<code class="descclassname">marsi.bigg_api.</code><code class="descname">list_model_genes</code><span class="sig-paren">(</span><em>model_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/bigg_api.html#list_model_genes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.bigg_api.list_model_genes" title="Permalink to this definition">¶</a></dt>
+<dd><p>List all genes in a model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model_id</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A valid id for a model in BiGG.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.bigg_api.get_model_gene">
+<code class="descclassname">marsi.bigg_api.</code><code class="descname">get_model_gene</code><span class="sig-paren">(</span><em>model_id</em>, <em>gene_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/bigg_api.html#get_model_gene"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.bigg_api.get_model_gene" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a gene in the context of a model from BiGG.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model_id</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A valid id for a model in BiGG.</li>
+<li><strong>gene_id</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A valid id for a gene in BiGG.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="marsi.bigg_api.search">
+<code class="descclassname">marsi.bigg_api.</code><code class="descname">search</code><span class="sig-paren">(</span><em>query</em>, <em>search_type</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/bigg_api.html#search"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.bigg_api.search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fuzzy search the BiGG database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>query</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Whatever you are searching for (ids, names, etc…).</li>
+<li><strong>search_type</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Search domain. One of “models”, “genes”, “reactions”, “metabolites”.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-marsi.config">
+<span id="marsi-config-module"></span><h2>marsi.config module<a class="headerlink" href="#module-marsi.config" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="marsi.config.Level">
+<em class="property">class </em><code class="descclassname">marsi.config.</code><code class="descname">Level</code><a class="reference internal" href="../_modules/marsi/config.html#Level"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.config.Level" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dl class="attribute">
+<dt id="marsi.config.Level.ERROR">
+<code class="descname">ERROR</code><em class="property"> = 0</em><a class="headerlink" href="#marsi.config.Level.ERROR" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.config.Level.WARNING">
+<code class="descname">WARNING</code><em class="property"> = 1</em><a class="headerlink" href="#marsi.config.Level.WARNING" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.config.Level.INFO">
+<code class="descname">INFO</code><em class="property"> = 2</em><a class="headerlink" href="#marsi.config.Level.INFO" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="marsi.config.Level.DEBUG">
+<code class="descname">DEBUG</code><em class="property"> = 4</em><a class="headerlink" href="#marsi.config.Level.DEBUG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-marsi.utils">
+<span id="marsi-utils-module"></span><h2>marsi.utils module<a class="headerlink" href="#module-marsi.utils" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="marsi.utils.pickle_large">
+<code class="descclassname">marsi.utils.</code><code class="descname">pickle_large</code><span class="sig-paren">(</span><em>obj</em>, <em>file_path</em>, <em>progress=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/utils.html#pickle_large"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.utils.pickle_large" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="marsi.utils.unpickle_large">
+<code class="descclassname">marsi.utils.</code><code class="descname">unpickle_large</code><span class="sig-paren">(</span><em>file_path</em>, <em>progress=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/utils.html#unpickle_large"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.utils.unpickle_large" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="marsi.utils.frange">
+<code class="descclassname">marsi.utils.</code><code class="descname">frange</code><span class="sig-paren">(</span><em>start</em>, <em>stop=None</em>, <em>steps=10</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/marsi/utils.html#frange"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#marsi.utils.frange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Float range generator.</p>
+<p>Generates <em>steps</em> equally separated between <em>start</em> and <em>stop</em>.
+If <em>stop</em> is None, the values are between 0 and <em>start</em></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>start</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The initial value.</li>
+<li><strong>stop</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The final value.</li>
+<li><strong>steps</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Number of values to generate.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A generator that yields float.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">generator</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-marsi">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-marsi" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">marsi package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-marsi.bigg_api">marsi.bigg_api module</a></li>
+<li><a class="reference internal" href="#module-marsi.config">marsi.config module</a></li>
+<li><a class="reference internal" href="#module-marsi.utils">marsi.utils module</a></li>
+<li><a class="reference internal" href="#module-marsi">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../API.html">API Docs</a><ul>
+      <li>Previous: <a href="../API.html" title="previous chapter">API Docs</a></li>
+      <li>Next: <a href="marsi.alembic.html" title="next chapter">marsi.alembic package</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/apidoc_output/marsi.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/apidoc_output/marsi.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

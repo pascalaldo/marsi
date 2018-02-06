@@ -1,0 +1,290 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>2.1 Find metabolites in the database &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="2.2 Find analogs for target" href="2.2 Find analogs for target.html" />
+    <link rel="prev" title="1.4 Converting Gene or Reaction Knockouts into Metabolite Knockouts" href="1.4 Converting Gene or Reaction Knockouts into Metabolite Knockouts.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="find-metabolites-in-the-database">
+<h1>2.1 Find metabolites in the database<a class="headerlink" href="#find-metabolites-in-the-database" title="Permalink to this headline">¶</a></h1>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">marsi.io.db</span> <span class="k">import</span> <span class="n">Metabolite</span><span class="p">,</span> <span class="n">Reference</span><span class="p">,</span> <span class="n">Database</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Looking</span> <span class="k">for</span> <span class="n">local</span> <span class="n">setup</span><span class="o">.</span><span class="n">cfg</span>
+<span class="n">Not</span> <span class="n">available</span> <span class="p">[</span><span class="n">Errno</span> <span class="mi">2</span><span class="p">]</span> <span class="n">No</span> <span class="n">such</span> <span class="n">file</span> <span class="ow">or</span> <span class="n">directory</span><span class="p">:</span> <span class="s1">&#39;setup.cfg&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">joaca</span><span class="o">/</span><span class="n">Documents</span><span class="o">/</span><span class="n">repositories</span><span class="o">/</span><span class="n">marsi</span><span class="o">/</span><span class="n">marsi</span><span class="o">/</span><span class="n">chemistry</span><span class="o">/</span><span class="n">rdkit</span><span class="o">.</span><span class="n">py</span><span class="p">:</span><span class="mi">25</span><span class="p">:</span> <span class="ne">DeprecationWarning</span><span class="p">:</span> <span class="n">The</span> <span class="n">rdkit</span><span class="o">.</span><span class="n">Chem</span><span class="o">.</span><span class="n">MCS</span> <span class="n">module</span> <span class="ow">is</span> <span class="n">deprecated</span><span class="p">;</span> <span class="n">please</span> <span class="n">use</span> <span class="n">rdkit</span><span class="o">.</span><span class="n">Chem</span><span class="o">.</span><span class="n">rdFMCS</span> <span class="n">instead</span><span class="o">.</span>
+  <span class="kn">from</span> <span class="nn">rdkit.Chem</span> <span class="k">import</span> <span class="n">AllChem</span><span class="p">,</span> <span class="n">MACCSkeys</span><span class="p">,</span> <span class="n">MCS</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="nb">len</span><span class="p">(</span><span class="n">Database</span><span class="o">.</span><span class="n">metabolites</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">---------------------------------------------------------------------------</span>
+
+<span class="ne">TypeError</span>                                 <span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">)</span>
+
+<span class="o">&lt;</span><span class="n">ipython</span><span class="o">-</span><span class="nb">input</span><span class="o">-</span><span class="mi">3</span><span class="o">-</span><span class="n">c03391927b54</span><span class="o">&gt;</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="o">----&gt;</span> <span class="mi">1</span> <span class="nb">len</span><span class="p">(</span><span class="n">Database</span><span class="o">.</span><span class="n">metabolites</span><span class="p">)</span>
+
+
+<span class="ne">TypeError</span><span class="p">:</span> <span class="s1">&#39;result&#39;</span> <span class="nb">object</span> <span class="n">cannot</span> <span class="n">be</span> <span class="n">interpreted</span> <span class="k">as</span> <span class="n">an</span> <span class="n">integer</span>
+</pre></div>
+</div>
+<div class="section" id="metabolites-are-indexed-using-inchi-key">
+<h2>Metabolites are indexed using InChI key.<a class="headerlink" href="#metabolites-are-indexed-using-inchi-key" title="Permalink to this headline">¶</a></h2>
+<p>For example: 1. 2-Deoxy-Glucose: PMMURAAUARKVCB-CERMHHMHSA-N-D 2.
+Norvaline: SNDPXSYFESPGGJ-SCSAIBSYSA-N</p>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="n">Metabolite</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;PMMURAAUARKVCB-CERMHHMHSA-N&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<table>
+    <tbody>
+        <tr><td><strong>Formula</strong></td><td>C6H12O5</td></tr>
+        <tr><td><strong>InChi</strong></td><td>InChI=1S/C6H12O5/c7-2-4-6(10)3(8)1-5(9)11-4/h3-10H,1-2H2/t3-,4-,5?,6+/m1/s1</td></tr>
+        <tr><td><strong>InChi Key</strong></td><td>PMMURAAUARKVCB-CERMHHMHSA-N</td></tr>
+        <tr><td><strong>Structure</strong></td><td><?xml version="1.0"?>
+<svg version="1.1" id="topsvg"
+xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+xmlns:cml="http://www.xml-cml.org/schema" x="0" y="0" width="200px" height="200px" viewBox="0 0 100 100">
+<title> - Open Babel Depiction</title>
+<rect x="0" y="0" width="100" height="100" fill="white"/>
+<g transform="translate(0,0)">
+<svg width="100" height="100" x="0" y="0" viewBox="0 0 218.564 240"
+font-family="sans-serif" stroke="rgb(0,0,0)" stroke-width="2"  stroke-linecap="round">
+<line x1="151.3" y1="143.3" x2="150.5" y2="144.7" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+<line x1="157.1" y1="146.0" x2="155.7" y2="148.4" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+<line x1="163.0" y1="148.6" x2="160.9" y2="152.2" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+<line x1="168.8" y1="151.2" x2="166.1" y2="156.0" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+<line x1="174.7" y1="153.9" x2="171.3" y2="159.7" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+<line x1="180.6" y1="156.5" x2="176.6" y2="163.5" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+<line x1="70.4" y1="143.4" x2="69.6" y2="142.0" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+<line x1="67.0" y1="146.1" x2="65.6" y2="143.6" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+<line x1="63.6" y1="148.8" x2="61.5" y2="145.2" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+<line x1="60.2" y1="151.5" x2="57.5" y2="146.8" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+<line x1="56.8" y1="154.2" x2="53.5" y2="148.3" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+<line x1="53.4" y1="156.9" x2="49.4" y2="149.9" stroke="rgb(0,0,0)"  stroke-width="1.0"/>
+<line x1="109.3" y1="80.0" x2="108.5" y2="74.6" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="108.5" y1="74.6" x2="110.7" y2="70.4" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="110.7" y1="70.4" x2="107.2" y2="66.1" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="107.2" y1="66.1" x2="112.0" y2="61.8" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="112.0" y1="61.8" x2="105.9" y2="57.5" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="105.9" y1="57.5" x2="113.3" y2="53.2" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="178.6" y1="160.0" x2="178.6" y2="187.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<polygon points="109.282032 160.000000 113.282032 186.800000 105.282032 186.800000 " stroke-width="2.000000" fill="rgb(0,0,0)"  stroke="rgb(0,0,0)" />
+<line x1="143.9" y1="140.0" x2="143.9" y2="113.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="132.7" y1="93.5" x2="109.3" y2="80.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="109.3" y1="80.0" x2="74.6" y2="100.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="74.6" y1="100.0" x2="74.6" y2="140.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="74.6" y1="140.0" x2="109.3" y2="160.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="109.3" y1="160.0" x2="143.9" y2="140.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<text x="137.923048" y="108.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >O</text>
+<text x="172.564065" y="208.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >OH</text>
+<text x="103.282032" y="208.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >OH</text>
+<text x="22.000000" y="168.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >HO</text>
+<text x="103.282032" y="48.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >OH</text>
+</svg>
+</g>
+<text font-size="18.000000" fill ="black" font-family="sans-serif"
+x="10.000000" y="20.000000" ></text>
+</svg></td></tr>
+        <tr><td><strong>DBs</strong></td><td>drugbank: DB08831</td></tr>
+        <tr><td><strong>Synonyms</strong></td><td>2-Deoxy-D-arabino-hexose</td></tr>
+    </tbody>
+</table><div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="n">Metabolite</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;SNDPXSYFESPGGJ-SCSAIBSYSA-N&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<table>
+    <tbody>
+        <tr><td><strong>Formula</strong></td><td>C5H11NO2</td></tr>
+        <tr><td><strong>InChi</strong></td><td>InChI=1S/C5H11NO2/c1-2-3-4(6)5(7)8/h4H,2-3,6H2,1H3,(H,7,8)/t4-/m1/s1</td></tr>
+        <tr><td><strong>InChi Key</strong></td><td>SNDPXSYFESPGGJ-SCSAIBSYSA-N</td></tr>
+        <tr><td><strong>Structure</strong></td><td><?xml version="1.0"?>
+<svg version="1.1" id="topsvg"
+xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+xmlns:cml="http://www.xml-cml.org/schema" x="0" y="0" width="200px" height="200px" viewBox="0 0 100 100">
+<title> - Open Babel Depiction</title>
+<rect x="0" y="0" width="100" height="100" fill="white"/>
+<g transform="translate(0,0)">
+<svg width="100" height="100" x="0" y="0" viewBox="0 0 218.564 180"
+font-family="sans-serif" stroke="rgb(0,0,0)" stroke-width="2"  stroke-linecap="round">
+<line x1="178.6" y1="127.0" x2="178.6" y2="100.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="178.6" y1="100.0" x2="143.9" y2="80.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="109.3" y1="100.0" x2="74.6" y2="80.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<polygon points="109.282032 100.000000 113.282032 126.800000 105.282032 126.800000 " stroke-width="2.000000" fill="rgb(0,0,0)"  stroke="rgb(0,0,0)" />
+<line x1="71.6" y1="80.0" x2="71.6" y2="53.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="77.6" y1="80.0" x2="77.6" y2="53.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="74.6" y1="80.0" x2="51.3" y2="93.5" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="109.3" y1="100.0" x2="143.9" y2="80.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<text x="174.564065" y="148.000000" fill="rgb(102,102,102)"  stroke="rgb(102,102,102)" stroke-width="1" font-size="16" >CH</text>
+<text x="198.564065" y="151.680000" fill="rgb(102,102,102)"  stroke="rgb(102,102,102)" stroke-width="1" font-size="13" >3</text>
+<text x="68.641016" y="48.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >O</text>
+<text x="22.000000" y="108.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >HO</text>
+<text x="105.282032" y="148.000000" fill="rgb(12,12,255)"  stroke="rgb(12,12,255)" stroke-width="1" font-size="16" >NH</text>
+<text x="129.282032" y="151.680000" fill="rgb(12,12,255)"  stroke="rgb(12,12,255)" stroke-width="1" font-size="13" >2</text>
+</svg>
+</g>
+<text font-size="18.000000" fill ="black" font-family="sans-serif"
+x="10.000000" y="20.000000" ></text>
+</svg></td></tr>
+        <tr><td><strong>DBs</strong></td><td>zinc: ZINC00391822</td></tr>
+        <tr><td><strong>Synonyms</strong></td><td></td></tr>
+    </tbody>
+</table></div>
+<div class="section" id="the-query-can-also-be-done-using-identifiers-from-databases">
+<h2>The query can also be done using identifiers from databases<a class="headerlink" href="#the-query-can-also-be-done-using-identifiers-from-databases" title="Permalink to this headline">¶</a></h2>
+<p>References are not indexed so this can be very slow.</p>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="n">ref</span> <span class="o">=</span> <span class="n">Reference</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">accession</span><span class="o">=</span><span class="s2">&quot;ZINC00391822&quot;</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="s2">&quot;zinc&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="n">ref</span><span class="o">.</span><span class="n">id</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="mi">3004454</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="n">mets</span> <span class="o">=</span> <span class="n">Metabolite</span><span class="o">.</span><span class="n">from_references</span><span class="p">(</span><span class="n">references</span><span class="o">=</span><span class="p">[</span><span class="n">ref</span><span class="p">])</span>
+</pre></div>
+</div>
+<div class="code ipython3 highlight-default"><div class="highlight"><pre><span></span><span class="n">mets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<table>
+    <tbody>
+        <tr><td><strong>Formula</strong></td><td>C5H11NO2</td></tr>
+        <tr><td><strong>InChi</strong></td><td>InChI=1S/C5H11NO2/c1-2-3-4(6)5(7)8/h4H,2-3,6H2,1H3,(H,7,8)/t4-/m1/s1</td></tr>
+        <tr><td><strong>InChi Key</strong></td><td>SNDPXSYFESPGGJ-SCSAIBSYSA-N</td></tr>
+        <tr><td><strong>Structure</strong></td><td><?xml version="1.0"?>
+<svg version="1.1" id="topsvg"
+xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+xmlns:cml="http://www.xml-cml.org/schema" x="0" y="0" width="200px" height="200px" viewBox="0 0 100 100">
+<title> - Open Babel Depiction</title>
+<rect x="0" y="0" width="100" height="100" fill="white"/>
+<g transform="translate(0,0)">
+<svg width="100" height="100" x="0" y="0" viewBox="0 0 218.564 180"
+font-family="sans-serif" stroke="rgb(0,0,0)" stroke-width="2"  stroke-linecap="round">
+<line x1="178.6" y1="127.0" x2="178.6" y2="100.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="178.6" y1="100.0" x2="143.9" y2="80.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="109.3" y1="100.0" x2="74.6" y2="80.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<polygon points="109.282032 100.000000 113.282032 126.800000 105.282032 126.800000 " stroke-width="2.000000" fill="rgb(0,0,0)"  stroke="rgb(0,0,0)" />
+<line x1="71.6" y1="80.0" x2="71.6" y2="53.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="77.6" y1="80.0" x2="77.6" y2="53.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="74.6" y1="80.0" x2="51.3" y2="93.5" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<line x1="109.3" y1="100.0" x2="143.9" y2="80.0" stroke="rgb(0,0,0)"  stroke-width="2.0"/>
+<text x="174.564065" y="148.000000" fill="rgb(102,102,102)"  stroke="rgb(102,102,102)" stroke-width="1" font-size="16" >CH</text>
+<text x="198.564065" y="151.680000" fill="rgb(102,102,102)"  stroke="rgb(102,102,102)" stroke-width="1" font-size="13" >3</text>
+<text x="68.641016" y="48.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >O</text>
+<text x="22.000000" y="108.000000" fill="rgb(255,12,12)"  stroke="rgb(255,12,12)" stroke-width="1" font-size="16" >HO</text>
+<text x="105.282032" y="148.000000" fill="rgb(12,12,255)"  stroke="rgb(12,12,255)" stroke-width="1" font-size="16" >NH</text>
+<text x="129.282032" y="151.680000" fill="rgb(12,12,255)"  stroke="rgb(12,12,255)" stroke-width="1" font-size="13" >2</text>
+</svg>
+</g>
+<text font-size="18.000000" fill ="black" font-family="sans-serif"
+x="10.000000" y="20.000000" ></text>
+</svg></td></tr>
+        <tr><td><strong>DBs</strong></td><td>zinc: ZINC00391822</td></tr>
+        <tr><td><strong>Synonyms</strong></td><td></td></tr>
+    </tbody>
+</table></div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">2.1 Find metabolites in the database</a><ul>
+<li><a class="reference internal" href="#metabolites-are-indexed-using-inchi-key">Metabolites are indexed using InChI key.</a></li>
+<li><a class="reference internal" href="#the-query-can-also-be-done-using-identifiers-from-databases">The query can also be done using identifiers from databases</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="examples.html">Examples</a><ul>
+      <li>Previous: <a href="1.4 Converting Gene or Reaction Knockouts into Metabolite Knockouts.html" title="previous chapter">1.4 Converting Gene or Reaction Knockouts into Metabolite Knockouts</a></li>
+      <li>Next: <a href="2.2 Find analogs for target.html" title="next chapter">2.2 Find analogs for target</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/examples/2.1 Find metabolites in the database.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/examples/2.1 Find metabolites in the database.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

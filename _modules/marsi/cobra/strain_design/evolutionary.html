@@ -1,0 +1,374 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.cobra.strain_design.evolutionary &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.cobra.strain_design.evolutionary</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2016 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">import</span> <span class="nn">inspyred</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">from</span> <span class="nn">IProgress</span> <span class="k">import</span> <span class="n">ProgressBar</span><span class="p">,</span> <span class="n">Bar</span><span class="p">,</span> <span class="n">Percentage</span>
+<span class="kn">from</span> <span class="nn">cameo.core.strain_design</span> <span class="k">import</span> <span class="n">StrainDesignMethod</span><span class="p">,</span> <span class="n">StrainDesign</span><span class="p">,</span> <span class="n">StrainDesignMethodResult</span>
+<span class="kn">from</span> <span class="nn">cameo.core.utils</span> <span class="k">import</span> <span class="n">get_reaction_for</span>
+<span class="kn">from</span> <span class="nn">cameo.flux_analysis.analysis</span> <span class="k">import</span> <span class="n">phenotypic_phase_plane</span><span class="p">,</span> <span class="n">flux_variability_analysis</span>
+<span class="kn">from</span> <span class="nn">cameo.flux_analysis.simulation</span> <span class="k">import</span> <span class="n">fba</span>
+<span class="kn">from</span> <span class="nn">cameo.strain_design.heuristic.evolutionary.archives</span> <span class="k">import</span> <span class="n">ProductionStrainArchive</span>
+<span class="kn">from</span> <span class="nn">cameo.strain_design.heuristic.evolutionary.objective_functions</span> <span class="k">import</span> <span class="n">biomass_product_coupled_min_yield</span><span class="p">,</span> \
+    <span class="n">biomass_product_coupled_yield</span>
+<span class="kn">from</span> <span class="nn">cameo.visualization.plotting</span> <span class="k">import</span> <span class="n">plotter</span>
+<span class="kn">from</span> <span class="nn">cobra.core.model</span> <span class="k">import</span> <span class="n">Model</span>
+<span class="kn">from</span> <span class="nn">cobra.exceptions</span> <span class="k">import</span> <span class="n">OptimizationError</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="k">import</span> <span class="n">DataFrame</span>
+
+<span class="kn">from</span> <span class="nn">marsi.cobra.flux_analysis.manipulation</span> <span class="k">import</span> <span class="n">knockout_metabolite</span>
+<span class="kn">from</span> <span class="nn">marsi.cobra.strain_design.metaheuristic</span> <span class="k">import</span> <span class="n">MetaboliteKnockoutOptimization</span>
+<span class="kn">from</span> <span class="nn">marsi.cobra.strain_design.target</span> <span class="k">import</span> <span class="n">MetaboliteKnockoutTarget</span>
+<span class="kn">from</span> <span class="nn">marsi.utils</span> <span class="k">import</span> <span class="n">search_metabolites</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;OptMet&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="OptMet"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.evolutionary.OptMet">[docs]</a><span class="k">class</span> <span class="nc">OptMet</span><span class="p">(</span><span class="n">StrainDesignMethod</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">evolutionary_algorithm</span><span class="o">=</span><span class="n">inspyred</span><span class="o">.</span><span class="n">ec</span><span class="o">.</span><span class="n">GA</span><span class="p">,</span>
+                 <span class="n">essential_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">OptMet</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span> <span class="o">=</span> <span class="n">evolutionary_algorithm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_optimization_algorithm</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_essential_metabolites</span> <span class="o">=</span> <span class="n">essential_metabolites</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_plot</span> <span class="o">=</span> <span class="n">plot</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_manipulation_type</span> <span class="o">=</span> <span class="s2">&quot;metabolites&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">manipulation_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_manipulation_type</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plot</span>
+
+    <span class="nd">@plot</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plot</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_plot</span> <span class="o">=</span> <span class="n">plot</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimization_algorithm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_optimization_algorithm</span><span class="o">.</span><span class="n">plot</span> <span class="o">=</span> <span class="n">plot</span>
+
+<div class="viewcode-block" id="OptMet.run"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.strain_design.html#marsi.cobra.strain_design.evolutionary.OptMet.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">biomass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">substrate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_knockouts</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">variable_size</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">simulation_method</span><span class="o">=</span><span class="n">fba</span><span class="p">,</span> <span class="n">growth_coupled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">max_evaluations</span><span class="o">=</span><span class="mi">20000</span><span class="p">,</span> <span class="n">population_size</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+            <span class="n">max_results</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        target : str, Metabolite or Reaction</span>
+<span class="sd">            The design target</span>
+<span class="sd">        biomass : str, Metabolite or Reaction</span>
+<span class="sd">            The biomass definition in the model</span>
+<span class="sd">        substrate : str, Metabolite or Reaction</span>
+<span class="sd">            The main carbon source</span>
+<span class="sd">        max_knockouts : int</span>
+<span class="sd">            Max number of knockouts allowed</span>
+<span class="sd">        variable_size : bool</span>
+<span class="sd">            If true, all candidates have the same size. Otherwise the candidate size can be from 1 to max_knockouts.</span>
+<span class="sd">        simulation_method: function</span>
+<span class="sd">            Any method from cameo.flux_analysis.simulation or equivalent</span>
+<span class="sd">        growth_coupled : bool</span>
+<span class="sd">            If true will use the minimum flux rate to compute the fitness</span>
+<span class="sd">        max_evaluations : int</span>
+<span class="sd">            Number of evaluations before stop</span>
+<span class="sd">        population_size : int</span>
+<span class="sd">            Number of individuals in each generation</span>
+<span class="sd">        max_results : int</span>
+<span class="sd">            Max number of different designs to return if found.</span>
+<span class="sd">        kwargs : dict</span>
+<span class="sd">            Arguments for the simulation method.</span>
+<span class="sd">        seed : int</span>
+<span class="sd">            A seed for random.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        OptMetResult</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">target</span> <span class="o">=</span> <span class="n">get_reaction_for</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+        <span class="n">biomass</span> <span class="o">=</span> <span class="n">get_reaction_for</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">,</span> <span class="n">biomass</span><span class="p">)</span>
+        <span class="n">substrate</span> <span class="o">=</span> <span class="n">get_reaction_for</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">,</span> <span class="n">substrate</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">growth_coupled</span><span class="p">:</span>
+            <span class="n">objective_function</span> <span class="o">=</span> <span class="n">biomass_product_coupled_min_yield</span><span class="p">(</span><span class="n">biomass</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">substrate</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">objective_function</span> <span class="o">=</span> <span class="n">biomass_product_coupled_yield</span><span class="p">(</span><span class="n">biomass</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">substrate</span><span class="p">)</span>
+
+        <span class="n">optimization_algorithm</span> <span class="o">=</span> <span class="n">MetaboliteKnockoutOptimization</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">,</span>
+            <span class="n">heuristic_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span><span class="p">,</span>
+            <span class="n">essential_metabolites</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_essential_metabolites</span><span class="p">,</span>
+            <span class="n">objective_function</span><span class="o">=</span><span class="n">objective_function</span><span class="p">,</span>
+            <span class="n">plot</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">plot</span><span class="p">)</span>
+
+        <span class="n">optimization_algorithm</span><span class="o">.</span><span class="n">simulation_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
+        <span class="n">optimization_algorithm</span><span class="o">.</span><span class="n">simulation_method</span> <span class="o">=</span> <span class="n">simulation_method</span>
+        <span class="n">optimization_algorithm</span><span class="o">.</span><span class="n">archiver</span> <span class="o">=</span> <span class="n">ProductionStrainArchive</span><span class="p">()</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">optimization_algorithm</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">max_evaluations</span><span class="o">=</span><span class="n">max_evaluations</span><span class="p">,</span>
+                                            <span class="n">pop_size</span><span class="o">=</span><span class="n">population_size</span><span class="p">,</span>
+                                            <span class="n">max_size</span><span class="o">=</span><span class="n">max_knockouts</span><span class="p">,</span>
+                                            <span class="n">variable_size</span><span class="o">=</span><span class="n">variable_size</span><span class="p">,</span>
+                                            <span class="n">maximize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                            <span class="n">max_archive_size</span><span class="o">=</span><span class="n">max_results</span><span class="p">,</span>
+                                            <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+                                            <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">optimization_algorithm</span><span class="o">.</span><span class="n">simulation_kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">OptMetResult</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">objective_function</span><span class="p">,</span> <span class="n">simulation_method</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_manipulation_type</span><span class="p">,</span>
+                            <span class="n">biomass</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">substrate</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span></div></div>
+
+
+<span class="k">class</span> <span class="nc">OptMetResult</span><span class="p">(</span><span class="n">StrainDesignMethodResult</span><span class="p">):</span>
+    <span class="n">__method_name__</span> <span class="o">=</span> <span class="s2">&quot;OptMet&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">knockouts</span><span class="p">,</span> <span class="n">objective_function</span><span class="p">,</span> <span class="n">simulation_method</span><span class="p">,</span> <span class="n">manipulation_type</span><span class="p">,</span> <span class="n">biomass</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span>
+                 <span class="n">substrate</span><span class="p">,</span> <span class="n">simulation_kwargs</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Model</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_knockouts</span> <span class="o">=</span> <span class="n">knockouts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_objective_function</span> <span class="o">=</span> <span class="n">objective_function</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulation_method</span> <span class="o">=</span> <span class="n">simulation_method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_manipulation_type</span> <span class="o">=</span> <span class="n">manipulation_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_biomass</span> <span class="o">=</span> <span class="n">biomass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_target</span> <span class="o">=</span> <span class="n">target</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_substrate</span> <span class="o">=</span> <span class="n">substrate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_processed_solutions</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulation_kwargs</span> <span class="o">=</span> <span class="n">simulation_kwargs</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">OptMetResult</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">designs</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">designs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processed_solutions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_process_solutions</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processed_solutions</span><span class="o">.</span><span class="n">designs</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;h3&gt;OptMet Result&lt;/h3&gt;</span>
+<span class="s2">        &lt;ul&gt;</span>
+<span class="s2">            &lt;li&gt;Simulation: </span><span class="si">%s</span><span class="s2">&lt;br/&gt;&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;Objective Function: </span><span class="si">%s</span><span class="s2">&lt;br/&gt;&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        </span><span class="si">%s</span><span class="s2"></span>
+<span class="s2">        &quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_simulation_method</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">_objective_function</span><span class="o">.</span><span class="n">_repr_latex_</span><span class="p">(),</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">data_frame</span><span class="o">.</span><span class="n">_repr_html_</span><span class="p">())</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">data_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processed_solutions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_process_solutions</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_processed_solutions</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_process_solutions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">processed_solutions</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;designs&quot;</span><span class="p">,</span> <span class="s2">&quot;size&quot;</span><span class="p">,</span> <span class="s2">&quot;fva_min&quot;</span><span class="p">,</span> <span class="s2">&quot;fva_max&quot;</span><span class="p">,</span>
+                                                 <span class="s2">&quot;target_flux&quot;</span><span class="p">,</span> <span class="s2">&quot;biomass_flux&quot;</span><span class="p">,</span> <span class="s2">&quot;yield&quot;</span><span class="p">,</span> <span class="s2">&quot;fitness&quot;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_knockouts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No solutions found&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_processed_solutions</span> <span class="o">=</span> <span class="n">processed_solutions</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">progress</span> <span class="o">=</span> <span class="n">ProgressBar</span><span class="p">(</span><span class="n">maxval</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_knockouts</span><span class="p">),</span> <span class="n">widgets</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Processing solutions: &quot;</span><span class="p">,</span> <span class="n">Bar</span><span class="p">(),</span> <span class="n">Percentage</span><span class="p">()])</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">solution</span> <span class="ow">in</span> <span class="n">progress</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_knockouts</span><span class="p">)):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">processed_solutions</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">process_metabolite_knockout_solution</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulation_method</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulation_kwargs</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_biomass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_substrate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_objective_function</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">OptimizationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                    <span class="n">processed_solutions</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">processed_solutions</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_processed_solutions</span> <span class="o">=</span> <span class="n">processed_solutions</span>
+
+    <span class="k">def</span> <span class="nf">display_on_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">map_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="s2">&quot;YlGnBu&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ko</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_frame</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s2">&quot;metabolites&quot;</span><span class="p">]:</span>
+                <span class="n">knockout_metabolite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">metabolites</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">ko</span><span class="p">))</span>
+            <span class="n">fluxes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulation_method</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_simulation_kwargs</span><span class="p">)</span>
+            <span class="n">fluxes</span><span class="o">.</span><span class="n">display_on_map</span><span class="p">(</span><span class="n">map_name</span><span class="o">=</span><span class="n">map_name</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="n">palette</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">wt_production</span> <span class="o">=</span> <span class="n">phenotypic_phase_plane</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">,</span> <span class="n">objective</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_target</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_biomass</span><span class="p">])</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ko</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_frame</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s2">&quot;metabolites&quot;</span><span class="p">]:</span>
+                <span class="n">knockout_metabolite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">metabolites</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">ko</span><span class="p">))</span>
+            <span class="n">mt_production</span> <span class="o">=</span> <span class="n">phenotypic_phase_plane</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">,</span> <span class="n">objective</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_target</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_biomass</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;Production Envelope&quot;</span>
+
+        <span class="n">data_frame</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ub&quot;</span><span class="p">,</span> <span class="s2">&quot;lb&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;strain&quot;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">wt_production</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="n">_df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">([[</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;objective_upper_bound&#39;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;objective_lower_bound&#39;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_biomass</span><span class="o">.</span><span class="n">id</span><span class="p">],</span> <span class="s2">&quot;WT&quot;</span><span class="p">]],</span>
+                            <span class="n">columns</span><span class="o">=</span><span class="n">data_frame</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="n">data_frame</span> <span class="o">=</span> <span class="n">data_frame</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_df</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">mt_production</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="n">_df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">([[</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;objective_upper_bound&#39;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;objective_lower_bound&#39;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_biomass</span><span class="o">.</span><span class="n">id</span><span class="p">],</span> <span class="s2">&quot;MT&quot;</span><span class="p">]],</span>
+                            <span class="n">columns</span><span class="o">=</span><span class="n">data_frame</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="n">data_frame</span> <span class="o">=</span> <span class="n">data_frame</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_df</span><span class="p">)</span>
+
+        <span class="n">plot</span> <span class="o">=</span> <span class="n">plotter</span><span class="o">.</span><span class="n">production_envelope</span><span class="p">(</span><span class="n">data_frame</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="n">grid</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+                                           <span class="n">x_axis_label</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_biomass</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">y_axis_label</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_target</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="n">palette</span><span class="p">)</span>
+        <span class="n">plotter</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">plot</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">process_metabolite_knockout_solution</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="n">simulation_method</span><span class="p">,</span> <span class="n">simulation_kwargs</span><span class="p">,</span> <span class="n">biomass</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span>
+                                         <span class="n">substrate</span><span class="p">,</span> <span class="n">objective_function</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    model : SolverBasedModel</span>
+<span class="sd">        A constraint-based model</span>
+<span class="sd">    solution : tuple</span>
+<span class="sd">        The output of a decoder (metabolite species)</span>
+<span class="sd">    simulation_method : function</span>
+<span class="sd">        See see cameo.flux_analysis.simulation</span>
+<span class="sd">    simulation_kwargs : dict</span>
+<span class="sd">        Keyword arguments to run the simulation method</span>
+<span class="sd">    biomass : Reaction</span>
+<span class="sd">        Cellular biomass reaction</span>
+<span class="sd">    target : Reaction</span>
+<span class="sd">        The strain design target</span>
+<span class="sd">    substrate : Reaction</span>
+<span class="sd">        The main carbon source uptake rate</span>
+<span class="sd">    objective_function : function</span>
+<span class="sd">        A cameo.strain_design.heuristic.evolutionary.objective_functions.ObjectiveFunction</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    list</span>
+<span class="sd">        A list with: metabolites, size, fva_min, fva_max, target flux, biomass flux, yield, fitness</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">metabolite_targets</span> <span class="o">=</span> <span class="p">[</span><span class="n">search_metabolites</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">species_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">species_id</span> <span class="ow">in</span> <span class="n">solution</span><span class="p">]</span>
+    <span class="k">with</span> <span class="n">model</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">metabolites</span> <span class="ow">in</span> <span class="n">metabolite_targets</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">metabolite</span> <span class="ow">in</span> <span class="n">metabolites</span><span class="p">:</span>
+                <span class="n">knockout_metabolite</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">metabolite</span><span class="p">)</span>
+
+        <span class="n">reactions</span> <span class="o">=</span> <span class="n">objective_function</span><span class="o">.</span><span class="n">reactions</span>
+        <span class="n">flux_dist</span> <span class="o">=</span> <span class="n">simulation_method</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">reactions</span><span class="o">=</span><span class="n">reactions</span><span class="p">,</span> <span class="n">objective</span><span class="o">=</span><span class="n">biomass</span><span class="p">,</span> <span class="o">**</span><span class="n">simulation_kwargs</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">objective</span> <span class="o">=</span> <span class="n">biomass</span>
+
+        <span class="n">fva</span> <span class="o">=</span> <span class="n">flux_variability_analysis</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">fraction_of_optimum</span><span class="o">=</span><span class="mf">0.99</span><span class="p">,</span> <span class="n">reactions</span><span class="o">=</span><span class="p">[</span><span class="n">target</span><span class="p">])</span>
+        <span class="n">target_yield</span> <span class="o">=</span> <span class="n">flux_dist</span><span class="p">[</span><span class="n">target</span><span class="p">]</span> <span class="o">/</span> <span class="nb">abs</span><span class="p">(</span><span class="n">flux_dist</span><span class="p">[</span><span class="n">substrate</span><span class="p">])</span>
+
+        <span class="n">fitness</span> <span class="o">=</span> <span class="n">objective_function</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">flux_dist</span><span class="p">,</span> <span class="n">solution</span><span class="p">)</span>
+
+        <span class="n">fva_min</span><span class="p">,</span> <span class="n">fva_max</span> <span class="o">=</span> <span class="n">fva</span><span class="o">.</span><span class="n">lower_bound</span><span class="p">(</span><span class="n">target</span><span class="p">),</span> <span class="n">fva</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="n">target_flux</span><span class="p">,</span> <span class="n">biomass_flux</span> <span class="o">=</span> <span class="n">flux_dist</span><span class="p">[</span><span class="n">target</span><span class="p">],</span> <span class="n">flux_dist</span><span class="p">[</span><span class="n">biomass</span><span class="p">]</span>
+
+        <span class="n">design</span> <span class="o">=</span> <span class="n">StrainDesign</span><span class="p">(</span><span class="n">MetaboliteKnockoutTarget</span><span class="p">(</span><span class="n">species_id</span><span class="o">=</span><span class="n">species_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">species_id</span> <span class="ow">in</span> <span class="n">solution</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">design</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">design</span><span class="p">),</span> <span class="n">fva_min</span><span class="p">,</span> <span class="n">fva_max</span><span class="p">,</span> <span class="n">target_flux</span><span class="p">,</span> <span class="n">biomass_flux</span><span class="p">,</span> <span class="n">target_yield</span><span class="p">,</span> <span class="n">fitness</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

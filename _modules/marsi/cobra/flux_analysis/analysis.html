@@ -1,0 +1,413 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.cobra.flux_analysis.analysis &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.cobra.flux_analysis.analysis</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2016 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">from</span> <span class="nn">IProgress</span> <span class="k">import</span> <span class="n">ProgressBar</span><span class="p">,</span> <span class="n">Bar</span><span class="p">,</span> <span class="n">Percentage</span>
+<span class="kn">from</span> <span class="nn">bokeh.charts</span> <span class="k">import</span> <span class="n">Line</span>
+<span class="kn">from</span> <span class="nn">bokeh.layouts</span> <span class="k">import</span> <span class="n">column</span>
+<span class="kn">from</span> <span class="nn">bokeh.models</span> <span class="k">import</span> <span class="n">FactorRange</span><span class="p">,</span> <span class="n">Range1d</span><span class="p">,</span> <span class="n">LinearAxis</span>
+<span class="kn">from</span> <span class="nn">bokeh.plotting</span> <span class="k">import</span> <span class="n">figure</span><span class="p">,</span> <span class="n">show</span>
+<span class="kn">from</span> <span class="nn">cameo.core.result</span> <span class="k">import</span> <span class="n">Result</span>
+<span class="kn">from</span> <span class="nn">cameo.flux_analysis.analysis</span> <span class="k">import</span> <span class="n">flux_variability_analysis</span><span class="p">,</span> <span class="n">FluxVariabilityResult</span>
+<span class="kn">from</span> <span class="nn">cameo.flux_analysis.simulation</span> <span class="k">import</span> <span class="n">pfba</span><span class="p">,</span> <span class="n">fba</span>
+<span class="kn">from</span> <span class="nn">cobra.core.metabolite</span> <span class="k">import</span> <span class="n">Metabolite</span>
+<span class="kn">from</span> <span class="nn">cobra.core.model</span> <span class="k">import</span> <span class="n">Model</span>
+<span class="kn">from</span> <span class="nn">cobra.core.reaction</span> <span class="k">import</span> <span class="n">Reaction</span>
+<span class="kn">from</span> <span class="nn">cobra.exceptions</span> <span class="k">import</span> <span class="n">OptimizationError</span><span class="p">,</span> <span class="n">Infeasible</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">array</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="k">import</span> <span class="n">DataFrame</span>
+
+<span class="kn">from</span> <span class="nn">marsi.cobra.flux_analysis.manipulation</span> <span class="k">import</span> <span class="n">knockout_metabolite</span><span class="p">,</span> <span class="n">compete_metabolite</span><span class="p">,</span> <span class="n">inhibit_metabolite</span>
+<span class="kn">from</span> <span class="nn">marsi.utils</span> <span class="k">import</span> <span class="n">frange</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;metabolite_knockout_fitness&#39;</span><span class="p">,</span> <span class="s1">&#39;metabolite_knockout_phenotype&#39;</span><span class="p">,</span> <span class="s1">&#39;sensitivity_analysis&#39;</span><span class="p">]</span>
+
+
+<span class="n">BASE_ELEMENTS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">]</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">MetaboliteKnockoutFitness</span><span class="p">(</span><span class="n">Result</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The result holder for the fitness landscape analysis.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    marsi.cobra.flux_analysis.analysis.metabolite_knockout_fitness</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_frame : pandas.DataFrame</span>
+<span class="sd">        A DataFrame with the result.</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fitness_data_frame</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MetaboliteKnockoutFitness</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fitness_data_frame</span><span class="p">,</span> <span class="n">DataFrame</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data_frame</span> <span class="o">=</span> <span class="n">fitness_data_frame</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">data_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_frame</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_frame</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;fitness&#39;</span><span class="p">)</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">show</span><span class="p">(</span><span class="n">Line</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;fitness&#39;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">plot_width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">plot_height</span><span class="o">=</span><span class="n">height</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">12</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_frame</span><span class="p">),</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Metabolite knockout fitness landscape&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="metabolite_knockout_fitness"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.flux_analysis.html#marsi.cobra.flux_analysis.analysis.metabolite_knockout_fitness">[docs]</a><span class="k">def</span> <span class="nf">metabolite_knockout_fitness</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">simulation_method</span><span class="o">=</span><span class="n">pfba</span><span class="p">,</span> <span class="n">compartments</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">elements</span><span class="o">=</span><span class="n">BASE_ELEMENTS</span><span class="p">,</span>
+                                <span class="n">objective</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ndecimals</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ncarbons</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="o">**</span><span class="n">simulation_kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the landscape of fitness for each metabolite knockout in the model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : cameo.core.SolverBasedModel</span>
+<span class="sd">        A constraint-based model.</span>
+<span class="sd">    simulation_method : cameo.flux_analysis.simulation.fba</span>
+<span class="sd">        A method to simulate the knockouts (e.g. cameo.flux_analysis.simulation.moma)</span>
+<span class="sd">    compartments : list</span>
+<span class="sd">        The compartments to consider (e.g. [&quot;c&quot;, &quot;g&quot;, &quot;r&quot;] for cytosol, golgi aparatus and endoplasmatic reticulum)</span>
+<span class="sd">    elements : list</span>
+<span class="sd">        Atomic elements to add to the result.</span>
+<span class="sd">    objective : str, cameo.core.Reaction, other</span>
+<span class="sd">        A valid objective for the model.</span>
+<span class="sd">    ndecimals : int</span>
+<span class="sd">        Number of decimals to use as precision.</span>
+<span class="sd">    progress : bool</span>
+<span class="sd">        Report progress.</span>
+<span class="sd">    ncarbons : int</span>
+<span class="sd">        Minimum number of carbons to consider.</span>
+<span class="sd">    simulation_kwargs : dict</span>
+<span class="sd">        Arguments for `simulation_method</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    MetaboliteKnockoutFitness</span>
+<span class="sd">        The fitness landscape.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Model</span><span class="p">)</span>
+    <span class="n">fitness</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fitness&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">elements</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">compartments</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">compartments</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">compartments</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="n">progress</span><span class="p">:</span>
+        <span class="n">iterator</span> <span class="o">=</span> <span class="n">ProgressBar</span><span class="p">(</span><span class="n">maxval</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">metabolites</span><span class="p">),</span> <span class="n">widgets</span><span class="o">=</span><span class="p">[</span><span class="n">Bar</span><span class="p">(),</span> <span class="n">Percentage</span><span class="p">()])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">iterator</span> <span class="o">=</span> <span class="nb">iter</span>
+    <span class="k">for</span> <span class="n">met</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">metabolites</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">met</span><span class="o">.</span><span class="n">compartment</span> <span class="ow">in</span> <span class="n">compartments</span> <span class="ow">and</span> <span class="n">met</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">ncarbons</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">model</span><span class="p">:</span>
+                <span class="n">knockout_metabolite</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">met</span><span class="p">,</span> <span class="n">allow_accumulation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_transport</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">solution</span> <span class="o">=</span> <span class="n">simulation_method</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">objective</span><span class="o">=</span><span class="n">objective</span><span class="p">,</span> <span class="o">**</span><span class="n">simulation_kwargs</span><span class="p">)</span>
+                    <span class="n">fitness</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">met</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="n">solution</span><span class="p">[</span><span class="n">objective</span><span class="p">],</span> <span class="n">ndecimals</span><span class="p">)]</span> <span class="o">+</span> \
+                                          <span class="p">[</span><span class="n">met</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">el</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">]</span>
+                <span class="k">except</span> <span class="n">OptimizationError</span><span class="p">:</span>
+                    <span class="n">fitness</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">met</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="o">.</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">met</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">el</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">MetaboliteKnockoutFitness</span><span class="p">(</span><span class="n">fitness</span><span class="p">)</span></div>
+
+
+<span class="k">class</span> <span class="nc">MetaboliteKnockoutPhenotypeResult</span><span class="p">(</span><span class="n">MetaboliteKnockoutFitness</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phenotype_data_frame</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MetaboliteKnockoutPhenotypeResult</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">phenotype_data_frame</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="n">phenotype</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">slice</span><span class="p">)):</span>
+            <span class="n">fva</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_frame</span><span class="p">[</span><span class="s1">&#39;fva&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">fva</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_frame</span><span class="p">[</span><span class="s1">&#39;fva&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">Metabolite</span><span class="p">):</span>
+            <span class="n">fva</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_frame</span><span class="p">[</span><span class="s1">&#39;fva&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> is not a valid search retrieval&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">reaction_id</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">fva</span><span class="o">.</span><span class="n">data_frame</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;upper_bound&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;lower_bound&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">phenotype</span><span class="p">[</span><span class="n">reaction_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;upper_bound&#39;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;lower_bound&#39;</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">phenotype</span>
+
+    <span class="k">def</span> <span class="nf">_phenotype_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">factors</span><span class="p">):</span>
+        <span class="n">plot</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">index</span><span class="p">,</span> <span class="n">y_range</span><span class="o">=</span><span class="n">FactorRange</span><span class="p">(</span><span class="n">factors</span><span class="p">))</span>
+        <span class="n">phenotype</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+        <span class="n">y0</span> <span class="o">=</span> <span class="p">[</span><span class="n">phenotype</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">factors</span><span class="p">]</span>
+        <span class="n">y1</span> <span class="o">=</span> <span class="p">[</span><span class="n">phenotype</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">factors</span><span class="p">]</span>
+
+        <span class="n">x0</span> <span class="o">=</span> <span class="p">[(</span><span class="n">i</span> <span class="o">-</span> <span class="o">.</span><span class="mi">5</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">factors</span><span class="p">))]</span>
+        <span class="n">x1</span> <span class="o">=</span> <span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="o">.</span><span class="mi">5</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">factors</span><span class="p">))]</span>
+
+        <span class="n">plot</span><span class="o">.</span><span class="n">quad</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">y1</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">plot</span>
+
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_frame</span>
+        <span class="k">if</span> <span class="n">conditions</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">conditions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">indexes</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">indexes</span><span class="p">]</span>
+
+        <span class="n">factors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">phenotype</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">keys</span><span class="p">())),</span> <span class="p">[])))</span>
+        <span class="n">plots</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+            <span class="n">plots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_phenotype_plot</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">factors</span><span class="p">))</span>
+        <span class="n">show</span><span class="p">(</span><span class="n">column</span><span class="p">(</span><span class="n">plots</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="metabolite_knockout_phenotype"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.flux_analysis.html#marsi.cobra.flux_analysis.analysis.metabolite_knockout_phenotype">[docs]</a><span class="k">def</span> <span class="nf">metabolite_knockout_phenotype</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">compartments</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">objective</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ndecimals</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">elements</span><span class="o">=</span><span class="n">BASE_ELEMENTS</span><span class="p">,</span>
+                                  <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ncarbons</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Model</span><span class="p">)</span>
+    <span class="n">phenotype</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;fitness&#39;</span><span class="p">,</span> <span class="s1">&#39;fva&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">elements</span><span class="p">)</span>
+    <span class="n">exchanges</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">exchanges</span>
+
+    <span class="k">if</span> <span class="n">progress</span><span class="p">:</span>
+        <span class="n">iterator</span> <span class="o">=</span> <span class="n">ProgressBar</span><span class="p">(</span><span class="n">maxval</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">metabolites</span><span class="p">),</span> <span class="n">widgets</span><span class="o">=</span><span class="p">[</span><span class="n">Bar</span><span class="p">(),</span> <span class="n">Percentage</span><span class="p">()])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">iterator</span> <span class="o">=</span> <span class="nb">iter</span>
+
+    <span class="k">for</span> <span class="n">met</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">metabolites</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">met</span><span class="o">.</span><span class="n">compartment</span> <span class="ow">in</span> <span class="n">compartments</span> <span class="ow">and</span> <span class="n">met</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">ncarbons</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">model</span><span class="p">:</span>
+                <span class="n">knockout_metabolite</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">met</span><span class="p">,</span> <span class="n">allow_accumulation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_transport</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">fitness</span> <span class="o">=</span> <span class="n">fba</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">objective</span><span class="o">=</span><span class="n">objective</span><span class="p">)</span>
+                <span class="n">fva</span> <span class="o">=</span> <span class="n">flux_variability_analysis</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">reactions</span><span class="o">=</span><span class="n">exchanges</span><span class="p">,</span> <span class="n">fraction_of_optimum</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">fva</span> <span class="o">=</span> <span class="n">FluxVariabilityResult</span><span class="p">(</span><span class="n">fva</span><span class="o">.</span><span class="n">data_frame</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="nb">round</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">ndecimals</span><span class="p">,)))</span>
+                <span class="n">phenotype</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">met</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">fitness</span><span class="p">,</span> <span class="n">fva</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">met</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">el</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">MetaboliteKnockoutPhenotypeResult</span><span class="p">(</span><span class="n">phenotype</span><span class="p">)</span></div>
+
+
+<span class="k">class</span> <span class="nc">SensitivityAnalysisResult</span><span class="p">(</span><span class="n">Result</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_id</span><span class="p">,</span> <span class="n">exchange_fluxes</span><span class="p">,</span> <span class="n">steps</span><span class="p">,</span> <span class="n">is_essential</span><span class="p">,</span> <span class="n">biomass_fluxes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">biomass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">variables_fluxes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SensitivityAnalysisResult</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_essential</span> <span class="o">=</span> <span class="n">is_essential</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_species_id</span> <span class="o">=</span> <span class="n">species_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_fluxes</span> <span class="o">=</span> <span class="n">exchange_fluxes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_steps</span> <span class="o">=</span> <span class="n">steps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_biomass_fluxes</span> <span class="o">=</span> <span class="n">biomass_fluxes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_biomass</span> <span class="o">=</span> <span class="n">biomass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span> <span class="o">=</span> <span class="n">variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_variables_fluxes</span> <span class="o">=</span> <span class="n">variables_fluxes</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">data_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_steps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exchange_fluxes</span><span class="p">]</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;fraction&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_species_id</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_biomass</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_biomass_fluxes</span><span class="p">)</span>
+            <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_biomass</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">variable</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">):</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_variables_fluxes</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">Reaction</span><span class="p">):</span>
+                    <span class="n">variable</span> <span class="o">=</span> <span class="n">variable</span><span class="o">.</span><span class="n">id</span>
+                <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">variable</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">x_label</span> <span class="o">=</span> <span class="s2">&quot;Competition Level&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_essential</span> <span class="k">else</span> <span class="s1">&#39;Inhibition level&#39;</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="n">plot_width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">plot_height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_species_id</span><span class="p">,</span>
+                     <span class="n">x_axis_label</span><span class="o">=</span><span class="n">x_label</span><span class="p">,</span> <span class="n">y_axis_label</span><span class="o">=</span><span class="s2">&quot;Accumulation Level (mmol/gDW)&quot;</span><span class="p">,</span>
+                     <span class="n">toolbar_sticky</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_frame</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">extra_y_ranges</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_biomass</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">extra_y_ranges</span><span class="p">[</span><span class="s2">&quot;growth_rate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Range1d</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_biomass</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_layout</span><span class="p">(</span><span class="n">LinearAxis</span><span class="p">(</span><span class="n">y_range_name</span><span class="o">=</span><span class="s2">&quot;growth_rate&quot;</span><span class="p">,</span> <span class="n">axis_label</span><span class="o">=</span><span class="s2">&quot;Growth Rate [h^-1])&quot;</span><span class="p">),</span> <span class="s1">&#39;right&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">extra_y_ranges</span><span class="p">[</span><span class="s2">&quot;flux&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Range1d</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">3</span><span class="p">:]]</span><span class="o">.</span><span class="n">min</span><span class="p">()),</span>
+                                                 <span class="n">end</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">3</span><span class="p">:]]</span><span class="o">.</span><span class="n">max</span><span class="p">()))</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_layout</span><span class="p">(</span><span class="n">LinearAxis</span><span class="p">(</span><span class="n">y_range_name</span><span class="o">=</span><span class="s2">&quot;flux&quot;</span><span class="p">,</span> <span class="n">axis_label</span><span class="o">=</span><span class="s2">&quot;Flux [mmol h^-1 gDW^-1])&quot;</span><span class="p">),</span> <span class="s1">&#39;right&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_biomass</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;fraction&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_essential</span> <span class="k">else</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+                     <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_species_id</span><span class="p">],</span> <span class="n">line_color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;fraction&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_essential</span> <span class="k">else</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+                     <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_species_id</span><span class="p">],</span> <span class="n">line_color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">)</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;fraction&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_essential</span> <span class="k">else</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+                     <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_biomass</span><span class="o">.</span><span class="n">id</span><span class="p">],</span> <span class="n">line_color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span>
+                     <span class="n">y_range_name</span><span class="o">=</span><span class="s2">&quot;growth_rate&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">Reaction</span><span class="p">):</span>
+                <span class="n">var</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">id</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;fraction&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_essential</span> <span class="k">else</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+                     <span class="n">data</span><span class="p">[</span><span class="n">var</span><span class="p">],</span> <span class="n">y_range_name</span><span class="o">=</span><span class="s2">&quot;flux&quot;</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="n">var</span><span class="p">)</span>
+
+        <span class="n">show</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="sensitivity_analysis"><a class="viewcode-back" href="../../../../apidoc_output/marsi.cobra.flux_analysis.html#marsi.cobra.flux_analysis.analysis.sensitivity_analysis">[docs]</a><span class="k">def</span> <span class="nf">sensitivity_analysis</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">metabolite</span><span class="p">,</span> <span class="n">biomass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_essential</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                         <span class="n">reference_dist</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">simulation_method</span><span class="o">=</span><span class="n">fba</span><span class="p">,</span> <span class="o">**</span><span class="n">simulation_kwargs</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="n">reference_dist</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">simulation_kwargs</span><span class="p">[</span><span class="s1">&#39;reference&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">simulation_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;reference&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">pfba</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">objective</span><span class="o">=</span><span class="n">biomass</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">species_id</span> <span class="o">=</span> <span class="n">metabolite</span><span class="o">.</span><span class="n">id</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="n">exchange_fluxes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">biomass_fluxes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">variables_fluxes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">fractions</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">fraction</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">frange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="n">steps</span><span class="p">)):</span>
+        <span class="n">variables_fluxes</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+        <span class="k">with</span> <span class="n">model</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">is_essential</span><span class="p">:</span>
+                <span class="n">exchange</span> <span class="o">=</span> <span class="n">compete_metabolite</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">metabolite</span><span class="p">,</span> <span class="n">simulation_kwargs</span><span class="p">[</span><span class="s1">&#39;reference&#39;</span><span class="p">],</span> <span class="n">fraction</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">exchange</span> <span class="o">=</span> <span class="n">inhibit_metabolite</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">metabolite</span><span class="p">,</span> <span class="n">simulation_kwargs</span><span class="p">[</span><span class="s1">&#39;reference&#39;</span><span class="p">],</span> <span class="n">fraction</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">flux_dist</span> <span class="o">=</span> <span class="n">simulation_method</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">objective</span><span class="o">=</span><span class="n">biomass</span><span class="p">,</span> <span class="o">**</span><span class="n">simulation_kwargs</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">biomass</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">biomass_fluxes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flux_dist</span><span class="p">[</span><span class="n">biomass</span><span class="p">])</span>
+
+                <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+                    <span class="n">variables_fluxes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flux_dist</span><span class="p">[</span><span class="n">variable</span><span class="p">])</span>
+
+                <span class="n">flux</span> <span class="o">=</span> <span class="n">flux_dist</span><span class="p">[</span><span class="n">exchange</span><span class="p">]</span>
+
+                <span class="n">exchange_fluxes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span>
+                <span class="n">fractions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fraction</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Feasible: </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%.3f</span><span class="s2">) essential: </span><span class="si">%s</span><span class="s2"> flux: </span><span class="si">%.3f</span><span class="s2">&quot;</span> <span class="o">%</span>
+                             <span class="p">(</span><span class="n">species_id</span><span class="p">,</span> <span class="n">fraction</span><span class="p">,</span> <span class="n">is_essential</span><span class="p">,</span> <span class="n">flux</span><span class="p">))</span>
+            <span class="k">except</span> <span class="n">Infeasible</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Infeasible: </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%.3f</span><span class="s2">) essential: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">species_id</span><span class="p">,</span> <span class="n">fraction</span><span class="p">,</span> <span class="n">is_essential</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">biomass</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">biomass_fluxes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+                    <span class="n">variables_fluxes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+                <span class="n">exchange_fluxes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">fractions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fraction</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">SensitivityAnalysisResult</span><span class="p">(</span><span class="n">species_id</span><span class="p">,</span> <span class="n">exchange_fluxes</span><span class="p">,</span> <span class="n">fractions</span><span class="p">,</span> <span class="n">is_essential</span><span class="p">,</span> <span class="n">biomass_fluxes</span><span class="p">,</span> <span class="n">biomass</span><span class="p">,</span>
+                                     <span class="n">variables</span><span class="p">,</span> <span class="n">array</span><span class="p">(</span><span class="n">variables_fluxes</span><span class="p">))</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

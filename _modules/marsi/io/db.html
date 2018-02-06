@@ -1,0 +1,490 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>marsi.io.db &#8212; marsi 0.0.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for marsi.io.db</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2017 Chr. Hansen A/S and The Novo Nordisk Foundation Center for Biosustainability, DTU.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="kn">import</span> <span class="nn">six</span>
+<span class="kn">from</span> <span class="nn">bitarray</span> <span class="k">import</span> <span class="n">bitarray</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="k">import</span> <span class="n">inspect</span>
+
+<span class="kn">from</span> <span class="nn">marsi.chemistry</span> <span class="k">import</span> <span class="n">rdkit</span>
+
+<span class="kn">from</span> <span class="nn">marsi.chemistry</span> <span class="k">import</span> <span class="n">openbabel</span>
+
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="k">import</span> <span class="n">Boolean</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">String</span><span class="p">,</span> <span class="n">Table</span><span class="p">,</span> <span class="n">Text</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="k">import</span> <span class="n">Column</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">,</span> <span class="n">Index</span><span class="p">,</span> <span class="n">UniqueConstraint</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="k">import</span> <span class="n">TypeDecorator</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.ext.associationproxy</span> <span class="k">import</span> <span class="n">association_proxy</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.ext.declarative</span> <span class="k">import</span> <span class="n">declarative_base</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="k">import</span> <span class="n">validates</span><span class="p">,</span> <span class="n">relationship</span><span class="p">,</span> <span class="n">backref</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm.collections</span> <span class="k">import</span> <span class="n">attribute_mapped_collection</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm.exc</span> <span class="k">import</span> <span class="n">NoResultFound</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.sql.elements</span> <span class="k">import</span> <span class="n">and_</span>
+
+<span class="kn">from</span> <span class="nn">marsi.chemistry.common</span> <span class="k">import</span> <span class="n">INCHI_KEY_REGEX</span>
+<span class="kn">from</span> <span class="nn">marsi.config</span> <span class="k">import</span> <span class="n">default_session</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Database&#39;</span><span class="p">,</span> <span class="s1">&#39;Metabolite&#39;</span><span class="p">,</span> <span class="s1">&#39;Reference&#39;</span><span class="p">]</span>
+
+
+<span class="n">Base</span> <span class="o">=</span> <span class="n">declarative_base</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">ColumnVector</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">column</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">Base</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="o">=</span> <span class="n">collection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">column</span> <span class="o">=</span> <span class="n">column</span>
+
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">column</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">CollectionWrapper</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">default_session</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">Base</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="o">=</span> <span class="n">collection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mapper</span> <span class="o">=</span> <span class="n">inspect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="o">.</span><span class="n">dump</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span>
+
+    <span class="k">def</span> <span class="nf">restore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dump</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">default_session</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">_dump</span> <span class="ow">in</span> <span class="n">dump</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">restore</span><span class="p">(</span><span class="n">_dump</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="p">)</span><span class="o">.</span><span class="n">yield_per</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">item</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">CollectionWrapper</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">item</span> <span class="ow">in</span> <span class="p">[</span><span class="n">attr</span><span class="o">.</span><span class="n">key</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapper</span><span class="o">.</span><span class="n">attrs</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="n">ColumnVector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;Metabolites (</span><span class="si">%i</span><span class="s2"> entries)&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Fingerprint</span><span class="p">(</span><span class="n">TypeDecorator</span><span class="p">):</span>
+    <span class="n">impl</span> <span class="o">=</span> <span class="n">String</span>
+
+    <span class="k">def</span> <span class="nf">process_bind_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">dialect</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">to01</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">process_result_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">dialect</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">bitarray</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Fingerprint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">length</span><span class="p">)</span>
+
+
+<span class="n">references_table</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;metabolite_references&#39;</span><span class="p">,</span> <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+                         <span class="n">Column</span><span class="p">(</span><span class="s1">&#39;metabolite_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;metabolites.id&#39;</span><span class="p">)),</span>
+                         <span class="n">Column</span><span class="p">(</span><span class="s1">&#39;reference_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;references.id&#39;</span><span class="p">)))</span>
+
+<span class="n">synonyms_table</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;metabolite_synonyms&#39;</span><span class="p">,</span> <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+                       <span class="n">Column</span><span class="p">(</span><span class="s1">&#39;metabolite_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;metabolites.id&#39;</span><span class="p">)),</span>
+                       <span class="n">Column</span><span class="p">(</span><span class="s1">&#39;synonym_id&#39;</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;synonyms.id&#39;</span><span class="p">)))</span>
+
+
+<span class="k">class</span> <span class="nc">Synonym</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;synonyms&quot;</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">synonym</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">500</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">__table_args__</span> <span class="o">=</span> <span class="p">(</span><span class="n">Index</span><span class="p">(</span><span class="s1">&#39;uq_synonyms&#39;</span><span class="p">,</span> <span class="n">synonym</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">add_synonym</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">synonym</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">default_session</span><span class="p">):</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">synonym</span> <span class="o">==</span> <span class="n">synonym</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">synonym</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">NoResultFound</span><span class="p">:</span>
+            <span class="n">synonym</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">synonym</span><span class="o">=</span><span class="n">synonym</span><span class="p">)</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">synonym</span><span class="p">)</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">synonym</span>
+
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__table__</span><span class="o">.</span><span class="n">columns</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="Reference"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.db.Reference">[docs]</a><span class="k">class</span> <span class="nc">Reference</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;references&quot;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">database</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">accession</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">__table_args__</span> <span class="o">=</span> <span class="p">(</span><span class="n">UniqueConstraint</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;accession&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;_database_accession_uc&#39;</span><span class="p">),</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="Reference.get"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.db.Reference.get">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">database</span><span class="p">,</span> <span class="n">accession</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">default_session</span><span class="p">):</span>
+        <span class="n">database</span> <span class="o">=</span> <span class="n">database</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">accession</span> <span class="o">=</span> <span class="n">accession</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">and_</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">database</span> <span class="o">==</span> <span class="n">database</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">accession</span> <span class="o">==</span> <span class="n">accession</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">query</span><span class="o">.</span><span class="n">one</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Reference.add_reference"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.db.Reference.add_reference">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">add_reference</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">database</span><span class="p">,</span> <span class="n">accession</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">default_session</span><span class="p">):</span>
+        <span class="n">database</span> <span class="o">=</span> <span class="n">database</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">accession</span> <span class="o">=</span> <span class="n">accession</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">and_</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">database</span> <span class="o">==</span> <span class="n">database</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">accession</span> <span class="o">==</span> <span class="n">accession</span><span class="p">))</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">reference</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">NoResultFound</span><span class="p">:</span>
+            <span class="n">reference</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">database</span><span class="p">,</span> <span class="n">accession</span><span class="o">=</span><span class="n">accession</span><span class="p">)</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">reference</span></div>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">accession</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Reference.to_dict"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.db.Reference.to_dict">[docs]</a>    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__table__</span><span class="o">.</span><span class="n">columns</span><span class="p">}</span></div></div>
+
+
+<span class="k">class</span> <span class="nc">MetaboliteFingerprint</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;metabolite_fingerprints&#39;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">metabolite_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;metabolites.id&#39;</span><span class="p">))</span>
+    <span class="n">fingerprint_type</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">fingerprint</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Fingerprint</span><span class="p">(</span><span class="mi">2048</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">metabolite</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s2">&quot;Metabolite&quot;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="n">backref</span><span class="p">(</span>
+        <span class="s2">&quot;_fingerprints&quot;</span><span class="p">,</span>
+        <span class="n">collection_class</span><span class="o">=</span><span class="n">attribute_mapped_collection</span><span class="p">(</span><span class="s2">&quot;fingerprint_type&quot;</span><span class="p">),</span>
+        <span class="n">cascade</span><span class="o">=</span><span class="s2">&quot;all, delete-orphan&quot;</span><span class="p">))</span>
+
+    <span class="n">__table_args__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">UniqueConstraint</span><span class="p">(</span><span class="s1">&#39;metabolite_id&#39;</span><span class="p">,</span> <span class="s1">&#39;fingerprint_type&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;_fp_type_uc&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__table__</span><span class="o">.</span><span class="n">columns</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="Metabolite"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.db.Metabolite">[docs]</a><span class="k">class</span> <span class="nc">Metabolite</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;metabolites&quot;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">inchi_key</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">27</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">inchi</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">5000</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">analog</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Boolean</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">formula</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">500</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">num_bonds</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">num_rings</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">sdf</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Text</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># solubility = Column(Float)</span>
+
+    <span class="n">references</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s2">&quot;Reference&quot;</span><span class="p">,</span> <span class="n">secondary</span><span class="o">=</span><span class="n">references_table</span><span class="p">)</span>
+    <span class="n">synonyms</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s2">&quot;Synonym&quot;</span><span class="p">,</span> <span class="n">secondary</span><span class="o">=</span><span class="n">synonyms_table</span><span class="p">)</span>
+    <span class="n">fingerprints</span> <span class="o">=</span> <span class="n">association_proxy</span><span class="p">(</span><span class="s1">&#39;_fingerprints&#39;</span><span class="p">,</span> <span class="s1">&#39;fingerprint&#39;</span><span class="p">,</span>
+                                     <span class="n">creator</span><span class="o">=</span><span class="k">lambda</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">MetaboliteFingerprint</span><span class="p">(</span><span class="n">fingerprint_type</span><span class="o">=</span><span class="n">key</span><span class="p">,</span>
+                                                                                      <span class="n">fingerprint</span><span class="o">=</span><span class="n">value</span><span class="p">))</span>
+
+    <span class="n">__table_args__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">Index</span><span class="p">(</span><span class="s1">&#39;uq_inchi_key&#39;</span><span class="p">,</span> <span class="n">inchi_key</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="Metabolite.validate_inchi_key"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.db.Metabolite.validate_inchi_key">[docs]</a>    <span class="nd">@validates</span><span class="p">(</span><span class="s1">&#39;inchi_key&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">validate_inchi_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">inchi_key</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">INCHI_KEY_REGEX</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">inchi_key</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;InChI Key </span><span class="si">%s</span><span class="s2"> is not valid&quot;</span> <span class="o">%</span> <span class="n">inchi_key</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">inchi_key</span></div>
+
+<div class="viewcode-block" id="Metabolite.get"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.db.Metabolite.get">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">inchi_key</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">default_session</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves a metabolite using the InChI Key.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        inchi_key : str</span>
+<span class="sd">            A valid InChi Key.</span>
+<span class="sd">        session : sqlalchemy.orm.session.Session</span>
+<span class="sd">            A database session.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Metabolite</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        KeyError</span>
+<span class="sd">            If the InChI Key is not available.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">inchi_key</span> <span class="o">==</span> <span class="n">inchi_key</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">query</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">NoResultFound</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">inchi_key</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Metabolite.from_references"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.db.Metabolite.from_references">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_references</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">references</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">default_session</span><span class="p">):</span>
+        <span class="n">hits</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">references</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">references</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Reference</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="n">hits</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">query</span><span class="o">.</span><span class="n">all</span><span class="p">()))</span>
+
+        <span class="k">return</span> <span class="n">hits</span></div>
+
+<div class="viewcode-block" id="Metabolite.from_molecule"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.db.Metabolite.from_molecule">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_molecule</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">molecule</span><span class="p">,</span> <span class="n">references</span><span class="p">,</span> <span class="n">synonyms</span><span class="p">,</span> <span class="n">analog</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">default_session</span><span class="p">,</span> <span class="n">first_time</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">inchi_key</span> <span class="o">=</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">mol_to_inchi_key</span><span class="p">(</span><span class="n">molecule</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">first_time</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">()</span>
+
+            <span class="n">metabolite</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">inchi_key</span><span class="o">=</span><span class="n">inchi_key</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">reference</span> <span class="ow">in</span> <span class="n">references</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">reference</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metabolite</span><span class="o">.</span><span class="n">references</span><span class="p">:</span>
+                    <span class="n">metabolite</span><span class="o">.</span><span class="n">references</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">synonym</span> <span class="ow">in</span> <span class="n">synonyms</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">synonym</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metabolite</span><span class="o">.</span><span class="n">synonyms</span><span class="p">:</span>
+                    <span class="n">metabolite</span><span class="o">.</span><span class="n">synonyms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">synonym</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">metabolite</span> <span class="o">=</span> <span class="n">Metabolite</span><span class="p">(</span><span class="n">inchi_key</span><span class="o">=</span><span class="n">inchi_key</span><span class="p">,</span>
+                                    <span class="n">inchi</span><span class="o">=</span><span class="n">openbabel</span><span class="o">.</span><span class="n">mol_to_inchi</span><span class="p">(</span><span class="n">molecule</span><span class="p">),</span>
+                                    <span class="n">analog</span><span class="o">=</span><span class="n">analog</span><span class="p">,</span>
+                                    <span class="n">formula</span><span class="o">=</span><span class="n">molecule</span><span class="o">.</span><span class="n">formula</span><span class="p">,</span>
+                                    <span class="n">sdf</span><span class="o">=</span><span class="n">openbabel</span><span class="o">.</span><span class="n">molecule_to_sdf</span><span class="p">(</span><span class="n">molecule</span><span class="p">),</span>
+                                    <span class="n">num_atoms</span><span class="o">=</span><span class="n">molecule</span><span class="o">.</span><span class="n">OBMol</span><span class="o">.</span><span class="n">NumAtoms</span><span class="p">(),</span>
+                                    <span class="n">num_bonds</span><span class="o">=</span><span class="n">molecule</span><span class="o">.</span><span class="n">OBMol</span><span class="o">.</span><span class="n">NumBonds</span><span class="p">(),</span>
+                                    <span class="n">num_rings</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">molecule</span><span class="o">.</span><span class="n">OBMol</span><span class="o">.</span><span class="n">GetSSSR</span><span class="p">()))</span>
+            <span class="k">for</span> <span class="n">reference</span> <span class="ow">in</span> <span class="n">references</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">reference</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metabolite</span><span class="o">.</span><span class="n">references</span><span class="p">:</span>
+                    <span class="n">metabolite</span><span class="o">.</span><span class="n">references</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">synonym</span> <span class="ow">in</span> <span class="n">synonyms</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">synonym</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metabolite</span><span class="o">.</span><span class="n">synonyms</span><span class="p">:</span>
+                    <span class="n">metabolite</span><span class="o">.</span><span class="n">synonyms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">synonym</span><span class="p">)</span>
+
+            <span class="n">fingerprint</span> <span class="o">=</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">fingerprint</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="s1">&#39;maccs&#39;</span><span class="p">)</span>
+            <span class="n">bits</span> <span class="o">=</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">fp_bits</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;maccs&#39;</span><span class="p">,</span> <span class="mi">2048</span><span class="p">)</span>
+            <span class="n">metabolite</span><span class="o">.</span><span class="n">fingerprints</span><span class="p">[</span><span class="s1">&#39;maccs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">fingerprint_to_bits</span><span class="p">(</span><span class="n">fingerprint</span><span class="p">,</span> <span class="n">bits</span><span class="p">)</span>
+
+            <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">metabolite</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">metabolite</span></div>
+
+    <span class="c1"># NOTE: Hack to get SDF files correct</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_sdf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sdf</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;SDF is not available&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sdf</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;OpenBabel&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s2">&quot;QuickFix1234</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">sdf</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sdf</span>
+
+<div class="viewcode-block" id="Metabolite.calc_solubility"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.db.Metabolite.calc_solubility">[docs]</a>    <span class="k">def</span> <span class="nf">calc_solubility</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">molecule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="p">(</span><span class="n">library</span><span class="o">=</span><span class="s1">&#39;openbabel&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">solubility</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="n">log_value</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">*</span> <span class="n">molecule</span><span class="o">.</span><span class="n">molwt</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">volume</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">mol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="p">(</span><span class="n">library</span><span class="o">=</span><span class="s1">&#39;openbabel&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">monte_carlo_volume</span><span class="p">(</span><span class="n">mol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom_coordinates</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_iterations</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Metabolite.molecule"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.db.Metabolite.molecule">[docs]</a>    <span class="k">def</span> <span class="nf">molecule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">library</span><span class="o">=</span><span class="s1">&#39;openbabel&#39;</span><span class="p">,</span> <span class="n">get3d</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">library</span> <span class="o">==</span> <span class="s1">&#39;openbabel&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">get3d</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">sdf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">molecule</span> <span class="o">=</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">sdf_to_molecule</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sdf</span><span class="p">,</span> <span class="n">from_file</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">molecule</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">return</span> <span class="n">molecule</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">inchi_to_molecule</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">library</span> <span class="o">==</span> <span class="s1">&#39;rdkit&#39;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">get3d</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">sdf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">rdkit</span><span class="o">.</span><span class="n">sdf_to_molecule</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sdf</span><span class="p">,</span> <span class="n">from_file</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">rdkit</span><span class="o">.</span><span class="n">inchi_to_molecule</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inchi_key</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">e</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid library: </span><span class="si">%s</span><span class="s2">, please choose between `openbabel` or `rdkit`&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Metabolite.fingerprint"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.db.Metabolite.fingerprint">[docs]</a>    <span class="k">def</span> <span class="nf">fingerprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fingerprint_format</span><span class="o">=</span><span class="s1">&#39;maccs&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">fingerprint_format</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fingerprints</span><span class="p">:</span>
+            <span class="n">ob_molecule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="p">(</span><span class="n">get3d</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">fingerprint</span> <span class="o">=</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">fingerprint</span><span class="p">(</span><span class="n">ob_molecule</span><span class="p">,</span> <span class="n">fingerprint_format</span><span class="p">)</span>
+            <span class="n">bits</span> <span class="o">=</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">fp_bits</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">fingerprint_format</span><span class="p">,</span> <span class="mi">2048</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fingerprints</span><span class="p">[</span><span class="n">fingerprint_format</span><span class="p">]</span> <span class="o">=</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">fingerprint_to_bits</span><span class="p">(</span><span class="n">fingerprint</span><span class="p">,</span> <span class="n">bits</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fingerprints</span><span class="p">[</span><span class="n">fingerprint_format</span><span class="p">]</span></div>
+
+    <span class="k">def</span> <span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">mol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule</span><span class="p">(</span><span class="n">library</span><span class="o">=</span><span class="s1">&#39;openbabel&#39;</span><span class="p">)</span>
+        <span class="n">mol</span><span class="o">.</span><span class="n">make3D</span><span class="p">(</span><span class="n">forcefield</span><span class="o">=</span><span class="s1">&#39;mmff94&#39;</span><span class="p">)</span>
+        <span class="n">mol</span><span class="o">.</span><span class="n">removeh</span><span class="p">()</span>
+        <span class="n">structure</span> <span class="o">=</span> <span class="n">mol</span><span class="o">.</span><span class="n">_repr_html_</span><span class="p">()</span> <span class="ow">or</span> <span class="n">openbabel</span><span class="o">.</span><span class="n">mol_to_svg</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
+        <span class="n">references</span> <span class="o">=</span> <span class="s2">&quot;; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">references</span><span class="p">)</span>
+        <span class="n">synonyms</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">synonym</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">synonyms</span><span class="p">])</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">&lt;table&gt;</span>
+<span class="s2">    &lt;tbody&gt;</span>
+<span class="s2">        &lt;tr&gt;&lt;td&gt;&lt;strong&gt;Formula&lt;/strong&gt;&lt;/td&gt;&lt;td&gt;</span><span class="si">%s</span><span class="s2">&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="s2">        &lt;tr&gt;&lt;td&gt;&lt;strong&gt;InChi&lt;/strong&gt;&lt;/td&gt;&lt;td&gt;</span><span class="si">%s</span><span class="s2">&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="s2">        &lt;tr&gt;&lt;td&gt;&lt;strong&gt;InChi Key&lt;/strong&gt;&lt;/td&gt;&lt;td&gt;</span><span class="si">%s</span><span class="s2">&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="s2">        &lt;tr&gt;&lt;td&gt;&lt;strong&gt;Structure&lt;/strong&gt;&lt;/td&gt;&lt;td&gt;</span><span class="si">%s</span><span class="s2">&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="s2">        &lt;tr&gt;&lt;td&gt;&lt;strong&gt;DBs&lt;/strong&gt;&lt;/td&gt;&lt;td&gt;</span><span class="si">%s</span><span class="s2">&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="s2">        &lt;tr&gt;&lt;td&gt;&lt;strong&gt;Synonyms&lt;/strong&gt;&lt;/td&gt;&lt;td&gt;</span><span class="si">%s</span><span class="s2">&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="s2">    &lt;/tbody&gt;</span>
+<span class="s2">&lt;/table&gt;&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">formula</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inchi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inchi_key</span><span class="p">,</span> <span class="n">structure</span><span class="p">,</span> <span class="n">references</span><span class="p">,</span> <span class="n">synonyms</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;Metabolite </span><span class="si">%s</span><span class="s2"> [</span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inchi_key</span><span class="p">,</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">references</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Metabolites are represented by it&#39;s InChI.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inchi</span>
+
+<div class="viewcode-block" id="Metabolite.to_dict"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.db.Metabolite.to_dict">[docs]</a>    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__table__</span><span class="o">.</span><span class="n">columns</span><span class="p">}</span></div>
+
+<div class="viewcode-block" id="Metabolite.dump"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.db.Metabolite.dump">[docs]</a>    <span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">references</span> <span class="o">=</span> <span class="p">[</span><span class="n">ref</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">references</span><span class="p">]</span>
+        <span class="n">synonyms</span> <span class="o">=</span> <span class="p">[</span><span class="n">syn</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">syn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">synonyms</span><span class="p">]</span>
+        <span class="n">fingerprints</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">fp</span><span class="o">.</span><span class="n">to01</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">fp</span> <span class="ow">in</span> <span class="n">six</span><span class="o">.</span><span class="n">iteritems</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fingerprints</span><span class="p">)}</span>
+        <span class="n">metabolite</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">metabolite</span><span class="o">=</span><span class="n">metabolite</span><span class="p">,</span> <span class="n">references</span><span class="o">=</span><span class="n">references</span><span class="p">,</span>
+                    <span class="n">synonyms</span><span class="o">=</span><span class="n">synonyms</span><span class="p">,</span> <span class="n">fingerprints</span><span class="o">=</span><span class="n">fingerprints</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Metabolite.restore"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.db.Metabolite.restore">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">restore</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dump</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">default_session</span><span class="p">):</span>
+        <span class="n">metabolite</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">dump</span><span class="p">[</span><span class="s1">&#39;metabolite&#39;</span><span class="p">])</span>
+        <span class="n">references</span> <span class="o">=</span> <span class="p">[</span><span class="n">Reference</span><span class="o">.</span><span class="n">add_reference</span><span class="p">(</span><span class="n">ref</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">],</span> <span class="n">ref</span><span class="p">[</span><span class="s1">&#39;accession&#39;</span><span class="p">],</span> <span class="n">session</span><span class="p">)</span> <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">dump</span><span class="p">[</span><span class="s1">&#39;references&#39;</span><span class="p">]]</span>
+        <span class="n">synonyms</span> <span class="o">=</span> <span class="p">[</span><span class="n">Synonym</span><span class="o">.</span><span class="n">add_synonym</span><span class="p">(</span><span class="n">syn</span><span class="p">[</span><span class="s1">&#39;synonym&#39;</span><span class="p">],</span> <span class="n">session</span><span class="p">)</span> <span class="k">for</span> <span class="n">syn</span> <span class="ow">in</span> <span class="n">dump</span><span class="p">[</span><span class="s1">&#39;synonyms&#39;</span><span class="p">]]</span>
+        <span class="n">metabolite</span><span class="o">.</span><span class="n">references</span> <span class="o">=</span> <span class="n">references</span>
+        <span class="n">metabolite</span><span class="o">.</span><span class="n">synonyms</span> <span class="o">=</span> <span class="n">synonyms</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">fingerprint</span> <span class="ow">in</span> <span class="n">six</span><span class="o">.</span><span class="n">iteritems</span><span class="p">(</span><span class="n">dump</span><span class="p">[</span><span class="s1">&#39;fingerprints&#39;</span><span class="p">]):</span>
+            <span class="n">metabolite</span><span class="o">.</span><span class="n">fingerprints</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">bitarray</span><span class="p">(</span><span class="n">fingerprint</span><span class="p">)</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">metabolite</span><span class="p">)</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="Database"><a class="viewcode-back" href="../../../apidoc_output/marsi.io.html#marsi.io.db.Database">[docs]</a><span class="k">class</span> <span class="nc">Database</span><span class="p">:</span>
+    <span class="n">metabolites</span> <span class="o">=</span> <span class="n">CollectionWrapper</span><span class="p">(</span><span class="n">Metabolite</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../io.html">marsi.io</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Joao Cardoso.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
