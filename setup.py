@@ -35,7 +35,9 @@ requirements = ['pandas>=1.4.2',
                 'alembic>=1.7.7',
                 'gnomic>=1.0.1',
                 'markupsafe==2.0.1',
-                'pybel']
+                'pybel',
+                'plotly',
+                'six']
 
 extra_requirements = {
     'docs': ['Sphinx>=1.3.5', 'numpydoc>=0.5'],

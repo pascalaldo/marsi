@@ -17,7 +17,7 @@ from cameo.flux_analysis.simulation import pfba
 from cameo.io import load_model
 from cameo.strain_design.heuristic.evolutionary.objective_functions import biomass_product_coupled_yield
 from cement.core.controller import CementBaseController, expose
-from pandas import DataFrame
+from pandas import read_csv
 
 from marsi.cobra.strain_design import RandomMutagenesisDesign, ALEDesign
 from marsi.cobra.strain_design.post_processing import replace_design
@@ -186,7 +186,7 @@ class OptimizationController(CementBaseController):
         else:
             input_file = self.app.pargs.input_file
 
-        knockouts = DataFrame.from_csv(input_file)
+        knockouts = read_csv(input_file)
         model, target, carbon_source, biomass, output_file = self._parse_optimization_args()
 
         objective_function = biomass_product_coupled_yield(biomass, target, carbon_source)

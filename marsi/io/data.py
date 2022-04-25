@@ -13,15 +13,15 @@
 # limitations under the License.
 
 import os
-from pandas import DataFrame
+from pandas import read_csv
 
 from marsi.utils import data_dir
 
 __all__ = ["chebi", "drugbank"]
 
-chebi = DataFrame.from_csv(os.path.join(data_dir, "chebi_analogues_filtered.csv"))
+chebi = read_csv(os.path.join(data_dir, "chebi_analogues_filtered.csv"))
 
-drugbank = DataFrame.from_csv(os.path.join(data_dir, "drugbank_open_vocabulary.csv"), sep=",", index_col=None)
+drugbank = read_csv(os.path.join(data_dir, "drugbank_open_vocabulary.csv"), sep=",", index_col=None)
 drugbank.columns = ["id", "accessions", "common_names", "cas", "unii", "synonyms", "inchi_key"]
 
 drugbank.fillna("", inplace=True)
@@ -29,14 +29,14 @@ drugbank.fillna("", inplace=True)
 drugbank['accessions'] = drugbank.accessions.apply(str.split, args=(" | ",))
 drugbank['synonyms'] = drugbank.synonyms.apply(str.split, args=(" | ",))
 
-pubchem = DataFrame.from_csv(os.path.join(data_dir, "pubchem_data.csv"))
+pubchem = read_csv(os.path.join(data_dir, "pubchem_data.csv"))
 
-kegg = DataFrame.from_csv(os.path.join(data_dir, "kegg_data.csv"))
+kegg = read_csv(os.path.join(data_dir, "kegg_data.csv"))
 
 # binding_db = read_csv(os.path.join(data_dir, "BindingDB_All.tsv"), sep="\t", error_bad_lines=False)
 # with open(os.path.join(data_dir, 'binding_db_sane_columns.txt'), 'r') as columns_file:
 #     line = next(columns_file)
 #     binding_db.columns = line.split(", ")
 
-# solubility = DataFrame.from_csv(os.path.join(data_dir, 'solubility.csv'))
+# solubility = read_csv(os.path.join(data_dir, 'solubility.csv'))
 # solubility.columns = ['log_measured', 'log_predicted', 'smiles']

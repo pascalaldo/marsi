@@ -15,12 +15,12 @@
 
 import os
 
-from pandas import DataFrame
+from pandas import read_csv, DataFrame
 
 from marsi.utils import internal_data_dir
 
 try:
-    bigg_metabolites = DataFrame.from_csv(os.path.join(internal_data_dir, "bigg_models_metabolites.txt"), sep="\t")
+    bigg_metabolites = read_csv(os.path.join(internal_data_dir, "bigg_models_metabolites.txt"), sep="\t")
     bigg_metabolites.database_links = bigg_metabolites.database_links.apply(eval)
     bigg_metabolites.model_list = bigg_metabolites.model_list.apply(str.split, args=(", ",))
 except IOError:

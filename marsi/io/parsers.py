@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import re
-from pandas import DataFrame
+from pandas import DataFrame, read_csv
 
 
 def parse_kegg_brite(brite_file):
@@ -52,7 +52,7 @@ def parse_kegg_brite(brite_file):
 
 
 def parse_chebi_data(chebi_names_file, chebi_vertice_file, chebi_relation_file):
-    chebi_names = DataFrame.from_csv(chebi_names_file, sep="\t")
+    chebi_names = read_csv(chebi_names_file, sep="\t")
     chebi_names.fillna("", inplace=True)
     chebi_names.index.name = "id"
 
@@ -63,11 +63,11 @@ def parse_chebi_data(chebi_names_file, chebi_vertice_file, chebi_relation_file):
     chebi_analogues = chebi_names[chebi_names.name.str.contains('analog')]
     chebi_antimetabolite = chebi_names[chebi_names.compound_id == 35221]
 
-    chebi_relations = DataFrame.from_csv(chebi_relation_file, sep="\t")
+    chebi_relations = read_csv(chebi_relation_file, sep="\t")
     chebi_relations.columns = map(str.lower, chebi_relations.columns)
     chebi_relations.index.name = "id"
 
-    chebi_vertices = DataFrame.from_csv(chebi_vertice_file, sep="\t")
+    chebi_vertices = read_csv(chebi_vertice_file, sep="\t")
     chebi_vertices.columns = map(str.lower, chebi_vertices.columns)
     chebi_vertices.index.name = "id"
 

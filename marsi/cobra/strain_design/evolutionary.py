@@ -26,7 +26,7 @@ from cameo.flux_analysis.simulation import fba
 from cameo.strain_design.heuristic.evolutionary.archives import ProductionStrainArchive
 from cameo.strain_design.heuristic.evolutionary.objective_functions import biomass_product_coupled_min_yield, \
     biomass_product_coupled_yield
-from cameo.visualization.plotting import plotter
+from cameo.visualization.plotting.with_plotly import PlotlyPlotter
 from cobra.core.model import Model
 from cobra.exceptions import OptimizationError
 from pandas import DataFrame
@@ -37,6 +37,7 @@ from marsi.cobra.strain_design.target import MetaboliteKnockoutTarget
 from marsi.utils import search_metabolites
 
 logger = logging.getLogger(__name__)
+plotter = PlotlyPlotter()
 
 __all__ = ["OptMet"]
 
