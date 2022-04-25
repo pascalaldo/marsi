@@ -17,9 +17,9 @@ from __future__ import absolute_import
 import logging
 
 from IProgress import ProgressBar, Bar, Percentage
-from bokeh.charts import Line
+from bokeh.plotting import figure, show
 from bokeh.layouts import column
-from bokeh.models import FactorRange, Range1d, LinearAxis
+from bokeh.models import FactorRange, Range1d, LinearAxis, ColumnDataSource
 from bokeh.plotting import figure, show
 from cameo.core.result import Result
 from cameo.flux_analysis.analysis import flux_variability_analysis, FluxVariabilityResult
@@ -73,7 +73,10 @@ class MetaboliteKnockoutFitness(Result):
         """
         data = self._data_frame.sort_values('fitness')
         data['x'] = data.index
-        show(Line(data, 'x', 'fitness', title=title, plot_width=width, plot_height=height))
+        p = figure(title=title)
+        source = ColumnDataSource(data)
+        p.line('x', 'fitness', source=source) # , plot_width=width, plot_height=height
+        show(p)
 
     def _repr_html_(self):
         return self.plot(height=500, width=12 * len(self._data_frame), title="Metabolite knockout fitness landscape")
