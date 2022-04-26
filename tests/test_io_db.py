@@ -13,7 +13,7 @@
 # limitations under the License.
 import pytest
 
-import pybel
+from openbabel import pybel
 import rdkit
 from sqlalchemy.exc import IntegrityError
 

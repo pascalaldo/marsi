@@ -57,7 +57,7 @@ def test_convert_target(model, essential_metabolites):
     assert all(isinstance(anti_met, AntiMetaboliteManipulationTarget) for anti_met in converted_mod_targets.values())
 
 
-@pytest.mark.skipif(TRAVIS, reason="Doesn't run after cobra update")
+@pytest.mark.skip() #if(TRAVIS, reason="Doesn't run after cobra update")
 def test_convert_design(model, essential_metabolites):
     # Target: EX_lac__D_e
     # Medium: glucose

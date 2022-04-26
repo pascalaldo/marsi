@@ -113,7 +113,7 @@ config = six.moves.configparser.ConfigParser()
 try:
     print("Looking for local setup.cfg")
     with open('setup.cfg') as file:
-        config.readfp(file)
+        config.read_file(file)
     print("Found!")
 except IOError as e:
     print("Not available %s" % str(e))

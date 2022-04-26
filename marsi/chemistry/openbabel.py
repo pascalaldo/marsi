@@ -14,7 +14,8 @@
 import time
 
 import numpy as np
-import pybel
+from openbabel import pybel
+from openbabel.openbabel import OBKekulize
 from bitarray import bitarray
 
 from marsi.chemistry.common import inchi_key_lru_cache
@@ -215,7 +216,8 @@ def inchi_to_molecule(inchi):
     """
     mol = pybel.readstring('inchi', inchi, opt=dict(errorlevel=0))
     mol.OBMol.StripSalts()
-    mol.OBMol.Kekulize()
+    #mol.OBMol.Kekulize()
+    OBKekulize(mol.OBMol)
     _set_zero_charge(mol)
     mol.addh()
 
@@ -249,7 +251,8 @@ def sdf_to_molecule(from_file_or_molecule_desc, from_file=True):
     else:
         mol = pybel.readstring('sdf', from_file_or_molecule_desc, opt=dict(errorlevel=0))
     mol.OBMol.StripSalts()
-    mol.OBMol.Kekulize()
+    # mol.OBMol.Kekulize()
+    OBKekulize(mol.OBMol)
     _set_zero_charge(mol)
     mol.addh()
     return mol
@@ -293,7 +296,8 @@ def mol_to_molecule(file_or_molecule_desc, from_file=True):
     else:
         mol = pybel.readstring('mol', file_or_molecule_desc, opt=dict(errorlevel=0))
     mol.OBMol.StripSalts()
-    mol.OBMol.Kekulize()
+    # mol.OBMol.Kekulize()
+    OBKekulize(mol.OBMol)
     _set_zero_charge(mol)
     mol.addh()
     return mol

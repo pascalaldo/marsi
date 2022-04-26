@@ -18,7 +18,7 @@ import numpy as np
 from cachetools import LRUCache
 from marsi.chemistry.common_ext import tanimoto_coefficient, tanimoto_distance, rmsd, monte_carlo_volume
 from scipy.spatial import ConvexHull
-from scipy.spatial.qhull import QhullError
+from scipy.spatial import QhullError
 
 __all__ = ["rmsd", "tanimoto_coefficient", "tanimoto_distance", "monte_carlo_volume",
            "INCHI_KEY_REGEX", 'SOLUBILITY']
