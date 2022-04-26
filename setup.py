@@ -18,25 +18,26 @@ from setuptools import setup, find_packages, Extension
 
 import versioneer
 
-requirements = ['pandas>=1.4.2',
-                'numpy>=1.22.3',
-                'bioservices>=1.8.4',
-                'requests>=2.27.1',
-                'bokeh>=2.4.2',
-                'cameo>=0.13.6',
-                'sqlalchemy>=1.4.35',
-                'scikit-learn',
-                'psycopg>=3.0.11',
-                'bitarray>=2.4.1',
-                'Cython>=0.29.28',
-                'cement>=3.0.6',
-                'pubchempy>=1.0.4 ',
-                'cachetools>=5.0.0',
-                'alembic>=1.7.7',
-                'gnomic>=1.0.1',
-                'markupsafe==2.0.1',
-                'plotly',
-                'six']
+requirements = []
+# ['pandas>=1.4.2',
+#                 'numpy>=1.22.3',
+#                 'bioservices>=1.8.4',
+#                 'requests>=2.27.1',
+#                 'bokeh>=2.4.2',
+#                 'cameo>=0.13.6',
+#                 'sqlalchemy>=1.4.35',
+#                 'scikit-learn',
+#                 'psycopg>=3.0.11',
+#                 'bitarray>=2.4.1',
+#                 'Cython>=0.29.28',
+#                 'cement>=3.0.6',
+#                 'pubchempy>=1.0.4 ',
+#                 'cachetools>=5.0.0',
+#                 'alembic>=1.7.7',
+#                 'gnomic>=1.0.1',
+#                 'markupsafe==2.0.1',
+#                 'plotly',
+#                 'six']
 
 extra_requirements = {
     'docs': ['Sphinx>=1.3.5', 'numpydoc>=0.5'],

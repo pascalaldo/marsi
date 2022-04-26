@@ -23,7 +23,7 @@ from bitarray import bitarray
 from cachetools import cached, LRUCache
 from rdkit import Chem
 from rdkit.Chem import AllChem, MACCSkeys
-from rdkit.Chem import rdFMCS
+from rdkit.Chem import MCS
 from rdkit.Chem.SaltRemover import SaltRemover
 
 from marsi.chemistry.common import monte_carlo_volume as mc_vol, inchi_key_lru_cache
@@ -246,7 +246,7 @@ def maximum_common_substructure(reference, molecule, match_rings=True, match_fra
         Time out in seconds.
     Returns
     -------
-    rdkit.Chem.rdFMCS.MCSResult
+    rdkit.Chem.MCS.MCSResult
         Maximum Common Substructure result.
     """
 
@@ -254,7 +254,7 @@ def maximum_common_substructure(reference, molecule, match_rings=True, match_fra
 
     min_num_atoms = math.ceil(reference.GetNumAtoms()) * match_fraction
 
-    return rdFMCS.FindMCS([reference, molecule], ringMatchesRingOnly=match_rings,
+    return MCS.FindMCS([reference, molecule], ringMatchesRingOnly=match_rings,
                         minNumAtoms=min_num_atoms, timeout=timeout,
                         atomCompare="any", bondCompare="any")
 
@@ -268,7 +268,7 @@ def mcs_similarity(mcs_result, molecule, atoms_weight=0.5, bonds_weight=0.5):
 
     Parameters
     ----------
-    mcs_result : rdkit.Chem.rdFMCS.MCSResult
+    mcs_result : rdkit.Chem.MCS.MCSResult
         The result of a Maximum Common Substructure run.
     molecule : rdkit.Chem.Mol
         A molecule.
@@ -282,7 +282,7 @@ def mcs_similarity(mcs_result, molecule, atoms_weight=0.5, bonds_weight=0.5):
         Similarity value
     """
 
-    assert isinstance(mcs_result, rdFMCS.MCSResult)
+    assert isinstance(mcs_result, MCS.MCSResult)
     assert isinstance(molecule, Chem.rdchem.Mol)
 
     atoms_score = atoms_weight * (float(mcs_result.numAtoms) / float(molecule.GetNumAtoms()))

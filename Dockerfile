@@ -1,50 +1,46 @@
 FROM ubuntu:latest
 
-RUN export PS1="$USER@marsi"
+ENV TZ=Etc/UTC
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt update
+RUN apt upgrade -y
+RUN apt install -y postgresql wget build-essential cmake python3-pip swig 
 
-RUN apt-get update
-RUN apt-get upgrade -y
-RUN apt-get install -y postgresql wget build-essential
+# Build and install RDKit
+RUN apt install -y libboost-dev libboost-python-dev libboost-numpy-dev libboost-system-dev libboost-math-dev libboost-iostreams-dev libboost-serialization-dev libboost-program-options-dev libfreetype-dev libfreetype6 libcairo2 libcairo2-dev libeigen3-dev python3-numpy
+RUN wget https://github.com/rdkit/rdkit/archive/Release_2022_03_1.tar.gz
+RUN tar -xzf Release_2022_03_1.tar.gz
+ENV RDBASE=$HOME/RDKit
+RUN mv rdkit-Release_2022_03_1 $RDBASE
+ENV LD_LIBRARY_PATH=$RDBASE/lib:$LD_LIBRARY_PATH
+ENV PYTHONPATH=$RDBASE:$PYTHONPATH
+RUN mkdir $RDBASE/build
+WORKDIR $RDBASE/build
+ 
+RUN cmake -DRDK_BUILD_INCHI_SUPPORT=ON -DRDK_BUILD_AVALON_SUPPORT=ON -DRDK_BUILD_CAIRO_SUPPORT=ON -DRDK_BUILD_PYTHON_WRAPPERS=ON ..
+RUN make
+RUN make install
 
-RUN wget http://repo.continuum.io/miniconda/Miniconda-3.5.5-Linux-x86_64.sh -O miniconda.sh;
-RUN bash miniconda.sh -b -p $HOME/conda
-RUN export PATH="$HOME/conda/bin:$PATH"
-RUN hash -r
-RUN conda config --set always_yes yes --set changeps1 no
-RUN conda update -q conda
-RUN conda create -q -n marsi27 python=2.7 pip cmake
-RUN conda create -q -n marsi35 python=3.5 pip cmake
+# Build and install openbabel
+WORKDIR /root
+RUN wget https://github.com/openbabel/openbabel/releases/download/openbabel-3-1-1/openbabel-3.1.1-source.tar.bz2
+RUN tar -xjf openbabel-3.1.1-source.tar.bz2
+RUN mkdir openbabel-3.1.1/build
+WORKDIR /root/openbabel-3.1.1/build
+COPY ./openbabel-python.i /root/openbabel-3.1.1/scripts/
+RUN pip install eigen
+RUN cmake -DRUN_SWIG=ON -DPYTHON_BINDINGS=ON ..
+RUN make
+RUN make install
+
+RUN mkdir /marsi
+WORKDIR /marsi
+COPY ./requirements.txt /marsi/
+RUN pip install -r requirements.txt
+RUN pip install --no-deps pytest==7.1.2
 
 COPY . /marsi
-
-RUN source activate marsi27
-RUN conda install -q -c rdkit boost rdkit=2016.09.4
-RUN conda install -q -c openbabel openbabel
-RUN pip install pip --upgrade
-
-RUN pip install flake8 cython numpy scipy pyzmq pandas pytest pytest-cov pytest-benchmark swiglpk optlang
-RUN cd /marsi && python setup.py install
-
-RUN psql -c 'create database "marsi-db";' -U postgres
-RUN psql -U postgres marsi-db -f tests/fixtures/marsi-db-schema.sql
-RUN python bin/restore_db.py
-RUN psql -d marsi-db -c 'SELECT COUNT(*) FROM metabolites;' -U postgres
-
-RUN marsi
-RUN cd /marsi & pytest tests
-
-RUN source activate marsi35
-RUN conda install -q -c rdkit boost rdkit=2016.09.4
-RUN conda install -q -c openbabel openbabel
-RUN pip install pip --upgrade
-
-RUN pip install flake8 cython numpy scipy pyzmq pandas pytest pytest-cov pytest-benchmark swiglpk optlang
-RUN cd /marsi && python setup.py install
-
-RUN psql -c 'create database "marsi-db";' -U postgres
-RUN psql -U postgres marsi-db -f tests/fixtures/marsi-db-schema.sql
-RUN python bin/restore_db.py
-RUN psql -d marsi-db -c 'SELECT COUNT(*) FROM metabolites;' -U postgres
-
-RUN marsi
-RUN cd /marsi & pytest tests
+RUN python3 setup.py install
+RUN cp -R build/lib.linux-x86_64-3.10/* ./
+RUN pytest --disable-warnings tests/test_chemistry.py
+ENTRYPOINT /bin/bash
