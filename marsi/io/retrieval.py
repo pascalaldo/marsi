@@ -30,6 +30,7 @@ from marsi.utils import data_dir, gunzip
 BIGG_BASE_URL = "http://bigg.ucsd.edu/static/namespace/"
 DRUGBANK_BASE_URL = "https://www.drugbank.ca/"
 CHEBI_FTP_URL = "ftp.ebi.ac.uk"
+CHEBI_DB_DIR = "/pub/databases/chebi/archive/rel179"
 KEGG_BASE_URL = "http://www.genome.jp"
 ZINC_BASE_URL = "http://zinc.docking.org/"
 
@@ -127,7 +128,7 @@ def retrieve_chebi_structures(dest=os.path.join(data_dir, "chebi_lite_3star.sdf"
     chebi_structures_file = dest + ".gz"
     ftp = FTP(CHEBI_FTP_URL)
     ftp.login()
-    ftp.cwd('pub/databases/chebi/SDF')
+    ftp.cwd(f'{CHEBI_DB_DIR}/SDF')
     with open(chebi_structures_file, "wb") as structures_file:
         ftp.retrbinary("RETR %s" % sdf_file, structures_file.write)
     ftp.quit()
@@ -142,7 +143,7 @@ def retrieve_chebi_names(dest=os.path.join(data_dir, "chebi_names_3star.txt")):
     chebi_names_file = dest + ".gz"
     ftp = FTP(CHEBI_FTP_URL)
     ftp.login()
-    ftp.cwd('pub/databases/chebi/Flat_file_tab_delimited')
+    ftp.cwd(f'{CHEBI_DB_DIR}/Flat_file_tab_delimited')
     with open(chebi_names_file, "wb") as names_file:
         ftp.retrbinary("RETR %s" % gz_file, names_file.write)
     ftp.quit()
@@ -156,7 +157,7 @@ def retrieve_chebi_relation(dest=os.path.join(data_dir, "chebi_relation_3star.ts
     tsv_file = "relation_3star.tsv"
     ftp = FTP(CHEBI_FTP_URL)
     ftp.login()
-    ftp.cwd('pub/databases/chebi/Flat_file_tab_delimited')
+    ftp.cwd(f'{CHEBI_DB_DIR}/Flat_file_tab_delimited')
     with open(dest, "wb") as relation_file:
         ftp.retrbinary("RETR %s" % tsv_file, relation_file.write)
     ftp.quit()
@@ -169,7 +170,7 @@ def retrieve_chebi_vertice(dest=os.path.join(data_dir, "chebi_vertice_3star.tsv"
     tsv_file = "vertice_3star.tsv"
     ftp = FTP(CHEBI_FTP_URL)
     ftp.login()
-    ftp.cwd('pub/databases/chebi/Flat_file_tab_delimited')
+    ftp.cwd(f'{CHEBI_DB_DIR}/Flat_file_tab_delimited')
     with open(dest, "wb") as verice_file:
         ftp.retrbinary("RETR %s" % tsv_file, verice_file.write)
     ftp.quit()

@@ -18,4 +18,10 @@ psql -h database -d $DB_NAME -c 'SELECT COUNT(*) FROM metabolites;' -U $DB_USER
 
 pytest tests || true
 
+while true
+do
+  echo "$(date) - Running marsi container loop"
+  sleep 10
+done
+
 exit 0

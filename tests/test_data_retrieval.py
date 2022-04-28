@@ -16,7 +16,7 @@ import os
 import pytest
 from pandas import DataFrame
 
-from marsi.io import retriaval, parsers
+from marsi.io import parsers, retrieval
 
 TRAVIS = os.getenv("TRAVIS", False)
 if TRAVIS:  # TRAVIS value is 'true'
@@ -27,12 +27,12 @@ if TRAVIS:  # TRAVIS value is 'true'
 def test_retrieve_bigg(tmpdir):
     bigg_dir = tmpdir.mkdir("bigg")
     dest = bigg_dir.join("bigg_models_reactions.txt")
-    retriaval.retrieve_bigg_reactions(dest.strpath)
+    retrieval.retrieve_bigg_reactions(dest.strpath)
     statinfo = os.stat(dest.strpath)
     assert statinfo.st_size > 0
 
     dest = bigg_dir.join("bigg_models_metabolites.txt")
-    retriaval.retrieve_bigg_metabolites(dest.strpath)
+    retrieval.retrieve_bigg_metabolites(dest.strpath)
     statinfo = os.stat(dest.strpath)
     assert statinfo.st_size > 0
 
@@ -41,12 +41,12 @@ def test_retrieve_bigg(tmpdir):
 def test_retrieve_drugbank(tmpdir):
     drugbank_dir = tmpdir.mkdir("drugbank")
     dest = drugbank_dir.join("drugbank_open_structures.sdf")
-    retriaval.retrieve_drugbank_open_structures(dest=dest.strpath)
+    retrieval.retrieve_drugbank_open_structures(dest=dest.strpath)
     statinfo = os.stat(dest.strpath)
     assert statinfo.st_size > 0
 
     dest = drugbank_dir.join("drugbank_open_vocabulary.txt")
-    retriaval.retrieve_drugbank_open_vocabulary(dest=dest.strpath)
+    retrieval.retrieve_drugbank_open_vocabulary(dest=dest.strpath)
     statinfo = os.stat(dest.strpath)
     assert statinfo.st_size > 0
 
@@ -55,22 +55,22 @@ def test_retrieve_drugbank(tmpdir):
 def test_retrieve_chebi(tmpdir):
     chebi_dir = tmpdir.mkdir("chebi")
     sdf_dest = chebi_dir.join("chebi_lite_3star.sdf")
-    retriaval.retrieve_chebi_structures(dest=sdf_dest.strpath)
+    retrieval.retrieve_chebi_structures(dest=sdf_dest.strpath)
     statinfo = os.stat(sdf_dest.strpath)
     assert statinfo.st_size > 0
 
     names_dest = chebi_dir.join("chebi_names_3star.txt")
-    retriaval.retrieve_chebi_names(dest=names_dest.strpath)
+    retrieval.retrieve_chebi_names(dest=names_dest.strpath)
     statinfo = os.stat(names_dest.strpath)
     assert statinfo.st_size > 0
 
     relation_dest = chebi_dir.join("chebi_relation_3star.sdf")
-    retriaval.retrieve_chebi_relation(dest=relation_dest.strpath)
+    retrieval.retrieve_chebi_relation(dest=relation_dest.strpath)
     statinfo = os.stat(relation_dest.strpath)
     assert statinfo.st_size > 0
 
     vertice_dest = chebi_dir.join("chebi_vertice_3star.sdf")
-    retriaval.retrieve_chebi_vertice(dest=vertice_dest.strpath)
+    retrieval.retrieve_chebi_vertice(dest=vertice_dest.strpath)
     statinfo = os.stat(vertice_dest.strpath)
     assert statinfo.st_size > 0
 
@@ -84,7 +84,7 @@ def test_retrieve_chebi(tmpdir):
 def test_retrieve_brite(tmpdir):
     kegg_dir = tmpdir.mkdir("kegg")
     dest = kegg_dir.join("kegg_brite_08310.keg")
-    retriaval.retrieve_kegg_brite(dest=dest.strpath)
+    retrieval.retrieve_kegg_brite(dest=dest.strpath)
 
     statinfo = os.stat(dest.strpath)
     assert statinfo.st_size > 0
@@ -99,11 +99,11 @@ def test_retrieve_brite(tmpdir):
 def test_retrieve_zinc(tmpdir):
     zinc_dir = tmpdir.mkdir("zinc")
     dest = zinc_dir.join("zinc_16_prop.tsv")
-    retriaval.retrieve_zinc_properties(dest=dest.strpath)
+    retrieval.retrieve_zinc_properties(dest=dest.strpath)
     statinfo = os.stat(dest.strpath)
     assert statinfo.st_size > 0
 
     dest = zinc_dir.join("zinc_16.sdf.gz")
-    retriaval.retrieve_zinc_structures(dest=dest.strpath)
+    retrieval.retrieve_zinc_structures(dest=dest.strpath)
     statinfo = os.stat(dest.strpath)
     assert statinfo.st_size > 0

@@ -72,7 +72,12 @@ def parse_chebi_data(chebi_names_file, chebi_vertice_file, chebi_relation_file):
     chebi_vertices.index.name = "id"
 
     def retrieve_child_id(compound_id):
-        return chebi_vertices.loc[compound_id, 'compound_child_id']
+        # return chebi_vertices.loc[compound_id, 'compound_child_id']
+        if (cpd := chebi_vertices.get(compound_id, None)) != None:
+            return cpd['compound_child_id']
+        else:
+            return 0
+
 
     chebi_relations['init_compound_id'] = chebi_relations.init_id.apply(retrieve_child_id)
     chebi_relations['final_compound_id'] = chebi_relations.final_id.apply(retrieve_child_id)
