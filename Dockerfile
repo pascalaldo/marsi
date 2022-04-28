@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:focal
 
 ENV TZ=Etc/UTC
 ENV DEBIAN_FRONTEND=noninteractive
@@ -41,6 +41,28 @@ RUN pip install --no-deps pytest==7.1.2
 
 COPY . /marsi
 RUN python3 setup.py install
-RUN cp -R build/lib.linux-x86_64-3.10/* ./
-RUN pytest --disable-warnings tests/test_chemistry.py
-ENTRYPOINT /bin/bash
+RUN cp -R build/lib.linux-x86_64-3.*/* ./
+RUN chmod +x ./entrypoint.sh
+
+# RUN service postgresql start
+# RUN su postgres
+
+# RUN psql -c 'create database "marsi-db";' -U postgres
+# RUN psql -U postgres marsi-db -f tests/fixtures/marsi-db-schema.sql
+# RUN python3 bin/restore_db.py
+# RUN psql -d marsi-db -c 'SELECT COUNT(*) FROM metabolites;' -U postgres
+
+# RUN su root
+
+# RUN pytest --disable-warnings tests/test_io_db.py || true
+
+# RUN pytest --disable-warnings tests/test_bigg_api.py || true
+# RUN pytest --disable-warnings tests/test_chemistry.py || true
+# RUN pytest --disable-warnings tests/test_cobra.py || true
+# RUN pytest --disable-warnings tests/test_data_retrieval.py || true
+# RUN pytest --disable-warnings tests/test_optmet_design.py || true
+# RUN pytest --disable-warnings tests/test_post_processing.py || true
+# RUN pytest --disable-warnings tests/test_targets.py || true
+# RUN pytest --disable-warnings tests/test_utils.py || true
+
+ENTRYPOINT ./entrypoint.sh

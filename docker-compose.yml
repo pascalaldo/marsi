@@ -1,0 +1,36 @@
+# Version of docker-compose
+version: '3'
+
+# Containers we are going to run
+services:
+  marsi:
+    image: marsi-dev
+    restart: 'no'
+    environment:
+      # Variables to connect to our Postgres server
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: 5432
+
+      # Hostname of our Postgres container
+      DB_HOST: database
+    depends_on:
+      # The db container needs to be started before we start this container
+      - database
+    links:
+      - database
+  database:
+    image: postgres:9.6
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      # Set a path where Postgres should store the data
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+# Define the volumes
+volumes:
+  pgdata:
+

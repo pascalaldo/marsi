@@ -15,6 +15,8 @@
 import json
 from marsi.io.db import Database
 
+print("RESTORING DATABASE")
+
 with open("tests/fixtures/marsi-db-sample.json", 'r') as dump_file:
     dump = json.load(dump_file)
     Database.metabolites.restore(dump)

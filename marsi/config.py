@@ -88,12 +88,12 @@ log.level = Level.INFO
 
 default = {'marsi': {
     'prj_dir': "%s/.marsi" % os.getenv('HOME'),
-    'db_name': 'marsi-db',
+    'db_name': os.getenv('DB_NAME'),
     'db_engine': "postgresql",
-    'db_user': getpass.getuser(),
-    'db_host': "localhost",
+    'db_user': os.getenv('DB_USER'),
+    'db_host': "database",
     'db_port': 5432,
-    'db_pass': None}
+    'db_pass': os.getenv('DB_PASSWORD')}
 }
 
 
