@@ -44,4 +44,4 @@ RUN python3 setup.py install
 RUN cp -R build/lib.linux-x86_64-3.*/* ./
 RUN chmod +x ./entrypoint.sh
 
-ENTRYPOINT ./entrypoint.sh
+ENTRYPOINT ./entrypoint.sh -c -t -d -l
